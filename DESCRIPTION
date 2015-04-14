@@ -1,0 +1,11 @@
+Package: EconCurves
+Type: Package
+Title: Tools to illustrate textbook economic models that shift around curves
+Version: 0.1
+Date: 2015-01-12
+Author: Sebastian Kranz
+Maintainer: Sebastian Kranz <sebastian.kranz@uni-ulm.de>
+Description: Tools to illustrate textbook economic models that shift around curves
+License: GPL >= 2.0
+Depends: restorepoint,codeUtils, sktools, dplyr, stringtools, grid
+Imports: RMaxima

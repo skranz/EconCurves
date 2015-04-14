@@ -1,0 +1,51 @@
+modelId: ThreeEq
+
+info:
+  descr: Basic three equation macro model
+
+curves:
+  IS: 
+    eq: 'y  = A - a*r'
+    xy: [y,r]
+    color_theme: red 
+  PC:
+    eq: 'pi = pi_expect +alpha*(y-y_eq)'
+    xy: [y,pi]
+    color_theme: blue
+  MR:
+    eq: "y  = y_e -alpha*beta*(pi-pi_target)"
+    xy: [y,pi]
+    color_theme: green
+
+panels:
+  y_r:
+    pos: [1,1]
+    xy: [y,r]
+    curves: [IS]
+  pi_y:
+    pos: [1,2]
+    xy: [y,pi]
+    curves: [PC,MR]
+
+variables:
+  y_: "x-value of IS at r_[t-1]"
+  pi_expect: "pi_[t-1] on y-axis of py_y"    
+  pi_: "y-value of PC at y_"
+  y_mr: "y-value of MR at pi_"
+  r_: "y-value of IS at y_mr"
+  
+sequences:
+  main: {1:IS, 2:y_, 3:pi_expect, 4:PC, 5:pi_,
+         6: MR, 7: y_mr, 8: r_}
+
+shocks:
+  G_inc:
+    descr: Government spending increases
+    effects:
+      A: 'A*1.1'
+    duration: 1
+
+settings:
+  base:
+    A: 100
+    
