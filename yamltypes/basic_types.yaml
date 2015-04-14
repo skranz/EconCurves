@@ -1,0 +1,34 @@
+#
+
+unknown:
+
+descr:
+	parentType: string
+
+player:
+	atomic: TRUE
+
+atomic:
+	atomic: TRUE
+
+boolean:
+	parentType: atomic
+	atomic: TRUE
+
+string:
+	parentType: atomic
+	atomic: TRUE
+
+character:
+	parentType: atomic
+	atomic: TRUE
+
+
+logical:
+	parentType: atomic
+	atomic: TRUE
+
+
+numeric:
+	parentType: atomic
+	atomic: TRUE

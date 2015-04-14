@@ -45,7 +45,7 @@ shocks:
       A: 'A*1.1'
     duration: 1
 
-settings:
+scenarios:
   base:
     init:
       A: 10

@@ -31,8 +31,8 @@ examples.new.scene = function() {
   PC.MR.sp = new.scene.pane(xvar="y", yvar="pi", curves=c("PC","MR"), grid.pos = c(1,2))
   
   ranges = list(
-    y  = c(-5,5)
-    r  = c(-1,5)
+    y  = c(-5,5),
+    r  = c(-1,5),
     pi = c(-1,10)
   )
   
