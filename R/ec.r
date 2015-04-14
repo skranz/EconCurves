@@ -31,6 +31,6 @@ load.model = function(modelId, file=paste0(modelId,".yaml"), dir=get.ec()$models
   restore.point("load.model")
   
   tt = load.struct(name="model",file = paste0(dir,"/",file),typeName = "model")
-  list(em = tt.object(tt,1), tt=tt)
+  list(em = as.environment(tt.object(tt,1)), tt=tt)
   
 }

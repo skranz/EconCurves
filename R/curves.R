@@ -7,44 +7,7 @@
 # For simplicity formulas will be stored as strings
 
 
- 
-# shifted.curve = function(cu, xshift="", yshift="") {
-#   xn = cu$xvar 
-#   yn = cu$yvar
-#   if (!is.null(cu$yformula)) {  
-#   }
-# }
-
-examples.scene = function() {
-
-  
-  
-"
-
-# initial shocks
-
-shift IS to right by 10%
-
-reduce y_e
-
-
-# computations in one period
-
-set y_t to x-value of IS at r_lag
-set pi_E to y-value of PC at y_t
-recompute PC
-set (pi_goal,y_goal) to intersection of PC and MR
-set (r_t) to y-value IS at y_goal
-
-next period
-"  
-  # IS moves
-  # => recompute y_t as x-cutpoint of IS and r_lag
-  # => 
-  
-}
-
-examples.curve = function() {
+old.examples.curve = function() {
   IS = curve("y  = A - a*r",
              xvar="y",yvar="r", color="red")
   
@@ -106,14 +69,14 @@ parse.formula = function(formula) {
 
 curve = function(formula, xvar, yvar, level=NULL, pal=NULL, par = NULL, color=NULL) {
   restore.point("curve")
-  f = specialize.formula(formula, xvar,yvar, level)
+  f = specialize.curve.formula(formula, xvar,yvar, level)
   cu = c(f,nlist(xvar,yvar,level=level, pal=pal, par=NULL, color=color))
   class(cu) = c("Curve","list")
   cu
 }
 
-specialize.formula = function(formula, xvar, yvar, level=NULL) {
-  restore.point("specizalize.formula")
+specialize.curve.formula = function(formula, xvar, yvar, level=NULL) {
+  restore.point("specizalize.curve.formula")
   formula_ = parse.formula(formula)
   lhs_ = get.lhs(formula_)
   rhs_ = get.rhs(formula_)

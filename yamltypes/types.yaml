@@ -6,8 +6,8 @@ model:
 		info:
 			type: modelInfo
 		curves:
-		panels:
-		variables:
+		panes:
+		vars:
 		sequences:
 		shocks:
 		scenarios:
@@ -27,11 +27,11 @@ modelId:
 curves:
 	fieldType: curve
 
-panels:
+panes:
 	fieldType: panel
 
-variables:
-	fieldType: variable
+vars:
+	fieldType: var
 
 sequences:
 	fieldType: sequence
@@ -47,7 +47,7 @@ curve:
 
 panel:
 
-variable:
+var:
 
 sequence:
 

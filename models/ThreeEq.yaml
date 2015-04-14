@@ -5,19 +5,19 @@ info:
 
 curves:
   IS: 
-    eq: 'y  = A - a*r'
+    eq: 'y  == A - a*r'
     xy: [y,r]
     color: red 
   PC:
-    eq: 'pi = pi_expect +alpha*(y-y_eq)'
+    eq: 'pi == pi_expect +alpha*(y-y_eq)'
     xy: [y,pi]
     color: blue
   MR:
-    eq: "y  = y_e -alpha*beta*(pi-pi_target)"
+    eq: 'y  == y_eq -alpha*beta*(pi-pi_target)'
     xy: [y,pi]
     color: green
 
-panels:
+panes:
   y_r:
     pos: [1,1]
     xy: [y,r]
@@ -27,12 +27,23 @@ panels:
     xy: [y,pi]
     curves: [PC,MR]
 
-variables:
-  y_: "x-value of IS at r_[t-1]"
-  pi_expect: "pi_[t-1] on y-axis of py_y"    
-  pi_: "y-value of PC at y_"
-  y_mr: "y-value of MR at pi_"
-  r_: "y-value of IS at y_mr"
+vars:
+  y_: 
+    xcurve: IS
+    y: 'lag_r_'
+  pi_expect:
+    yaxis: py_y
+    y: 'lag_pi_'
+  pi_:
+    ycurve: PC
+    x: y_
+  y_mr:
+    xcurve: MR
+    y: pi_
+  r_:
+    ycurve: IS
+    x: y_mr
+
   
 sequences:
   main: {1:IS, 2:y_, 3:pi_expect, 4:PC, 5:pi_,
