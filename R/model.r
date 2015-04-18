@@ -3,10 +3,9 @@ examples.model = function() {
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
-  res = load.model("ThreeEq")
-  tt = res$tt
-  em = res$em
+  em = load.model("ThreeEq")
   init.model(em)
+  init.model.shocks(em)
   init.model.scen(em)
   #em$init.var
   em$sim = simulate.model(em)
@@ -14,6 +13,14 @@ examples.model = function() {
   dyplot.timelines(em$sim,cols = c(em$var.names,"A"),em = em)
 }
 
+
+load.model = function(modelId, file=paste0(modelId,".yaml"), dir=get.ec()$models.path, ec = get.ec()) {
+  restore.point("load.model")
+  
+  tt = load.struct(name="model",file = paste0(dir,"/",file),typeName = "model")
+  em = as.environment(tt.object(tt,1))
+  em
+}
 
 
 simulate.model = function(em,T=10, shocks=em$shocks, append=FALSE) {
@@ -36,12 +43,12 @@ simulate.model = function(em,T=10, shocks=em$shocks, append=FALSE) {
   for (t in 2:T) {
     res.li[[t]] = compute.next.period(em,prev=res.li[[t-1]],shocks.df=shocks.df)
   }
-  sim = as_data_frame(rbindlist(res.li))
-  sim
+  em$sim = as_data_frame(rbindlist(res.li))
+  invisible(em$sim)
 }
 
 
-compute.next.period = function(em, prev, shocks.df, round=10) {
+compute.next.period = function(em, prev, shocks.df, round.digits=8) {
   restore.point("compute.next.period")
   
   vars = em$var.names
@@ -97,7 +104,7 @@ compute.next.period = function(em, prev, shocks.df, round=10) {
   
   names(res) = endo
   if (!is.null(round))
-    res = round(res)
+    res = round(res,round.digits)
   
   res = as.list(res)
   act[endo] = res  
@@ -133,7 +140,6 @@ init.model = function(em) {
   init.model.curves(em)
   init.model.panes(em)
   init.model.vars(em)
-  init.model.shocks(em)
 }
 
 
@@ -143,16 +149,20 @@ init.model.panes = function(em) {
     pane$xvar = pane$xy[1]
     pane$yvar = pane$xy[2]
     
+    xnames = pane$xmarkers; ynames = pane$ymarkers
     pane$xmarkers = lapply(pane$xmarkers, function(marker) {
-      marker$name = get.name(marker)
+      marker = list(name=marker)
       marker$axis = "x"
       marker
     })
+    names(pane$xmarkers) = xnames
     pane$ymarkers = lapply(pane$ymarkers, function(marker) {
-      marker$name = get.name(marker)
+      marker = list(name=marker)
       marker$axis = "y"
       marker
     })
+    names(pane$ymarkers) = ynames
+
     pane$markers = c(pane$xmarkers,pane$ymarkers)
     pane
   })
@@ -192,7 +202,7 @@ init.model.scen = function(em, scen.name = names(em$scenarios)[1]) {
 }
 
 
-model.initial.var = function(em, round=8) {
+model.initial.var = function(em, round.digits=8) {
   vars = names(em$vars) 
   par = em$init.par
   impl_ss_ = em$impl_ss_
@@ -203,7 +213,7 @@ model.initial.var = function(em, round=8) {
     "  c(", paste0(sapply(impl_ss_,deparse,width.cutoff = 500L), collapse=","),")\n",
     "}"
   )
-  cat(code)
+  #cat(code)
   fn = eval(parse(text=code))
   
   x = rep(0,length(vars))
@@ -211,7 +221,7 @@ model.initial.var = function(em, round=8) {
   
   names(res) = vars
   if (!is.null(round))
-    res = round(res)
+    res = round(res, round.digits)
   em$init.var = as.list(res)
   invisible(em$init.var)
 }
@@ -316,14 +326,7 @@ get.model.var.type = function(var) {
   types[not.null]
 }
 
-make.model.eq = function(em) {
-  curves.eq = lapply(em$curves, function(curve) curve$eq)
-  
-  
-}
 
-run.model = function(em) {
-  
-}
+
 
 

@@ -1,0 +1,35 @@
+story:
+    fields:
+        modelId: 
+        storyId: 
+        scenarioId: 
+        fixed: 
+        lang:
+        T:
+        shocks:
+            type: shocks
+        periods:
+            type: storyPeriods  
+
+
+storyPeriods:
+    fieldType: storyPeriod
+
+storyPeriod:
+    fields:
+        t:
+        steps:
+            type: storySteps  
+
+storySteps:
+    fieldType: storyStep
+
+storyStep:
+    fields:
+        tell:
+        show:
+        lagshow:
+        ask:
+        task:
+        success:
+    allowOtherFields: true

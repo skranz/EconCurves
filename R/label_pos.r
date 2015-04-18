@@ -1,7 +1,9 @@
 
 get.endpoints = function(lines) {
-  line = lines[[1]]
+  restore.point("get.endpoints")
+  #line = lines[[2]]
   li = lapply(lines, function(line) {
+    restore.point("uhsfanjadnfjn")
     n = length(line$x)
     if (n==0) return(NULL)
     if (n==1) {

@@ -34,6 +34,15 @@ draw.lines = function(lines,...) {
   lapply(lines, draw.line,...)
 }
 
+plot.lines = function(em, lines,...) {
+  restore.point("plot.lines")
+  line.panes = sapply(lines, function(line) line$pane)
+  for (pane in em$panes) {
+    plines = lines[line.panes %in% pane$name]
+    plot.pane(em=em,pane=pane,lines=plines,...)
+  }
+}
+
 plot.pane = function(em,pane, lines, alpha=1,main="",mar=c(3,3,0,0), show.grid=TRUE, label.df=NULL) {
   restore.point("plot.pane")
   axis = em$scen$axis
@@ -42,6 +51,8 @@ plot.pane = function(em,pane, lines, alpha=1,main="",mar=c(3,3,0,0), show.grid=T
   
   plot.empty.pane(xlim=xrange, ylim=yrange,mar=mar,xlab=pane$xvar,ylab=pane$yvar,main=main, show.grid=show.grid)
 
+  if (length(lines)==0)
+    return()
   draw.lines(lines)
   
   if (is.null(label.df))

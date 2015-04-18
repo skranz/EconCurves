@@ -3,6 +3,7 @@ ec = new.env()
 
 init.ec = function(path=getwd(),
     models.path = paste0(path,"/models"),
+    stories.path = paste0(path,"/stories"),
     types.path = paste0(path,"/yamltypes")
 ) {
   restore.point("init.ee")
@@ -10,6 +11,7 @@ init.ec = function(path=getwd(),
   ec$main.path = path
   ec$types.path = types.path
   ec$models.path = models.path
+  ec$stories.path = stories.path
   yaml.objects.settings(default.types.path=types.path)
   ec$types = load.types()
 }

@@ -1,0 +1,100 @@
+storyId: ThreeEq_G_langfristig
+
+modelId: ThreeEq
+
+scenarioId: base
+
+fixed: [MR,PC,y_eq,pi_target]
+
+lang: de
+
+T: 2
+
+shocks:
+  G_inc:
+    effects:
+      A: 'A*1.3'
+    start: 2
+    duration: 100
+
+periods:
+  1:
+    steps:
+      init:
+        tell: >
+          Unsere geschlossene Volkswirtschaft startet im Gleichgewicht.
+          Die Inflationsrate ist auf ihrem Zielniveau von {{pi_target}}
+          und die gesamtwirtschaftliche Nachfrage $y_1$ liegt genau auf dem
+          Gleichgewichtsniveau von y_eq={{y_eq}},
+          bei dem die Inflationsrate konstant bleibt.
+        show: [IS,MR,PC,r_, pi_target,y_]
+  2:
+#    shocks: G_inc
+    steps:
+      step_IS:
+        lagshow: [IS,MR,PC,r_, pi_target,y_]
+        tell: >
+          In Periode 2 entscheidet sich die Regierung,
+          unerwarteterweise, die Staatsausgaben langfristig auf ein
+          höheres Niveau anzuheben.
+          (Wir ignorieren im Moment, wie die Regierung diese
+          Ausgaben finanziert.)
+        ask: >
+          Welche Kurve verschiebt sich? In welche Richtung?
+        task:
+          IS: [which, direction]
+        success: >
+          Genau, die IS Kurve verschiebt sich durch die erhöhten 
+          Staatsausgaben nach rechts. Bei gleichem Zinssatz wird mehr nachgefragt.
+      step_y:
+        ask: >
+          Bestimmen Sie in der Abbildung den neuen Wert y_2 des BIP
+          in Periode 2.
+        task:
+          y_: [find]
+        success: >
+          Richtig, das neue BIP y_2={{y_}} befindet sich auf dem Schnittpunkt
+          zwischen dem vorherigem Zinssatz r_1 und der neuen IS
+          Kurve.
+      step_PC_MR:
+        tell: >
+          Betrachten wir nun dass y-pi Panel mit der Phillips-Kurve (PC) und der
+          Reaktionskurve der Zentralbank (MR).
+        show: [PC,MR]
+      step_pi:
+        tell: >
+          Die erhöhte Nachfrage führt zu geringerer Arbeitslosigkeit. Dies
+          steigert die Verhandlungsmacht von Arbeitnehmern.
+          Als Konsequenz haben wir Lohnsteigerungen über der erwarteten
+          Inflationsrate von Epi2={{Epi2}}%.
+          
+          Die Firmen reagieren auf die steigenden
+          Lohnkosten durch Preissteigerungen, die dann auch über dem Niveau der erwarteten
+          Inflationsrate von {{Epi_2}}% liegen.
+        ask: >
+          Bestimmen Sie die resultierende Inflationsrate in Periode 2.
+        task:
+          pi_: [find]
+        success: >
+          Sie finden die neue Inflationsrate als vertikalen Wert
+          der Phillips Kurve (PC) an der Stelle des neuen BIP y{{t}}.
+          
+          Die tatsächliche Inflationsrate von {{pi_}} liegt also
+          über der eigentlich erwarteten Inflationsrate {{Epi}}.
+          
+          Das liegt daran, dass wir angenommen haben, dass die 
+          Staatsausgabenerhöhung unvorhergesehen war.
+          
+      step_y_mr:
+        tell: >
+          Die Zentralbank will gegensteuern, indem sie die Zinsen 
+          gemäß der MR Kurve setzt. (Häh?)
+        show: [y_mr,r_]
+  remaining:
+    t: '3:5'
+    steps:
+      step_all:
+        tell: >
+          Äh,.. Dö Dynamik zieht weiter...
+        show: [IS,y_,PC,MR]
+      

@@ -22,44 +22,19 @@ panes:
     pos: [1,1]
     xy: [y,r]
     curves: [IS]
-    xmarker: 
-      y_eq:
-        label:
-          side: 'top'
-          line: -1
-      y_: 
-        label:
-          side: 'bottom'
-          line: -1
-        color: purple
-    ymarker:
-      r_:
-        label:
-          side: 'right'
-          line: -1
-      lag_r_:
-        label:
-          side: 'right'
-          line: -2
-        
+    xmarkers: [y_eq,y_]
+    ymarkers: [r_]
+
   PC_MR:
     pos: [1,2]
     xy: [y,pi]
     curves: [PC,MR]
-    xmarkers: 
-      y_eq:
-        label_pos: 'top'
-      y_: 
-        label_pos: 'bottom'
-        color: purple
-      y_mr: 
-        label_pos: 'bottom'
-        color: lila
-    ymarkers:
-      pi_:
-        color: orange
-      Epi:
-        color: brown
+    xmarkers: [y_eq,y_,y_mr]
+    ymarkers: [pi_,Epi,pi_target]
+
+#markers:
+#  y_:
+#    color: brown
 
 vars:
   y_: 
@@ -81,10 +56,6 @@ latex:
   pi_: '\pi'
   y_mr: 'y_{mr}'
 
-
-sequences:
-  main: {1:IS, 2:y_, 3:Epi, 4:PC, 5:pi_,
-         6: MR, 7: y_mr, 8: r_}
 
 shocks:
   G_inc:
