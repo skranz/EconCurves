@@ -8,21 +8,170 @@ examples.model = function() {
   em = res$em
   init.model(em)
   init.model.scen(em)
-  em$init.var
+  #em$init.var
+  em$sim = simulate.model(em)
+  sim = em$sim
+  dyplot.timelines(em$sim,cols = c(em$var.names,"A"),em = em)
 }
 
 
+
+simulate.model = function(em,T=10, shocks=em$shocks, append=FALSE) {
+  restore.point("simulate.model")
+
+  em$sim.shocks = shocks
+  shocks.df = make.shocks.table(shocks)
+  
+  # create lagged variables: are equal to current variables in steady state
+  lag.var = em$init.var
+  names(lag.var) = paste0("lag_",names(em$init.var))
+
+  lag.par = em$init.par
+  names(lag.par) = paste0("lag_",names(em$init.par))
+
+  t = 1
+  res.li = vector("list")
+  start = c(list(t=1),em$init.var, em$init.par, lag.var, lag.par)
+  res.li[[t]] = start
+  for (t in 2:T) {
+    res.li[[t]] = compute.next.period(em,prev=res.li[[t-1]],shocks.df=shocks.df)
+  }
+  sim = as_data_frame(rbindlist(res.li))
+  sim
+}
+
+
+compute.next.period = function(em, prev, shocks.df, round=10) {
+  restore.point("compute.next.period")
+  
+  vars = em$var.names
+  pars = em$par.names
+  
+  
+  prev = as.list(prev)
+  t = prev$t+1
+  
+  act = prev
+  act[em$lag.par.names] = prev[pars] 
+  act[em$lag.var.names] = prev[vars] 
+  act[pars] = em$init.par
+  act[["t"]] = t
+  
+  # Adapt parameters for current shocks
+  shocks = shocks.df[which(shocks.df$t == t),,drop=FALSE]
+  row = 0
+  par = shocks$par[1]
+  for (par in shocks$par) {
+    row = row+1
+    act[par] = eval(shocks$formula_[[row]], act)
+  }
+  
+  # Make code for nleqslv
+  exo = setdiff(names(act), em$var.names)
+  endo = em$var.names
+  
+#   code = paste0("function(x) {\n",
+#     paste0("  ",exo,"=",act[exo], collapse="\n"),"\n\n",
+#     paste0("  ",endo,"=x[",seq_along(endo),"]", collapse="\n"),"\n",
+#     "  c(", paste0(sapply(em$impl_[endo],deparse,width.cutoff = 500L), collapse=","),")\n",
+#     "}"
+#   )
+  
+  # replace all exogenous variables by their numerical values
+  impl_ = lapply(em$impl_, function(call) {
+    substitute.call(call,act[exo])
+  })
+  
+  code = paste0("function(x) {\n",
+    paste0("  ",endo,"=x[",seq_along(endo),"]", collapse="\n"),"\n",
+    "  c(", paste0(sapply(impl_[endo],deparse,width.cutoff = 500L), collapse=","),")\n",
+    "}"
+  )
+  #cat(code)
+  fn = eval(parse(text=code))
+  
+  
+  # start with previous values
+  start.x = unlist(act[endo])
+  res = nleqslv(start.x,fn)$x
+  
+  names(res) = endo
+  if (!is.null(round))
+    res = round(res)
+  
+  res = as.list(res)
+  act[endo] = res  
+  act   
+}
+
+
+#' transform shocks list into a data frame with one row
+#' for each (t, shock, par) combination
+make.shocks.table = function(shocks) {
+  restore.point("make.shocks.table")
+  
+  name = names(shocks)[1]
+  li = lapply(names(shocks), function(name) {
+    shock = shocks[[name]]
+    
+    t = shock$start:(shock$start+shock$duration-1)
+    
+    var = names(shock$effects)[1]
+    li = lapply(names(shock$effects), function(par) {
+      formula_ = parse.as.call(shock$effects[[par]])
+      formula.li = replicate(formula_, n = length(t))
+      data.table(shock = name,t=t,par = par, formula_ = formula.li)
+    })
+    dt = rbindlist(li)
+    dt
+  })
+  dt =  rbindlist(li) 
+  as_data_frame(dt)  
+}
+
 init.model = function(em) {
-  init.model.curves(em)  
+  init.model.curves(em)
+  init.model.panes(em)
   init.model.vars(em)
+  init.model.shocks(em)
+}
+
+
+init.model.panes = function(em) {
+  em$panes = lapply(em$panes, function(pane) {
+    pane$name = attr(pane,"name")
+    pane$xvar = pane$xy[1]
+    pane$yvar = pane$xy[2]
+    
+    pane$xmarkers = lapply(pane$xmarkers, function(marker) {
+      marker$name = get.name(marker)
+      marker$axis = "x"
+      marker
+    })
+    pane$ymarkers = lapply(pane$ymarkers, function(marker) {
+      marker$name = get.name(marker)
+      marker$axis = "y"
+      marker
+    })
+    pane$markers = c(pane$xmarkers,pane$ymarkers)
+    pane
+  })
+  invisible(em$panes)
+}
+
+
+init.model.shocks = function(em, shocks=em$shocks) {
+  em$shocks = lapply(shocks, function(shock) {
+    shock$name = attr(shock,"name")
+    shock
+  })
+  invisible(em$shocks)
 }
 
 init.model.scen = function(em, scen.name = names(em$scenarios)[1]) {
   restore.point("init.model.scen")
   
-  
   scen = em$scenarios[[scen.name]]
-  
   env = new.env()
   for (par in names(scen$init)) {
     val = scen$init[[par]]
@@ -35,15 +184,18 @@ init.model.scen = function(em, scen.name = names(em$scenarios)[1]) {
   }
   scen$init.par = as.list(env)
   em$scen = scen
+  em$init.par = scen$init.par
+  em$par.names = names(em$init.par)
+  em$lag.par.names = paste0("lag_",em$par.names)
+  
   model.initial.var(em)
 }
 
+
 model.initial.var = function(em, round=8) {
-  impl_ss_ = c(
-    lapply(em$vars, function(var) {var$impl_ss_})
-  )
   vars = names(em$vars) 
-  par = em$scen$init.par
+  par = em$init.par
+  impl_ss_ = em$impl_ss_
   
   code = paste0("function(x) {\n",
     paste0("  ",names(par),"=",par, collapse="\n"),"\n\n",
@@ -79,13 +231,16 @@ init.model.curves = function(em) {
   
   curve = em$curves[[1]]
   em$curves = lapply(em$curves, function(curve) {
+    curve$name = get.name(curve)
     curve$eq_ = parse.as.call(text=curve$eq)
     curve$impl_ = substitute(lhs-(rhs),list(lhs=get.lhs(curve$eq_),rhs=get.rhs(curve$eq_)))
     
     curve$xvar = curve$xy[1]
     curve$yvar = curve$xy[2]
     
-    curve
+    res = specialize.curve.formula(curve$eq, xvar=curve$xvar,yvar=curve$yvar)
+    
+    c(curve, res)
   })
   invisible(em$curves)
 }
@@ -102,6 +257,7 @@ subst.var = function(call, var, subs, subset=FALSE) {
   #if (subset) res = res[[1]]
   res
 }
+
 init.model.vars = function(em) {
   var = em$variables[[1]]
   vars = lapply(em$vars, function(var) {
@@ -121,16 +277,14 @@ init.model.vars = function(em) {
         var$eq_ = subst.var(curve$eq_, var = curve$xvar, subs = var$x, subset=FALSE)
         var$eq_ = subst.var(var$eq_, var = curve$yvar, subs = var$name, subset=FALSE)
       }
-    } else if (var$type == "xaxis") {
-      var$eq = paste0(var$name,"==",var$x)
-      var$eq_ = parse.as.call(var$eq)      
-    } else if (var$type == "yaxis") {
-      var$eq = paste0(var$name,"==",var$y)
+    } else if (var$type == "formula") {
+      var$eq = paste0(var$name,"==",var$formula)
       var$eq_ = parse.as.call(var$eq)      
     }
     # Implicit equation
     var$impl_ = substitute(lhs-(rhs),list(lhs=get.lhs(var$eq_),rhs=get.rhs(var$eq_)))
 
+    
     # Condition for steady state
     ivars = find.variables(var$impl_)
     lagged = ivars[str.starts.with(ivars,"lag_")]
@@ -145,12 +299,19 @@ init.model.vars = function(em) {
 
   })
   
+  
   em$vars = vars
-  invisible(em$vars)
+  em$var.names = names(em$vars)
+  em$lag.var.names = paste0("lag_",em$var.names)
+
+  em$impl_ = lapply(em$vars, function(var) {var$impl_})
+  em$impl_ss_ = lapply(em$vars, function(var) {var$impl_ss_})
+
+  invisible(em)
 }
 get.model.var.type = function(var) {
   restore.point("get.model.var.type")
-  types = c("xcurve","ycurve","xaxis","yaxis")
+  types = c("xcurve","ycurve","formula")
   not.null = sapply(types, function(type) {!is.null(var[[type]])})
   types[not.null]
 }

@@ -107,19 +107,15 @@ curves.intersections = function(cu1, cu2, grid.length=201) {
   return(int)
 }
 
-compute.points = function(cu,xrange, yrange, ...) {
-  UseMethod("compute.points")
-}
+compute.curve.points = function(cu, xrange, yrange, par,xlen = 101,ylen=xlen, ...) {
+  restore.point("compute.curve.points")
 
-
-compute.points.Curve = function(cu, xrange, yrange, par=cu$par,xlen = 101,ylen=xlen, ...) {
-  restore.point("compute.points.Curve")
-  par = as.list(par)
   if (!is.data.frame(par)) {
     pdf = do.call(quick.df,as.list(par))
   } else {
-    pdf = par
+    pdf = as.data.frame(par)
   }
+  par = as.list(par)
   if (!is.null(cu$yformula_)) {
     xseq = seq(xrange[1],xrange[2], length=xlen)
     par[[cu$xvar]] = xseq
@@ -169,5 +165,35 @@ is.vertical = function(cu) {
 
 is.horizontal = function(cu) {
   cu$is.horizontal
+}
+
+
+specialize.curve.formula = function(formula, xvar, yvar, level=NULL) {
+  restore.point("specizalize.curve.formula")
+  formula_ = parse.formula(formula)
+  lhs_ = get.lhs(formula_)
+  lhs = deparse1(lhs_)
+  rhs_ = get.rhs(formula_)
+  
+  vl = find.variables(lhs_)
+  vr = find.variables(rhs_)
+
+  yformula_ = xformula_ = NULL
+  
+  # y variable is alone on lhs
+  if (identical(lhs,yvar) & (! yvar %in% vr)) {
+    yformula_ = substitute(rhs, list(rhs=rhs_))
+  }
+
+  # x variable is alone on lhs
+  if (identical(lhs,xvar) & (! xvar %in% vr)) {
+    xformula_ = substitute(rhs, list(rhs=rhs_))
+  }
+  
+  # implicit formula
+  implicit_ = substitute(lhs-(rhs), list(lhs=lhs_,rhs=rhs_))
+
+  ret = nlist(xformula_, yformula_, implicit_)
+  ret
 }
 

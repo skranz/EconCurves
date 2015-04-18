@@ -1,7 +1,7 @@
 modelId: ThreeEq
 
 info:
-  descr: Basic three equation macro model
+  descr: Basic three-equation macro model
 
 curves:
   IS: 
@@ -9,7 +9,7 @@ curves:
     xy: [y,r]
     color: red 
   PC:
-    eq: 'pi == pi_expect +alpha*(y-y_eq)'
+    eq: 'pi == Epi +alpha*(y-y_eq)'
     xy: [y,pi]
     color: blue
   MR:
@@ -18,22 +18,54 @@ curves:
     color: green
 
 panes:
-  y_r:
+  IS_:
     pos: [1,1]
     xy: [y,r]
     curves: [IS]
-  pi_y:
+    xmarker: 
+      y_eq:
+        label:
+          side: 'top'
+          line: -1
+      y_: 
+        label:
+          side: 'bottom'
+          line: -1
+        color: purple
+    ymarker:
+      r_:
+        label:
+          side: 'right'
+          line: -1
+      lag_r_:
+        label:
+          side: 'right'
+          line: -2
+        
+  PC_MR:
     pos: [1,2]
     xy: [y,pi]
     curves: [PC,MR]
+    xmarkers: 
+      y_eq:
+        label_pos: 'top'
+      y_: 
+        label_pos: 'bottom'
+        color: purple
+      y_mr: 
+        label_pos: 'bottom'
+        color: lila
+    ymarkers:
+      pi_:
+        color: orange
+      Epi:
+        color: brown
 
 vars:
   y_: 
     xcurve: IS
     y: 'lag_r_'
-  pi_expect:
-    yaxis: py_y
-    y: 'lag_pi_'
+  Epi: 'lag_pi_'
   pi_:
     ycurve: PC
     x: y_
@@ -44,29 +76,35 @@ vars:
     ycurve: IS
     x: y_mr
 
-  
+latex:
+  Epi: 'E\pi'
+  pi_: '\pi'
+  y_mr: 'y_{mr}'
+
+
 sequences:
-  main: {1:IS, 2:y_, 3:pi_expect, 4:PC, 5:pi_,
+  main: {1:IS, 2:y_, 3:Epi, 4:PC, 5:pi_,
          6: MR, 7: y_mr, 8: r_}
 
 shocks:
   G_inc:
     descr: Government spending increases
     effects:
-      A: 'A*1.1'
-    duration: 1
+      A: 'A*1.3'
+    start: 2
+    duration: 3
 
 scenarios:
   base:
     init:
-      A: 10
+      A: 15
       a: 1
       pi_target: 2
       alpha: 1
       beta: 1
       y_eq: 10
     axis:
-      y: [0,10]
-      r: [0,5]
-      pi: [0,3]
+      y: [0,20]
+      r: [0,10]
+      pi: [-5,10]
       

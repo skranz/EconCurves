@@ -74,37 +74,3 @@ curve = function(formula, xvar, yvar, level=NULL, pal=NULL, par = NULL, color=NU
   class(cu) = c("Curve","list")
   cu
 }
-
-specialize.curve.formula = function(formula, xvar, yvar, level=NULL) {
-  restore.point("specizalize.curve.formula")
-  formula_ = parse.formula(formula)
-  lhs_ = get.lhs(formula_)
-  rhs_ = get.rhs(formula_)
-  
-  vl = find.variables(lhs_)
-  vr = find.variables(rhs_)
-
-  yformula = yformula_ = xformula = xformula_ = NULL
-  
-  # y variable is alone on lhs
-  if (identical(vl,yvar) & (! yvar %in% vr)) {
-    yformula_ = formula_
-    yformula  = formula
-  }
-
-  # x variable is alone on lhs
-  if (identical(vl,xvar) & (! xvar %in% vr)) {
-    xformula_ = formula_
-    xformula  = formula
-  }
-  
-  # implicit formula
-  lhs = str.left.of(formula,"=")
-  rhs = str.right.of(formula,"=")
-  implicit = paste0(lhs, "-(", rhs,")")
-  implicit_ = parse.formula(implicit)
-  
-  ret = nlist(formula, xformula, yformula, implicit,
-              formula_, xformula_, yformula_, implicit_)
-  ret
-}

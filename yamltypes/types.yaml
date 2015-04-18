@@ -11,6 +11,7 @@ model:
 		sequences:
 		shocks:
 		scenarios:
+		latex:
 	otherFields: FALSE
 	typeByFieldName: TRUE
 
@@ -48,6 +49,13 @@ curve:
 panel:
 
 var:
+	fields:
+		formula:
+		xcurve:
+		ycurve:
+		x:
+		y:
+	defaultField: formula
 
 sequence:
 
@@ -57,3 +65,5 @@ scenario:
 	fields:
 		init:
 		axis:
+
+latex:
