@@ -31,5 +31,32 @@ storyStep:
         lagshow:
         ask:
         task:
+            type: stepTask
         success:
     allowOtherFields: true
+
+stepTask:
+    fields:
+        select:
+            type: taskSelect
+        find:
+            type: taskFind
+        shiftDir:
+            type: taskShiftDir
+    allowOtherFields: true
+    fieldType : task
+
+task:
+    fields:
+        symbol:
+    defaultField: symbol
+    allowOtherFields: true
+
+taskSelect:
+    parentType: task
+
+taskFind:
+    parentType: task
+
+taskShiftDir:
+    parentType: task

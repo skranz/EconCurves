@@ -16,14 +16,18 @@ get.endpoints = function(lines) {
   bind_rows(li)
 }
 
-find.label.pos = function(lines, yrange,yshift=diff(yrange)*0.05) {
+find.label.pos = function(lines, yrange,yshift=diff(yrange)*0.05, do.shuffle=FALSE) {
   restore.point("find.label.pos")    
-  linas = names(lines)
+  linas = sapply(lines, function(line) line$name)
   
   ep.df = get.endpoints(lines)
   ep.df$remain = TRUE
 
-  shuffle = sample.int(length(linas))
+  if (do.shuffle) {
+    shuffle = sample.int(length(linas))
+  } else {
+    shuffle = seq_along(linas)
+  }
   i = 1
   # greedy search: find end points that are closest
   for (i in shuffle) {

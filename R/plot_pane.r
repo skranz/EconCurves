@@ -43,12 +43,12 @@ plot.lines = function(em, lines,...) {
   }
 }
 
-plot.pane = function(em,pane, lines, alpha=1,main="",mar=c(3,3,0,0), show.grid=TRUE, label.df=NULL) {
+plot.pane = function(em,pane, lines, alpha=1,main="",mar=c(3,3,0,0), show.grid=!TRUE, label.df=NULL) {
   restore.point("plot.pane")
   axis = em$scen$axis
   xrange = as.numeric(axis[[pane$xvar]])
   yrange = as.numeric(axis[[pane$yvar]])
-  
+  par(mar=mar)
   plot.empty.pane(xlim=xrange, ylim=yrange,mar=mar,xlab=pane$xvar,ylab=pane$yvar,main=main, show.grid=show.grid)
 
   if (length(lines)==0)

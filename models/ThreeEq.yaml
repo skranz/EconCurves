@@ -12,8 +12,12 @@ curves:
     eq: 'pi == Epi +alpha*(y-y_eq)'
     xy: [y,pi]
     color: blue
+  next_PC:
+    eq: 'pi == next_Epi +alpha*(y-y_eq)'
+    xy: [y,pi]
+    color: cyan
   MR:
-    eq: 'y  == y_eq -alpha*beta*(pi-pi_target)'
+    eq: 'y  == y_eq -alpha*beta*(pi-piT)'
     xy: [y,pi]
     color: green
 
@@ -30,7 +34,7 @@ panes:
     xy: [y,pi]
     curves: [PC,MR]
     xmarkers: [y_eq,y_,y_mr]
-    ymarkers: [pi_,Epi,pi_target]
+    ymarkers: [pi_,Epi,piT]
 
 #markers:
 #  y_:
@@ -40,13 +44,16 @@ vars:
   y_: 
     xcurve: IS
     y: 'lag_r_'
+  # adaptive expectations
   Epi: 'lag_pi_'
+  next_Epi: 'pi_'
   pi_:
     ycurve: PC
     x: y_
+  pi_mr:
+    ycut: [next_PC,MR]
   y_mr:
-    xcurve: MR
-    y: pi_
+    xcut: [next_PC,MR]
   r_:
     ycurve: IS
     x: y_mr
@@ -69,8 +76,8 @@ scenarios:
   base:
     init:
       A: 15
-      a: 1
-      pi_target: 2
+      a: 2
+      piT: 2
       alpha: 1
       beta: 1
       y_eq: 10

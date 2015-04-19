@@ -8,9 +8,10 @@ examples.story = function() {
   
   em = es$em
   sim = em$sim
-  par(mfrow=c(1,2))
+  par(mfrow=c(1,2),oma=c(0,0,0,0))
   tell.step.task.on.console(es,t=2,step=1)
   tell.story.on.console(es = es,t.start = 1,step.start = 1)
+  
   dyplot.timelines(em$sim,cols = c(em$var.names,"A"),em = em)
 }
 
@@ -34,6 +35,11 @@ init.story = function(es) {
   es$em = em
 }
 
+step.task.symbols = function(step) {
+  restore.point("step.task.symbols")
+  symbols = unique(unlist(lapply(step$task, function(ta) ta$symbol)))  
+}
+
 init.story.periods = function(es) {
   es$periods = lapply(es$periods, function(period) {
     symbols = NULL
@@ -41,7 +47,7 @@ init.story.periods = function(es) {
       step = period$steps[[i]]
       symbols = unique(c(symbols, step$show, paste0("lag_",step$lagshow)))
       step$start.symbols = symbols
-      symbols = unique(c(symbols, names(step$task)))
+      symbols = unique(c(symbols, step.task.symbols(step)))
       step$end.symbols = symbols
       
       #restore.point("jdvndjnvduvhz")
@@ -157,5 +163,5 @@ compute.symbol.lines = function(t, em, symbols) {
   lag.lines = do.call(c, lag.lines)
   names(lag.lines) = sc("lag_",sapply(lag.lines, function(line) line$base))
   
-  c(cur.lines, lag.lines)[symbols]
+  c(cur.lines, lag.lines)# [symbols]
 }

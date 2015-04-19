@@ -4,7 +4,7 @@ modelId: ThreeEq
 
 scenarioId: base
 
-fixed: [MR,PC,y_eq,pi_target]
+fixed: [MR,y_eq,piT]
 
 lang: de
 
@@ -23,16 +23,16 @@ periods:
       init:
         tell: >
           Unsere geschlossene Volkswirtschaft startet im Gleichgewicht.
-          Die Inflationsrate ist auf ihrem Zielniveau von {{pi_target}}
-          und die gesamtwirtschaftliche Nachfrage $y_1$ liegt genau auf dem
+          Die Inflationsrate pi1 ist auf ihrem Zielniveau von {{piT}}%
+          und die gesamtwirtschaftliche Nachfrage y1 liegt genau auf dem
           Gleichgewichtsniveau von y_eq={{y_eq}},
           bei dem die Inflationsrate konstant bleibt.
-        show: [IS,MR,PC,r_, pi_target,y_]
+        show: [IS,MR,PC,r_, piT,y_]
   2:
 #    shocks: G_inc
     steps:
       step_IS:
-        lagshow: [IS,MR,PC,r_, pi_target,y_]
+        lagshow: [IS,MR,PC,r_, piT,y_]
         tell: >
           In Periode 2 entscheidet sich die Regierung,
           unerwarteterweise, die Staatsausgaben langfristig auf ein
@@ -40,51 +40,63 @@ periods:
           (Wir ignorieren im Moment, wie die Regierung diese
           Ausgaben finanziert.)
         ask: >
-          Welche Kurve verschiebt sich? In welche Richtung?
+          Welche Kurve verschiebt sich?
         task:
-          IS: [which, direction]
+          select: lag_IS
         success: >
-          Genau, die IS Kurve verschiebt sich durch die erhöhten 
-          Staatsausgaben nach rechts. Bei gleichem Zinssatz wird mehr nachgefragt.
+          Genau, die IS Kurve verschiebt sich.
+      step_IS_dir:
+        ask: > 
+          In welche Richtung verschiebt sich die IS Kurve?
+        task:  
+          shiftDir: IS 
+        success: >
+          Genau, die IS Kurve verschiebt sich durch die
+          Staatsausgabenerhöhung nach rechts.
+          Bei gegebenen Zinssatz wird mehr nachgefragt.
       step_y:
         ask: >
           Bestimmen Sie in der Abbildung den neuen Wert y_2 des BIP
           in Periode 2.
         task:
-          y_: [find]
+          find: y_ 
         success: >
-          Richtig, das neue BIP y_2={{y_}} befindet sich auf dem Schnittpunkt
-          zwischen dem vorherigem Zinssatz r_1 und der neuen IS
+          Richtig, das neue BIP, y2={{y_}}, befindet sich auf dem Schnittpunkt
+          zwischen dem vorherigem Zinssatz, r1={{r_}}, und der neuen IS
           Kurve.
       step_PC_MR:
         tell: >
-          Betrachten wir nun dass y-pi Panel mit der Phillips-Kurve (PC) und der
-          Reaktionskurve der Zentralbank (MR).
-        show: [PC,MR]
+          Betrachten wir nun dass y-pi Panel, indem auch das neue BIP von y2 
+          eingezeichnet ist. Da die Staatsausgabenerhöhung unerwartet war,
+          ist die erwartete Inflation Epi2 noch durch das alte
+          Inflationsniveau Epi2=pi1=piT={{Epi2}}% gegeben. 
+          Dies bedeutet, die Phillips-Kurve (PC) bleibt auf ihrem vorherigen
+          Niveau.
+          Die Reaktionskurve der Zentralbank (MR) bleibt stets konstant.
+        show: [PC,MR, Epi_]
       step_pi:
         tell: >
           Die erhöhte Nachfrage führt zu geringerer Arbeitslosigkeit. Dies
           steigert die Verhandlungsmacht von Arbeitnehmern.
           Als Konsequenz haben wir Lohnsteigerungen über der erwarteten
-          Inflationsrate von Epi2={{Epi2}}%.
+          Inflationsrate von Epi2={{Epi}}%.
           
           Die Firmen reagieren auf die steigenden
-          Lohnkosten durch Preissteigerungen, die dann auch über dem Niveau der erwarteten
-          Inflationsrate von {{Epi_2}}% liegen.
+          Lohnkosten durch Preissteigerungen, die dann auch über dem Niveau 
+          der erwarteten Inflationsrate von {{Epi}}% liegen.
         ask: >
           Bestimmen Sie die resultierende Inflationsrate in Periode 2.
         task:
-          pi_: [find]
+          find: pi_
         success: >
-          Sie finden die neue Inflationsrate als vertikalen Wert
-          der Phillips Kurve (PC) an der Stelle des neuen BIP y{{t}}.
+          Sie finden die neue Inflationsrate von pi{{t}}={{pi_}}%
+          als vertikalen Wert
+          der Phillips Kurve (PC) an der Stelle des neuen BIP y{{t}}={{y_}}.
           
-          Die tatsächliche Inflationsrate von {{pi_}} liegt also
-          über der eigentlich erwarteten Inflationsrate {{Epi}}.
-          
-          Das liegt daran, dass wir angenommen haben, dass die 
-          Staatsausgabenerhöhung unvorhergesehen war.
-          
+          Aufgrund der unerwarteten Staatsausgabenerhöhung
+          liegt also die tatsächliche Inflationsrate,
+          über der erwarteten Inflationsrate Epi{{t}}={{Epi}}%.
+
       step_y_mr:
         tell: >
           Die Zentralbank will gegensteuern, indem sie die Zinsen 
