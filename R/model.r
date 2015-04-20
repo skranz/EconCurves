@@ -76,14 +76,7 @@ compute.next.period = function(em, prev, shocks.df, round.digits=8) {
   # Make code for nleqslv
   exo = setdiff(names(act), em$var.names)
   endo = em$var.names
-  
-#   code = paste0("function(x) {\n",
-#     paste0("  ",exo,"=",act[exo], collapse="\n"),"\n\n",
-#     paste0("  ",endo,"=x[",seq_along(endo),"]", collapse="\n"),"\n",
-#     "  c(", paste0(sapply(em$impl_[endo],deparse,width.cutoff = 500L), collapse=","),")\n",
-#     "}"
-#   )
-  
+
   # replace all exogenous variables by their numerical values
   impl_ = lapply(em$impl_, function(call) {
     substitute.call(call,act[exo])
@@ -91,7 +84,7 @@ compute.next.period = function(em, prev, shocks.df, round.digits=8) {
   
   code = paste0("function(x) {\n",
     paste0("  ",endo,"=x[",seq_along(endo),"]", collapse="\n"),"\n",
-    "  c(", paste0(sapply(impl_[endo],deparse,width.cutoff = 500L), collapse=","),")\n",
+    "  c(", paste0(sapply(impl_,deparse,width.cutoff = 500L), collapse=","),")\n",
     "}"
   )
   #cat(code)
@@ -202,7 +195,8 @@ init.model.scen = function(em, scen.name = names(em$scenarios)[1]) {
 }
 
 
-model.initial.var = function(em, round.digits=8) {
+model.initial.var = function(em, round.digits=10) {
+  restore.point("model.initial.var")
   vars = names(em$vars) 
   par = em$init.par
   impl_ss_ = em$impl_ss_
@@ -269,64 +263,111 @@ subst.var = function(call, var, subs, subset=FALSE) {
 }
 
 init.model.vars = function(em) {
-  var = em$variables[[1]]
-  vars = lapply(em$vars, function(var) {
+  restore.point("init.model.vars")
+  var = em$vars[[1]]
+  
+  var = em$vars[["y_mr"]]
+  # create types
+  em$vars = lapply(em$vars, function(var) {
     restore.point("hfhhfuehuh")
-    
-    
     var$type = get.model.var.type(var)
     var$name = attr(var,"name")
-    if (var$type == "xcurve" | var$type =="ycurve") {
-      var$curve = var[[var$type]]
-      curve = em$curves[[var$curve]]
-      
-      if (var$type == "xcurve") {
-        var$eq_ = subst.var(curve$eq_, var = curve$yvar, subs = var$y, subset=FALSE)
-        var$eq_ = subst.var(var$eq_, var = curve$xvar, subs = var$name, subset=FALSE)
-      } else if (var$type == "ycurve") {
-        var$eq_ = subst.var(curve$eq_, var = curve$xvar, subs = var$x, subset=FALSE)
-        var$eq_ = subst.var(var$eq_, var = curve$yvar, subs = var$name, subset=FALSE)
-      }
-    } else if (var$type == "formula") {
-      var$eq = paste0(var$name,"==",var$formula)
-      var$eq_ = parse.as.call(var$eq)      
-    }
-    # Implicit equation
-    var$impl_ = substitute(lhs-(rhs),list(lhs=get.lhs(var$eq_),rhs=get.rhs(var$eq_)))
-
+    var
+  })
+  
+  em$var.names = names(em$vars)
+  em$lag.var.names = paste0("lag_",em$var.names)
+  
+  var.types = sapply(em$vars, function(var) var$type)
+  em$var.types = var.types
+  vars = em$vars
+  # create single variable equations    
+  
+  rows = var.types %in% "xcurve" 
+  xcurve.eq = lapply(vars[rows], function(var) {
+    var$curve = var[[var$type]]
+    curve = em$curves[[var$curve]]
+    eq_ = subst.var(curve$eq_, var = curve$yvar, subs = var$y, subset=FALSE)
+    eq_ = subst.var(eq_, var = curve$xvar, subs = var$name, subset=FALSE)
+    eq_
+  })
     
-    # Condition for steady state
-    ivars = find.variables(var$impl_)
+  rows = var.types %in% "ycurve" 
+  ycurve.eq = lapply(vars[rows], function(var) {
+    var$curve = var[[var$type]]
+    curve = em$curves[[var$curve]]
+    eq_ = subst.var(curve$eq_, var = curve$xvar, subs = var$x, subset=FALSE)
+    eq_ = subst.var(eq_, var = curve$yvar, subs = var$name, subset=FALSE)
+    eq_
+  })
+
+  rows = var.types %in% "formula" 
+  formula.eq = lapply(vars[rows], function(var) {
+    eq = paste0(var$name,"==",var$formula)
+    eq_ = parse.as.call(eq)
+    eq_
+  })
+  
+  # we now need to find the equations for the cut points
+  xrows = which(var.types == "xcut")
+  yrows = which(var.types == "ycut")
+  if (length(xrows) != length(yrows)) {
+    stop("You must specify for every xcut variable exactly one ycut variable.")
+  } 
+  cuts.eq = NULL
+  if (length(xrows)>0) {
+    # Match xcuts and ycuts
+    xcut.id = sapply(em$vars[xrows], function(var) paste0(var$xcut,collapse="."))
+    ycut.id = sapply(em$vars[yrows], function(var) paste0(var$ycut,collapse="."))
+  
+    xdf = data_frame(xrow = xrows, id = xcut.id)
+    ydf = data_frame(yrow = yrows, id = ycut.id)
+    cut.df = inner_join(xdf,ydf,by="id")
+    
+    cuts.eq = lapply(int.seq(1,NROW(cut.df)), function(r) {
+      restore.point("doirz8zhehf")
+      xvar = vars[[cut.df$xrow[r]]]
+      yvar = vars[[cut.df$yrow[r]]]
+      curve.names = xvar$xcut
+      eq.li = lapply(em$curves[curve.names], function(curve){
+        eq_ = subst.var(curve$eq_, var = curve$xvar, subs = xvar$name, subset=FALSE)
+        eq_ = subst.var(eq_, var = curve$yvar, subs = yvar$name, subset=FALSE)
+        eq_
+      })
+      eq.li
+    })
+    cuts.eq = do.call(c,cuts.eq)
+  }  
+      
+
+  eq.li = c(xcurve.eq, ycurve.eq, formula.eq, cuts.eq)
+  
+  impl.li = lapply(eq.li, function(eq_) {
+    substitute(lhs-(rhs),list(lhs=get.lhs(eq_),rhs=get.rhs(eq_)))
+  })    
+  impl.ss.li = lapply(impl.li, function(impl_) {
+    ivars = find.variables(impl_)
     lagged = ivars[str.starts.with(ivars,"lag_")]
     if (length(lagged)>0) {
       unlagged = str.right.of(lagged,"lag_")
-      var$impl_ss_ = subst.var(var$impl_,var = lagged, subs = unlagged, subset=FALSE)
+      impl_ss_ = subst.var(impl_,var = lagged, subs = unlagged, subset=FALSE)
     } else {
-      var$impl_ss_ = var$impl_
+      impl_ss_ = impl_
     }
-    
-    var
-
+    impl_ss_
   })
-  
-  
-  em$vars = vars
-  em$var.names = names(em$vars)
-  em$lag.var.names = paste0("lag_",em$var.names)
 
-  em$impl_ = lapply(em$vars, function(var) {var$impl_})
-  em$impl_ss_ = lapply(em$vars, function(var) {var$impl_ss_})
-
+  em$impl_ = impl.li
+  em$impl_ss_ = impl.ss.li
   invisible(em)
 }
+
 get.model.var.type = function(var) {
   restore.point("get.model.var.type")
-  types = c("xcurve","ycurve","formula")
+  types = c("xcurve","ycurve","formula","xcut","ycut")
   not.null = sapply(types, function(type) {!is.null(var[[type]])})
   types[not.null]
 }
-
-
 
 
 

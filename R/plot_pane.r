@@ -34,16 +34,16 @@ draw.lines = function(lines,...) {
   lapply(lines, draw.line,...)
 }
 
-plot.lines = function(em, lines,...) {
+plot.lines = function(em, lines, pane.names=names(em$panes),...) {
   restore.point("plot.lines")
   line.panes = sapply(lines, function(line) line$pane)
-  for (pane in em$panes) {
+  for (pane in em$panes[pane.names]) {
     plines = lines[line.panes %in% pane$name]
     plot.pane(em=em,pane=pane,lines=plines,...)
   }
 }
 
-plot.pane = function(em,pane, lines, alpha=1,main="",mar=c(3,3,0,0), show.grid=!TRUE, label.df=NULL) {
+plot.pane = function(em,pane, lines, alpha=1,main="",mar=c(4,3,1,1), show.grid=!TRUE, label.df=NULL) {
   restore.point("plot.pane")
   axis = em$scen$axis
   xrange = as.numeric(axis[[pane$xvar]])

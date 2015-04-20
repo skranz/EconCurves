@@ -29,6 +29,8 @@ storyStep:
         tell:
         show:
         lagshow:
+        hide:
+        laghide:
         ask:
         task:
             type: stepTask
@@ -37,12 +39,16 @@ storyStep:
 
 stepTask:
     fields:
+        pane:
+            type: character
         select:
             type: taskSelect
         find:
             type: taskFind
-        shiftDir:
-            type: taskShiftDir
+        findPoint:
+            type: taskFindPoint
+        shift:
+            type: taskShift
     allowOtherFields: true
     fieldType : task
 
@@ -58,5 +64,8 @@ taskSelect:
 taskFind:
     parentType: task
 
-taskShiftDir:
+taskFindPoint:
+    parentType: task
+
+taskShift:
     parentType: task

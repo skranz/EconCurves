@@ -11,8 +11,7 @@ compute.marker.line = function(marker, val, xrange,yrange, lty=2, lwd=1, t=0, pa
     y = c(pos,pos)
     x = xrange
   }
-  #color = curve.color(color, level,color)
-  color = "black"
+  color = curve.color("black", level=level)
   
   m = marker$name
   lab = ifelse(str.ends.with(m,"_"),substring(m,1,nchar(m)-1),m)
@@ -56,7 +55,7 @@ compute.pane.lines = function(em, pane, t, sim=em$sim, val=as.list(sim[t,,drop=F
   
   # marker
   ma.li = lapply(pane$markers[marker.names], function(marker) {
-    compute.marker.line(marker=marker, val = val,xrange = xrange,yrange=yrange, t=t, pane.name=pane.name)
+    compute.marker.line(marker=marker, val = val,xrange = xrange,yrange=yrange, t=t, pane.name=pane.name,level=level)
   })
 
   cu.li = lapply(em$curves[curve.names], function(cu) {

@@ -67,13 +67,13 @@ color.table = function() {
 #     yellows, browns, purples, cyans)
 #   
 #   cat(paste0('"',colors,'"', collapse=","))
-  colors = c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FF9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#FFDF80FF","yellow","orange3","#B34300FF","#FF80BFFF","#B30059FF","#BFFFFF","#00B3B3")
+  colors = c("#999999","#111111", "#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FF9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#FFDF80FF","yellow","orange3","#B34300FF","#FF80BFFF","#B30059FF","#BFFFFF","#00B3B3")
   
   #show.colors(colors,2)
   
   df = data.frame(
     color=colors,
-    base = c("blue","blue","green","green","red","red",
+    base = c("black","black", "blue","blue","green","green","red","red",
       "orange","orange","lila","lila","yellow","yellow",
       "brown","brown","purple","purple","cyan","cyan"),
     level = c(2,1)
