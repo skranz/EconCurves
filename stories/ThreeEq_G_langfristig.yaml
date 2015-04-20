@@ -89,7 +89,7 @@ periods:
           pane: [PC_MR]
           find: pi_
         success: >
-          Sie finden die neue Inflationsrate von pi{{t}}={{pi_}}%
+          Richtig. Sie finden die neue Inflationsrate von pi{{t}}={{pi_}}%
           als vertikalen Wert
           der Phillipskurve (PC{{t}}) an der Stelle des neuen BIP,
           y{{t}}={{y_}}.

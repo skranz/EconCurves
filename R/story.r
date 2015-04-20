@@ -117,7 +117,7 @@ compile.story.txt = function(txt, out="text",val =as.list(em$sim[t,,drop=FALSE])
   
 }
 
-tell.story.on.console = function(es, t.start=1, step.start=1, mfrow=c(1,1), ask=FALSE) {
+tell.story.on.console = function(es, t.start=1, step.start=1, mfrow=c(1,1), ask=FALSE, num.attempts=3) {
   restore.point("tell.story.on.console")
   
   es$mfrow = mfrow
@@ -131,10 +131,13 @@ tell.story.on.console = function(es, t.start=1, step.start=1, mfrow=c(1,1), ask=
       step = period$steps[[s]]
       cat(paste0("\n",t,".", s,":"))
       tell.step.task.on.console(es,t,s)
-      if (ask) {
-        ask.task.on.console(es, t, s)        
+      if (ask & length(step$task)>0) {
+        ret = ask.task.on.console(es, t, s, num.attempts=num.attempts)
+        if (!ret)
+          cat("Let us just proceed as if you were correct. You can try next time.\n")
+      } else {
+        readline(prompt="[Press Enter to continue] [Esc to stop]")
       }
-      readline(prompt="[Press Enter to continue] [Esc to stop]")
       if (length(step$task)>0) {
         tell.step.sol.on.console(es,t,s)
         readline(prompt="[Press Enter to continue] [Esc to stop]")
@@ -174,7 +177,7 @@ tell.step.sol.on.console = function(es, t=1, step=1) {
 
 }
 
-ask.task.on.console = function(es, t=1, step=1) {
+ask.task.on.console = function(es, t=1, step=1, num.attempts=1) {
   restore.point("ask.task.on.console")
   period = get.story.period(es,t)
   st = period$steps[[step]]
@@ -196,31 +199,82 @@ ask.task.on.console = function(es, t=1, step=1) {
   }
   
   
-  cat("\nAnswer by clicking at a correct position in the pane.")
+  #cat("\nAnswer by clicking at a correct position in the pane.")
   
   # draw task pane
   par(mfrow=c(1,1))
   lines = get.story.step.lines(es = es,t = t,step = step,solved=FALSE,previous.steps = TRUE, pane.names=pane.name)
   plot.lines(em=es$em,lines, pane.names=pane.name)
   
-  if (task$type == "shift") {
-    cat("\nAnswer by clicking correctly in the figure.")
-    symbols = task$shift$symbol
-    ref.line = compute.symbol.lines(t=t, em=em, symbols=symbols[1], pane.names=pane.name)[[1]]
-    line = compute.symbol.lines(t=t, em=em, symbols=symbols[2], pane.names=pane.name)[[1]]
-    
-    xy = unlist(locator(1))
-    
-    point.shift = point.to.line.pos(xy,ref.line)
-    
-    ref.shift = line.to.line.shift(line, ref.line)
+  ret = TRUE
+  for (attempt in 1:num.attempts) {
+    if (task$type == "shift") {
+      ret = console.ask.shift(es=es,em=em,t=t,task=task, pane.name=pane.name)
+    } else if (task$type == "find") {
+      ret = console.ask.find(es=es,em=em,t=t,task=task, pane.name=pane.name)
+    }
+    if (ret) break
+    if (!ret & attempt<num.attempts)
+      cat("\nSorry that was wrong. Try again.")
+    if (!ret & attempt<num.attempts)
+      cat("\nSorry, that was ", attempt , "times wrong.")
   }
   
-  restore.point("jdnfdsskfmk")
-  
-  #par(mfrow=es$mfrow)
+  par(mfrow=es$mfrow)
+  return(ret)
   
 }
+
+console.ask.shift = function(es, em,t, task, pane.name) {
+  restore.point("console.ask.shift")
+  #cat("\nAnswer by clicking correctly in the figure.")
+  symbols = task$shift$symbol
+  ref.line = compute.symbol.lines(t=t, em=em, symbols=symbols[1], pane.names=pane.name)[[1]]
+  line = compute.symbol.lines(t=t, em=em, symbols=symbols[2], pane.names=pane.name)[[1]]
+  
+  #plot.lines(em=es$em,lines=list(ref.line,line), pane.names=pane.name)
+  ref.shift = line.to.line.shift(line, ref.line)
+  
+  xy = unlist(locator(1))
+  point.shift = sign(point.to.line.pos(xy,ref.line))
+  if (all(point.shift==ref.shift))
+    return(TRUE)
+  cat("\nUnfortunately, not correct...")
+  return(FALSE)
+  
+}
+
+# Find a marker
+console.ask.find = function(es, em,t, task, pane.name, val = as.list(em$sim[t,]), tol=0.15) {
+  restore.point("console.ask.find")
+  #cat("\nAnswer by clicking correctly in the figure.")
+  symbol = task$find$symbol
+
+  #plot.lines(em=es$em,lines=list(ref.line,line), pane.names=pane.name)
+  xy = unlist(locator(1))
+  ref.val = val[[symbol]]
+
+  pane = em$panes[[pane.name]]
+  axis = pane$markers[[symbol]]$axis
+  axis.ind = ifelse(axis=="x",1,2)
+  
+  click.val = xy[axis.ind]
+  
+  if (axis=="x") {
+    ref.inch = grconvertX(ref.val, from = "user", to = "inches")
+    click.inch = grconvertX(click.val, from = "user", to = "inches")
+  } else if (axis=="y") {
+    ref.inch = grconvertY(ref.val, from = "user", to = "inches")
+    click.inch = grconvertY(click.val, from = "user", to = "inches")
+  }
+  dist = abs(ref.inch-click.inch)
+
+  if (dist>tol)
+    return(FALSE)  
+  
+  return(TRUE)
+}
+
 
 line.to.line.shift = function(line, ref.line, num.points=5,...) {
   restore.point("line.to.line.shift")
@@ -230,17 +284,29 @@ line.to.line.shift = function(line, ref.line, num.points=5,...) {
   } else {
     rows = 1
   }
+  row = 1
   li = lapply(rows, function(row) {
     pos = point.to.line.pos(c(x=line$x[row],y=line$y[row]), ref.line)
     sign(pos)
   })
-  dt = rbindlist(li)
+  df = as.data.frame(do.call(rbind,li))
+  if (diff(range(df$x))>=2 | diff(range(df$y))>=2){
+    stop("line was not shifted but new line crosses old line")  
+  }
   
+  x.ind = which.max(abs(df$x))
+  y.ind = which.max(abs(df$y))
+  return( c(x=df$x[x.ind], y=df$y[y.ind]) )
 }
 
 point.to.line.pos = function(xy,line,dim="xy") {
   restore.point("point.to.line.pos")
+
   line.xy = find.nearest.line.point(xy=xy,line=line,dim=dim)
+  #
+  #points(xy[1],xy[2])
+  #points(line.xy[1],line.xy[2],col="red")
+  #lines(x=line$x,y=line$y, col="red")
   xy-line.xy
 }
 
@@ -274,7 +340,7 @@ find.nearest.line.point = function(xy, line, dim="xy") {
   }
 
   if (dim=="xy") {
-    dist.vec = (xy[1]-line$x)^2+(xy[2]-line$y^2)
+    dist.vec = (xy[1]-line$x)^2+(xy[2]-line$y)^2
   } else if (dim=="x") {
     dist.vec = abs(xy[1]-line$x)
   } else if (dim=="y") {
