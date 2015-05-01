@@ -26,8 +26,8 @@ example.plot.pane = function() {
  
 }
 
-draw.line = function(line,...) {
-  lines(x=line$x,y=line$y,col=line$color,lty=line$lty,lwd=line$lwd,...)
+draw.line = function(line,lwd.factor=1,...) {
+  lines(x=line$x,y=line$y,col=line$color,lty=line$lty,lwd=line$lwd*lwd.factor,...)
 }
 
 draw.lines = function(lines,...) {
@@ -43,22 +43,22 @@ plot.lines = function(em, lines, pane.names=names(em$panes),...) {
   }
 }
 
-plot.pane = function(em,pane, lines, alpha=1,main="",mar=c(4,3,1,1), show.grid=!TRUE, label.df=NULL) {
+plot.pane = function(em,pane, lines, alpha=1,main="",mar=c(4,3,1,1), show.grid=!TRUE, label.df=NULL,lwd.factor=1,label.cex=0.75, cex.axis=0.8) {
   restore.point("plot.pane")
   axis = em$scen$axis
   xrange = as.numeric(axis[[pane$xvar]])
   yrange = as.numeric(axis[[pane$yvar]])
   par(mar=mar)
-  plot.empty.pane(xlim=xrange, ylim=yrange,mar=mar,xlab=pane$xvar,ylab=pane$yvar,main=main, show.grid=show.grid)
+  plot.empty.pane(xlim=xrange, ylim=yrange,mar=mar,xlab=pane$xvar,ylab=pane$yvar,main=main, show.grid=show.grid, cex.axis=cex.axis)
 
   if (length(lines)==0)
     return()
-  draw.lines(lines)
+  draw.lines(lines,lwd.factor=lwd.factor)
   
   if (is.null(label.df))
     label.df = find.label.pos(lines,yrange=yrange)
   
-  boxed.labels(x = label.df$x,y = label.df$y,labels = label.df$line,cex=0.75,bg="white",border=FALSE,xpad=1.1,ypad=1.1)
+  boxed.labels(x = label.df$x,y = label.df$y,labels = label.df$line,cex=label.cex,bg="white",border=FALSE,xpad=1.1,ypad=1.1)
 }
 
 

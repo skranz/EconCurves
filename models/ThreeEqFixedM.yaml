@@ -1,0 +1,90 @@
+modelId: ThreeEq
+
+info:
+  descr: Three equation model with LM curve and a fixed monetary base M
+  
+curves:
+  IS: 
+    eq: 'y  == A - a*r'
+    xy: [y,r]
+    color: red
+  LM:
+#    eq: 'M == P*(y_ - b*r)'
+#    eq: 'y  == M/P + b*r'
+    eq: 'r  == pmax(-Epi, -M/P+b*y)'
+    xy: [y,r]
+    color: green
+  PC:
+    eq: 'pi == Epi +alpha*(y-y_eq)'
+    xy: [y,pi]
+    color: blue
+  MR:
+    eq: 'y  == y_eq -alpha*beta*(pi-piT)'
+    xy: [y,pi]
+    color: brown
+
+panes:
+  IS_LM:
+    pos: [1,1]
+    xy: [y,r]
+    curves: [IS,LM]
+    xmarkers: [y_eq,y_]
+    ymarkers: [r_]
+
+  PC_MR:
+    pos: [1,2]
+    xy: [y,pi]
+    curves: [PC,MR]
+    xmarkers: [y_eq,y_]
+    ymarkers: [pi_,Epi,piT]
+
+#markers:
+#  y_:
+#    color: brown
+
+vars:
+  P:
+    descr: Price level
+    formula: 'lag_P*(1+0.01*pi_)'
+    laginit: 1
+  y_: 
+    descr: Current GDP
+    xcurve: IS
+    y: lag_r_
+  r_:
+    descr: Current interest rate
+    ycurve: LM
+    x: y_
+  # adaptive expectations
+  Epi: 'lag_pi_'
+  pi_:
+    ycurve: PC
+    x: y_
+    laginit: pi_start
+
+shocks:
+  G_inc:
+    descr: Government spending increases
+    effects:
+      A: 'A*1.3'
+    start: 4
+    duration: 100
+
+scenarios:
+  base:
+    init:
+      pi_start: 0
+      #M: 7.65
+      M: 7.5
+      A: 15
+      a: 2
+      b: 1
+      piT: 2
+      alpha: 1
+      beta: 1
+      y_eq: 10
+    axis:
+      y: [0,20]
+      r: [-3,10]
+      pi: [-5,10]
+      

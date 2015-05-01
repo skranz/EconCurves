@@ -5,7 +5,7 @@ examples.plot.empty.pane = function() {
 }
 
 
-plot.empty.pane = function(xlim,ylim,mar=c(4,4,4,1),mgp=c(2,2,0),xlab="",ylab="",main="",x.ticks = pretty(xlim,n.ticks,),y.ticks=pretty(ylim,n.ticks),n.ticks=10, zero = c(min(xlim),min(ylim)), show.grid=TRUE, ...) {
+plot.empty.pane = function(xlim,ylim,mar=c(4,4,4,1),mgp=c(2,2,0),xlab="",ylab="",main="",x.ticks = pretty(xlim,n.ticks,),y.ticks=pretty(ylim,n.ticks),n.ticks=10, zero = c(min(xlim),min(ylim)), show.grid=TRUE, cex.axis=0.8, ...) {
   restore.point("plot.empty.pane")
   #par(mar=mar,mpg=mpg)
   plot(x=mean(xlim),y=mean(ylim),xlim=xlim,ylim=ylim,axes=FALSE,frame.plot=FALSE, type="n",xlab=xlab,ylab=ylab, main=main,mgp=mgp,mar=mar)
@@ -18,8 +18,8 @@ plot.empty.pane = function(xlim,ylim,mar=c(4,4,4,1),mgp=c(2,2,0),xlab="",ylab=""
 
 #  axis(side=1,pos = zero[2],at=x.ticks,cex.axis=0.8)
 #  axis(side=2,pos = zero[1],at=y.ticks, cex.axis=0.8)
-  axis(side=1,at=x.ticks,cex.axis=0.8)
-  axis(side=2,at=y.ticks, cex.axis=0.8)
+  axis(side=1,at=x.ticks,cex.axis=cex.axis)
+  axis(side=2,at=y.ticks, cex.axis=cex.axis)
   
   #grid(nx=n.ticks,ny=n.ticks)
 }

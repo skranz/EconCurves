@@ -144,12 +144,12 @@ compute.implicit.z = function(cu, xrange, yrange,par,  xlen=101,ylen=xlen, z.as.
   restore.point("compute.implicit")
   
   # Compute a contour line using the implicit function
-  xseq = seq(xrange[1],xrange[2], length=num.points)
-  yseq = seq(yrange[1],yrange[2], length=num.points)
+  xseq = seq(xrange[1],xrange[2], length=xlen)
+  yseq = seq(yrange[1],yrange[2], length=ylen)
   grid = expand.grid(list(x=xseq,y=yseq))
 
-  par[[cu$x]] = grid$x
-  par[[cu$y]] = grid$y
+  par[[cu$xvar]] = grid$x
+  par[[cu$yvar]] = grid$y
   grid$z = eval(cu$implicit_, par)
   
   if (z.as.matrix) {

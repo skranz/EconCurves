@@ -2,9 +2,11 @@ story:
     fields:
         modelId: 
         storyId: 
-        scenarioId: 
+        scenarioId:
+        scenario:
         fixed: 
         lang:
+        timelineVars:
         T:
         shocks:
             type: shocks

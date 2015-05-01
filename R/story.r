@@ -1,13 +1,19 @@
 
 examples.story = function() {
+  set.restore.point.options(display.restore.point = !TRUE)
+
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
-  es = load.story("ThreeEq_G_langfristig")
+  #es = load.story("ThreeEq_G_langfristig")
+  es = load.story("ThreeEqFixedM_G_langfristig")
+  es = load.story("IS_LM_PC_G_kurzfristig")
   init.story(es)
   par(mfrow=c(1,2),oma=c(0,0,0,0))
   tell.story.on.console(ask=TRUE,es = es,t.start = 1,step.start = 1, mfrow=c(1,2))
   
+  tell.story.on.console(ask=TRUE,es = es,t.start = 2,step.start = 8, mfrow=c(1,2))
+
   em = es$em
   sim = em$sim
   dyplot.timelines(em$sim,cols = c(em$var.names,"A"),em = em)
@@ -28,10 +34,17 @@ load.story = function(storyId, file=paste0(storyId,".yaml"), dir=get.ec()$storie
 
 init.story = function(es) {
   restore.point("init.story")
+  es$t = es$step.num = 1
+  es$wait.for.answer = FALSE
+  es$tol = 0.07
+    
   init.story.periods(es)
   em = load.model(es$modelId)
   init.model(em)
-  init.model.scen(em,scen.name = es$scenarioId)
+  if (is.null(es$scenario))
+    es$scenario = em$scenarios[[es$scenarioId]]
+  
+  init.model.scen(em,scen = es$scenario)
   init.model.shocks(em,shocks = es$shocks)
   simulate.model(em,T=es$T)
   es$em = em
@@ -40,13 +53,15 @@ init.story = function(es) {
 step.task.symbols = function(step) {
   restore.point("step.task.symbols")
   tasks = setdiff(names(step$task),"pane")
-  symbols = unique(unlist(lapply(step$task[tasks], function(ta) ta$symbol)))  
+  symbols = unique(unlist(lapply(step$task[tasks], function(ta) ta$symbol)))
+  symbols
 }
 
 init.story.periods = function(es) {
-
+  restore.point("init.story.periods")
   #period = es$periods[[2]]
-  es$periods = lapply(es$periods, function(period) {
+  es$periods = lapply(seq_along(es$periods), function(period.num) {
+    period = es$periods[[period.num]]
     symbols = NULL
     i = 1
     for (i in seq_along(period$steps)) {
@@ -70,8 +85,25 @@ init.story.periods = function(es) {
       period$steps[[i]] = step
     }
     period$symbols = symbols
+    period$period.num = period.num
     period
   })
+  
+  tperiod.df = data.frame(period=seq_along(es$periods), t.start=seq_along(es$periods), t.end = Inf)
+  t = 1
+  for (per in seq_along(es$periods)[-1]) {
+    period = es$periods[[per]]
+    if (is.null(period$t)) {
+      t = t+1
+    } else {
+      t = period$t
+    }
+    tperiod.df$t.end[per-1] = t-1
+    tperiod.df$t.start[per] = t
+  }
+  es$tperiod.df = tperiod.df
+  
+  es
 }
 
 get.story.step.task.type = function(step) {
@@ -85,8 +117,59 @@ get.story.step.task.type = function(step) {
   types[not.null]
 }
 
-get.story.period = function(es,t) {
-  es$periods[[t]]
+get.story.period = function(es,t=es$t) {
+  if (is.null(es$tperiod.df))
+    return(es$periods[[t]])
+  
+  per = which(es$tperiod.df$t.start<=t & es$tperiod.df$t.end>=t)
+  es$periods[[per[1]]]
+}
+
+get.period.t = function(es, period.num=period$period.num,period ) {
+  if (period.num > length(es$periods))
+    return(es$T)
+  
+  es$tperiod.df$t.start[period.num] 
+}
+
+get.story.step.symbols = function(es,t, step.num, solved=TRUE, previous.steps=TRUE) {
+  st = get.story.period(es,t)$steps[[step.num]]
+  
+  if (!solved & previous.steps) {
+    symbols = st$start.symbols
+  } else if (solved & previous.steps) {
+    symbols = st$end.symbols
+  } else if (!solved & !previous.steps) {
+    symbols = st$show
+  } else if (solved & !previous.steps) {
+    symbols = c(st$show, names(st$task))
+  }
+  symbols
+}
+
+story.step.dyplot = function(es, t, step, solved=FALSE, previous.steps=TRUE, pane.names = names(es$em$panes), vars = names(es$em$vars)) {
+  restore.point("story.step.dyplot")
+  
+  em = es$em
+  sim = em$sim
+  sim = sim[,c("t",vars)]
+  
+  #if (t==1) return()
+  
+  if (t<NROW(sim)) {
+    sim[(t+1):NROW(sim),vars]=NA 
+  }
+  symbols = get.story.step.symbols(es=es,t=t,step.num=step, solved=solved, previous.steps=previous.steps)
+
+  t.vars = intersect(symbols, vars)
+  hidden.vars = setdiff(vars, t.vars)
+  if (length(hidden.vars)>0) {
+    sim[t,hidden.vars] = NA
+  }
+  sim
+  #cat("\nRefresh timeline: t=",t, " vars = ", paste0(t.vars, collapse=","))
+  dyplot.timelines(sim,cols = vars,em = em)
+
 }
 
 get.story.step.lines = function(es, t, step, solved=FALSE, previous.steps=TRUE, pane.names = names(es$em$panes)) {
@@ -105,255 +188,74 @@ get.story.step.lines = function(es, t, step, solved=FALSE, previous.steps=TRUE, 
   compute.symbol.lines(t = t,em = es$em,symbols = symbols, pane.names=pane.names)
 }
 
-compile.story.txt = function(txt, out="text",val =as.list(em$sim[t,,drop=FALSE]),  em=NULL,t=1) {
+compile.story.txt = function(txt, out="text",val =as.list(em$sim[t,,drop=FALSE]),  em=NULL,t=1, digits=4) {
   restore.point("compile.story.txt")
   
   if (length(txt)==0) return("")
+  
+  val = lapply(val, function(v) {
+    if (is.numeric(v)) return(signif(v,digits))
+    return(v)
+  }) 
+  
   txt = whisker.render(txt, data=val)
+  
   if (out=="text") {
     txt = gsub("$","",txt, fixed=TRUE)
+  } else if (out=="html") {
+    restore.point("compile.story.txt.2")
+    txt = markdownToHTML(text=txt,encoding = "UTF-8", fragment.only=TRUE)
+    #Encoding(txt) <- "UTF-8"
+    txt
   }
   txt
   
 }
 
-tell.story.on.console = function(es, t.start=1, step.start=1, mfrow=c(1,1), ask=FALSE, num.attempts=3) {
-  restore.point("tell.story.on.console")
+
+has.click.found = function(click.val, ref.val, axis="xy", tol=0.05, tol.units=c("perc","inches")[1],pane=NULL) {
+  restore.point("has.click.found")
   
-  es$mfrow = mfrow
-  
-  par(mfrow=mfrow)
-  
-  t = 3
-  for (t in 1:es$T) {
-    period = get.story.period(es=es,t=t)
-    for (s in seq_along(period$steps)) {
-      step = period$steps[[s]]
-      cat(paste0("\n",t,".", s,":"))
-      tell.step.task.on.console(es,t,s)
-      if (ask & length(step$task)>0) {
-        ret = ask.task.on.console(es, t, s, num.attempts=num.attempts)
-        if (!ret)
-          cat("Let us just proceed as if you were correct. You can try next time.\n")
-      } else {
-        readline(prompt="[Press Enter to continue] [Esc to stop]")
-      }
-      if (length(step$task)>0) {
-        tell.step.sol.on.console(es,t,s)
-        readline(prompt="[Press Enter to continue] [Esc to stop]")
-      }
+  if (tol.units=="inches") {
+    if (axis=="x") {
+      ref.inch = grconvertX(ref.val, from = "user", to = "inches")
+      click.inch = grconvertX(click.val[[1]], from = "user", to = "inches")
+      dist = abs(ref.inch-click.inch)
+    } else if (axis=="y") {
+      ref.inch = grconvertY(ref.val, from = "user", to = "inches")
+      click.inch = grconvertY(click.val[[length(click.val)]], from = "user", to = "inches")
+      dist = abs(ref.inch-click.inch)
+    } else if (axis=="xy") {
+      riX = grconvertX(ref.val[[1]], from = "user", to = "inches")
+      ciX = grconvertX(click.val[[1]], from = "user", to = "inches")
+      riY = grconvertY(ref.val[[2]], from = "user", to = "inches")
+      ciY = grconvertY(click.val[[2]], from = "user", to = "inches")
+      dist = sqrt((riX-ciX)^2+(riY-ciY)^2)
     }
+    return(dist<=tol)
   }
-  
-}
-
-tell.step.task.on.console = function(es, t=1, step=1) {
-  restore.point("tell.step.task.on.console")
-  period = get.story.period(es,t)
-  st = period$steps[[step]]
-  tell = compile.story.txt(st$tell, em=es$em, t=t)
-  ask = compile.story.txt(st$ask, em=es$em, t=t)
-  
-  
-  cat(paste0("\n",tell))
-  cat(paste0("\n",ask,"\n"))
-  
-  lines = get.story.step.lines(es = es,t = t,step = step,solved=FALSE,previous.steps = TRUE)
-  plot.lines(em=es$em,lines)
-}
-
-
-
-tell.step.sol.on.console = function(es, t=1, step=1) {
-  restore.point("tell.step.sol.on.console")
-  
-  st = es$periods[[t]]$steps[[step]]
-
-  success = compile.story.txt(st$success, em=es$em, t=t)
-
-  cat(paste0("\n",success))
-  lines = get.story.step.lines(es = es,t = t,step = step,solved=TRUE,previous.steps = TRUE)
-  plot.lines(em = es$em,lines=lines)
-
-}
-
-ask.task.on.console = function(es, t=1, step=1, num.attempts=1) {
-  restore.point("ask.task.on.console")
-  period = get.story.period(es,t)
-  st = period$steps[[step]]
-  em = es$em
-  
-  task = st$task
-  if (length(task)==0) return(TRUE)
-  if (is.null(task$type)) return(TRUE)
-  if (task$type == "unknown") {
-    warning("Unknown task type in period", t,"step",step)
-    return(TRUE)
-  }
-  
-  pane.name = get.task.pane(es,task)
-  
-  if (is.null(pane.name)) {
-    warning("Could not identify task pane in period", t,"step",step)
-    return(TRUE)
-  }
-  
-  
-  #cat("\nAnswer by clicking at a correct position in the pane.")
-  
-  # draw task pane
-  par(mfrow=c(1,1))
-  lines = get.story.step.lines(es = es,t = t,step = step,solved=FALSE,previous.steps = TRUE, pane.names=pane.name)
-  plot.lines(em=es$em,lines, pane.names=pane.name)
-  
-  ret = TRUE
-  for (attempt in 1:num.attempts) {
-    if (task$type == "shift") {
-      ret = console.ask.shift(es=es,em=em,t=t,task=task, pane.name=pane.name)
-    } else if (task$type == "find") {
-      ret = console.ask.find(es=es,em=em,t=t,task=task, pane.name=pane.name)
+  if (tol.units=="perc") {
+    xlen = diff(pane$xrange)
+    ylen = diff(pane$yrange)
+    if (axis=="x") {
+      dist = abs(ref.val-click.val[[1]]) / xlen
+    } else if (axis=="y") {
+      dist = abs(ref.val-click.val[[length(click.val)]]) / ylen
+    } else if (axis=="xy") {
+      dist = sqrt(((ref.val[[1]]-click.val[[1]])/xlen)^2+
+                  ((ref.val[[2]]-click.val[[2]])/ylen)^2)
     }
-    if (ret) break
-    if (!ret & attempt<num.attempts)
-      cat("\nSorry that was wrong. Try again.")
-    if (!ret & attempt<num.attempts)
-      cat("\nSorry, that was ", attempt , "times wrong.")
+    return(dist<=tol)
   }
-  
-  par(mfrow=es$mfrow)
-  return(ret)
-  
-}
+  stop("unknown.tol.units")
 
-console.ask.shift = function(es, em,t, task, pane.name) {
-  restore.point("console.ask.shift")
-  #cat("\nAnswer by clicking correctly in the figure.")
-  symbols = task$shift$symbol
-  ref.line = compute.symbol.lines(t=t, em=em, symbols=symbols[1], pane.names=pane.name)[[1]]
-  line = compute.symbol.lines(t=t, em=em, symbols=symbols[2], pane.names=pane.name)[[1]]
-  
-  #plot.lines(em=es$em,lines=list(ref.line,line), pane.names=pane.name)
-  ref.shift = line.to.line.shift(line, ref.line)
-  
-  xy = unlist(locator(1))
-  point.shift = sign(point.to.line.pos(xy,ref.line))
-  if (all(point.shift==ref.shift))
-    return(TRUE)
-  cat("\nUnfortunately, not correct...")
-  return(FALSE)
-  
-}
-
-# Find a marker
-console.ask.find = function(es, em,t, task, pane.name, val = as.list(em$sim[t,]), tol=0.15) {
-  restore.point("console.ask.find")
-  #cat("\nAnswer by clicking correctly in the figure.")
-  symbol = task$find$symbol
-
-  #plot.lines(em=es$em,lines=list(ref.line,line), pane.names=pane.name)
-  xy = unlist(locator(1))
-  ref.val = val[[symbol]]
-
-  pane = em$panes[[pane.name]]
-  axis = pane$markers[[symbol]]$axis
-  axis.ind = ifelse(axis=="x",1,2)
-  
-  click.val = xy[axis.ind]
-  
-  if (axis=="x") {
-    ref.inch = grconvertX(ref.val, from = "user", to = "inches")
-    click.inch = grconvertX(click.val, from = "user", to = "inches")
-  } else if (axis=="y") {
-    ref.inch = grconvertY(ref.val, from = "user", to = "inches")
-    click.inch = grconvertY(click.val, from = "user", to = "inches")
-  }
-  dist = abs(ref.inch-click.inch)
-
-  if (dist>tol)
-    return(FALSE)  
-  
-  return(TRUE)
-}
-
-
-line.to.line.shift = function(line, ref.line, num.points=5,...) {
-  restore.point("line.to.line.shift")
-  n = length(line$x)
-  if (n>1) {
-    rows = unique(round(seq(1,n,length=num.points)))
-  } else {
-    rows = 1
-  }
-  row = 1
-  li = lapply(rows, function(row) {
-    pos = point.to.line.pos(c(x=line$x[row],y=line$y[row]), ref.line)
-    sign(pos)
-  })
-  df = as.data.frame(do.call(rbind,li))
-  if (diff(range(df$x))>=2 | diff(range(df$y))>=2){
-    stop("line was not shifted but new line crosses old line")  
-  }
-  
-  x.ind = which.max(abs(df$x))
-  y.ind = which.max(abs(df$y))
-  return( c(x=df$x[x.ind], y=df$y[y.ind]) )
-}
-
-point.to.line.pos = function(xy,line,dim="xy") {
-  restore.point("point.to.line.pos")
-
-  line.xy = find.nearest.line.point(xy=xy,line=line,dim=dim)
-  #
-  #points(xy[1],xy[2])
-  #points(line.xy[1],line.xy[2],col="red")
-  #lines(x=line$x,y=line$y, col="red")
-  xy-line.xy
-}
-
-point.to.line.distance = function(xy,line, dim="xy") {
-  restore.point("point.to.line.distance")
-  
-  if (line$type=="marker") {
-    if (dim!="xy" & line$axis !=dim) return(Inf)
-    dim = line$axis    
-  }
-  
-  if (dim=="xy") {
-    dist.vec = (xy[1]-line$x)^2+(xy[2]-line$y^2)
-    dist = sqrt(min(dist.vec))
-  } else if (dim=="x") {
-    dist.vec = abs(xy[1]-line$x)
-    dist = min(dist.vec)
-  } else if (dim=="y") {
-    dist.vec = abs(xy[2]-line$y)
-    dist = min(dist.vec)
-  }
-  dist  
-}
-
-find.nearest.line.point = function(xy, line, dim="xy") {
-  restore.point("find.nearests.line.point")
-  
-  if (line$type=="marker") {
-    if (line$axis == "x") return(c(line$x[1],xy[2]))
-    if (line$axis == "y") return(c(xy[1],line$y[1]))
-  }
-
-  if (dim=="xy") {
-    dist.vec = (xy[1]-line$x)^2+(xy[2]-line$y)^2
-  } else if (dim=="x") {
-    dist.vec = abs(xy[1]-line$x)
-  } else if (dim=="y") {
-    dist.vec = abs(xy[2]-line$y)
-  }
-  row = which.min(dist.vec)
-  c(x=line$x[row],y=line$y[row])
-}
+} 
 
 get.task.pane = function(es, task) {
   if (!is.null(task$pane)) return(task$pane)
   return(NULL)
 }
+
 compute.symbol.lines = function(t, em, symbols, pane.names=names(em$panes)) {
   restore.point("compute.symbol.lines")
   lag = symbols[str.starts.with(symbols,"lag_")]
@@ -376,4 +278,80 @@ compute.symbol.lines = function(t, em, symbols, pane.names=names(em$panes)) {
   
   c(cur.lines, lag.lines)# [symbols]
 }
+
+check.click.answer = function(es,xy,pane.name,t=es$t, step.num=es$step.num,task=NULL,...) {
+  restore.point("check.click.answer")
+  em = es$em
+  if (is.null(task)) {
+    period = get.story.period(es,t)
+    step = period$steps[[step.num]]
+    task = step$task
+  }  
+  if (task$type == "shift") {
+    ret = check.shift.answer(es=es,xy=xy,em=em,t=t,task=task, pane.name=pane.name)
+  } else if (task$type == "find") {
+    ret = check.find.answer(es=es,xy=xy,em=em,t=t,task=task, pane.name=pane.name)
+  } else if (task$type == "findPoint") {
+    ret = check.findPoint.answer(es=es,xy=xy,em=em,t=t,task=task, pane.name=pane.name)
+  }
+
+  return(ret)
+}
+
+check.shift.answer = function(es,xy,pane.name,task, em=es$em,t=es$t)  {
+  restore.point("check.shift.answer")
+  #cat("\nAnswer by clicking correctly in the figure.")
+  symbols = task$shift$symbol
+  
+  # wrong pane clicked
+  pane = es$em$panes[[pane.name]]
+  if (!has.pane.all.symbols(pane, symbols))
+    return(FALSE)
+
+  ref.line = compute.symbol.lines(t=t, em=em, symbols=symbols[1], pane.names=pane.name)[[1]]
+  line = compute.symbol.lines(t=t, em=em, symbols=symbols[2], pane.names=pane.name)[[1]]
+  
+  ref.shift = line.to.line.shift(line, ref.line)
+  
+  point.shift = sign(point.to.line.pos(xy,ref.line))
+  if (all(point.shift==ref.shift))
+    return(TRUE)
+  return(FALSE)
+}
+
+# Find a marker
+check.find.answer = function(es,xy,pane.name,task, em=es$em,t=es$t, val = as.list(em$sim[t,]), tol=es$tol) {
+  restore.point("console.ask.find")
+  symbol = task$find$symbol
+  ref.val = val[[symbol]]
+  pane = em$panes[[pane.name]]
+  # wrong pane clicked
+  if (!all(symbol %in% names(pane$markers))) {
+    return(FALSE)
+  }
+  axis = pane$markers[[symbol]]$axis
+  found = has.click.found(click.val = xy,ref.val = ref.val,axis = axis, tol=tol,pane=pane)
+  return(found)
+}
+
+
+# Find a marker
+check.findPoint.answer = function(es,xy,pane.name,task, em=es$em,t=es$t, val = as.list(em$sim[t,]), tol=es$tol) {
+  restore.point("check.findPoint.answer")
+
+  symbols = task$findPoint$symbol
+  pane = em$panes[[pane.name]]
+  # wrong pane clicked
+  if (!all(symbols %in% names(pane$markers))) {
+    return(FALSE)
+  }
+
+  ref.val = unlist(val[symbols])
+
+  axis = "xy"
+  found = has.click.found(click.val = xy,ref.val = ref.val,axis = axis, tol=tol,pane=pane)
+  return(found)
+}
+
+
 

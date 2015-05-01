@@ -4,13 +4,16 @@ examples.model = function() {
   init.ec()
   ec = get.ec()
   em = load.model("ThreeEq")
+  em = load.model("ThreeEqFixedM")
+  em = load.model("IS_LM_PC")
   init.model(em)
   init.model.shocks(em)
   init.model.scen(em)
-  #em$init.var
-  em$sim = simulate.model(em)
+  em$init.var
+  em$sim = simulate.model(em,T = 200)
   sim = em$sim
   dyplot.timelines(em$sim,cols = c(em$var.names,"A"),em = em)
+  dyplot.timelines(em$sim,cols = c("y_","pi_","r_"),em = em)
 }
 
 
@@ -171,10 +174,9 @@ init.model.shocks = function(em, shocks=em$shocks) {
   invisible(em$shocks)
 }
 
-init.model.scen = function(em, scen.name = names(em$scenarios)[1]) {
+init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scenarios[[scen.name]]) {
   restore.point("init.model.scen")
   
-  scen = em$scenarios[[scen.name]]
   env = new.env()
   for (par in names(scen$init)) {
     val = scen$init[[par]]
@@ -185,6 +187,15 @@ init.model.scen = function(em, scen.name = names(em$scenarios)[1]) {
     }
     env[[par]] = val
   }
+  
+  # init axis ranges
+  em$panes = lapply(em$panes, function(pane) {
+    restore.point("jndngjdng")
+    pane$xrange = scen$axis[[pane$xvar]]
+    pane$yrange = scen$axis[[pane$yvar]]
+    pane
+  })
+  
   scen$init.par = as.list(env)
   em$scen = scen
   em$init.par = scen$init.par
@@ -197,28 +208,87 @@ init.model.scen = function(em, scen.name = names(em$scenarios)[1]) {
 
 model.initial.var = function(em, round.digits=10) {
   restore.point("model.initial.var")
-  vars = names(em$vars) 
+  var.names = names(em$vars)
   par = em$init.par
-  impl_ss_ = em$impl_ss_
+  impl_init_ = em$impl_init_
   
   code = paste0("function(x) {\n",
-    paste0("  ",names(par),"=",par, collapse="\n"),"\n\n",
-    paste0("  ",vars,"=x[",seq_along(vars),"]", collapse="\n"),"\n",
-    "  c(", paste0(sapply(impl_ss_,deparse,width.cutoff = 500L), collapse=","),")\n",
+    'restore.point("fn")\n',
+    sc("  ",names(par),"=",par, collapse="\n"),"\n\n",
+    sc("  ",var.names,"=x[",seq_along(var.names),"]",
+           collapse="\n"),"\n",
+    "  c(", paste0(sapply(impl_init_,deparse1), collapse=","),")\n",
     "}"
   )
   #cat(code)
   fn = eval(parse(text=code))
-  
-  x = rep(0,length(vars))
+  fn
+  # random start values on the unit interval
+  x = runif(length(var.names))
+  #x = rep(0,length(var.names))
   res = nleqslv(x,fn)$x
   
-  names(res) = vars
+  names(res) = var.names
   if (!is.null(round))
     res = round(res, round.digits)
   em$init.var = as.list(res)
   invisible(em$init.var)
 }
+
+examples.find.model.par = function() {
+  setwd("D:/libraries/EconCurves/EconCurves")
+  init.ec()
+
+  em = load.model("IS_LM_PC")
+  init.model(em)
+  init.model.shocks(em)
+  init.model.scen(em)
+  es = load.story("IS_LM_PC_G_kurzfristig")
+
+  find.model.par(em, find.par="M", extra.lhs='y_ - y_eq', scen=es$scenario)
+  
+}
+
+find.model.par = function(em, find.par=NULL, extra.lhs=NULL, scen=NULL) {
+  restore.point("find.model.par")
+  
+  if (!is.null(scen))
+    init.model.scen(em,scen=scen)
+  
+  var.names = names(em$vars)
+  par = em$init.par
+  par.names = setdiff(names(par), find.par)
+  par = par[par.names]
+  find.par.ind =  seq_along(find.par) + length(var.names)
+  impl_init_ = em$impl_init_
+  cond.str = sapply(impl_init_,deparse1)
+  cond.str = c(cond.str, extra.lhs)
+  
+  code = paste0("function(x) {\n",
+#    'restore.point("fn")\n',
+    sc("  ",names(par),"=",par, collapse="\n"),"\n\n",
+    sc("  ",var.names,"=x[",seq_along(var.names),"]",
+           collapse="\n"),"\n",
+    sc("  ",find.par,"=x[",find.par.ind,"]",
+           collapse="\n"),"\n",
+    
+    "  c(", paste0(cond.str, collapse=","),")\n",
+    "}"
+  )
+  #cat(code)
+  fn = eval(parse(text=code))
+  fn
+  # random start values on the unit interval
+  x = runif(length(var.names)+length(find.par))
+  res = nleqslv(x,fn)$x
+
+  par.val = res[find.par.ind]  
+    
+  names(par.val) = find.par
+  cat("\n\n",paste0(find.par,": ", par.val,collapse="\n"),"\n\n")
+  par.val
+}
+
 
 # not yet implemented
 make.model.jacobi = function(em) {
@@ -272,6 +342,8 @@ init.model.vars = function(em) {
     restore.point("hfhhfuehuh")
     var$type = get.model.var.type(var)
     var$name = attr(var,"name")
+    if (is.null(var$laginit))
+      var$laginit = var$name
     var
   })
   
@@ -344,21 +416,25 @@ init.model.vars = function(em) {
   
   impl.li = lapply(eq.li, function(eq_) {
     substitute(lhs-(rhs),list(lhs=get.lhs(eq_),rhs=get.rhs(eq_)))
-  })    
-  impl.ss.li = lapply(impl.li, function(impl_) {
+  })  
+  
+  
+  impl.init.li = lapply(impl.li, function(impl_) {
     ivars = find.variables(impl_)
     lagged = ivars[str.starts.with(ivars,"lag_")]
     if (length(lagged)>0) {
       unlagged = str.right.of(lagged,"lag_")
-      impl_ss_ = subst.var(impl_,var = lagged, subs = unlagged, subset=FALSE)
+      laginit = sapply(vars[unlagged], function(var) var$laginit)
+      
+      impl_init_ = subst.var(impl_,var = lagged, subs = laginit, subset=FALSE)
     } else {
-      impl_ss_ = impl_
+      impl_init_ = impl_
     }
-    impl_ss_
+    impl_init_
   })
 
   em$impl_ = impl.li
-  em$impl_ss_ = impl.ss.li
+  em$impl_init_ = impl.init.li
   invisible(em)
 }
 

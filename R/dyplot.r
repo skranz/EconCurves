@@ -22,6 +22,14 @@ to.xts = function (dat, time.col, interval = NULL, time = as.list(dat)[[time.col
     d
 }
 
+examples.dyplot = function() {
+  T = 10
+  df = data.frame(t=1:T, y=runif(T),z=runif(T))
+  df$y[4:10] = NA
+  df
+  dyplot(df)
+}
+
 dyplot = function (data, xcol = colnames(data)[1], ycol = setdiff(colnames(data), xcol), interval = NULL,...) 
 {
     restore.point("dyplot")
@@ -32,7 +40,7 @@ dyplot = function (data, xcol = colnames(data)[1], ycol = setdiff(colnames(data)
     dygraph(ts,...)
 }
 
-dyplot.timelines = function(sim, cols=em$var.names, em, main="Dynamics",xlab="t",ylab="", shocks=em$sim.shocks,...) {
+dyplot.timelines = function(sim, cols=em$var.names, em, main="",xlab="t",ylab="", shocks=em$sim.shocks,...) {
   
   restore.point("dyplot.timelines")
   dat = sim

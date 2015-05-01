@@ -1,0 +1,94 @@
+storyId: IS_LM_PC_G_langfristig
+
+modelId: IS_LM_PC
+
+scenarioId: base
+
+timelineVars: [y_,r_,pi_]
+
+lang: de
+
+T: 6
+
+shocks:
+  G_inc:
+    effects:
+      A: 'A*1.3'
+    start: 3
+    duration: 1
+
+periods:
+  1:
+    steps:
+      init:
+        tell: >
+          Wir betrachten eine geschlossene Volkswirtschaft mit konstanter
+          Geldmenge M. Stellen Sie sich einen Haufen von Silbermünzen vor,
+          der sich nicht verändert.
+          
+          Wir starten mit einer Inflationsrate von pi{{t}}=0% und einem BIP von
+          y={{y_}}, welches genau dem Gleichgewichtsniveau entspricht, bei 
+          dem die Inflationsrate konstant bleibt.
+          
+          Der Zinssatz r{{t}}={{r_}}% bildet sich durch den Schnittpunkt der IS und LM
+          Kurve. Die aktuelle Phillipskurve (PC) beschreibt, wie sich 
+          die Inflation bei unterschiedlichen Werten des BIP y verändern
+          würde.
+          
+        show: [IS,LM,PC,r_, y_,pi_,y_eq]
+  2:
+    steps:
+      start:
+        show: [IS,LM,PC,r_, y_,pi_]
+        lagshow: [IS,LM,PC,r_, y_,pi_]
+        tell: >
+          In Periode 2 verändert sich noch nichts. Unsere Wirtschaft
+          bleibt weiterhin im Gleichgewicht.
+  3:
+    steps:
+      start:
+        show: [IS,LM,PC,r_, y_,pi_]
+        lagshow: [IS,LM,PC,r_, y_,pi_]
+        tell: >
+          In Periode 3 entscheidet sich die Regierung,
+          die Staatsausgaben G langfristig auf ein
+          höheres Niveau anzuheben.
+          
+          
+          Die IS Kurve verschiebt sich nach rechts. Es gibt einen Boom
+          und das BIP y steigt. Der neue Zinssatz und das neue BIP y
+          befindet sich am Schnittpunkt der neuen IS Kurve und der LM Kurve.
+          
+          Warum steigen die Zinsen? Die höhere Nachfrage bedeutet,
+          dass heute mehr Geld (Silber) benötigt wird, um sich die Güter
+          zu kaufen. Geldbesitzer verlangen einen höheren Zinssatz um
+          den Geldnachfragern das Geld zur Verfügung zu stellen.
+          
+          Die Zinssatzerhöhung reduziert die privaten Investitionen.
+          Wir haben ein Crowding Out von privaten Investitionen durch
+          die erhöhten Staatsausgaben.
+          
+          Je steiler die LM Kurve,
+          desto stärker reagiert der Zinssatz und desto weniger stark
+          weitet sich das BIP durch den Nachfrageschock aus.
+
+          (Beachte: Wir nehmen in diesen Modell an, dass Investitionen direkt
+          auf den Zinssatz reagieren. In späteren Modellen nehmen wir
+          an, dass die mit einer Periode Verzögerung passiert.)
+          
+          Die Phillipskurve zeigt, wie der Boom die Inflation anheizt.
+          Der Arbeitsmarkt brummt gewaltig und Löhne und Preise
+          steigen stark an.
+          
+  4:
+    steps:
+      start:
+        show: [IS,LM,PC,r_, y_,pi_]
+        lagshow: [IS,LM,PC,r_, y_,pi_]
+        tell: >
+          Das Modell ist natürlich eine starke Vereinfachung 
+          einer realen Wirtschaft mit fester Geldmenge.
+          Dennoch suggeriert dieses Beispiel, dass ohne stabilisierende
+          Maßnahmen einer Zentralbank, die Geldmenge und Zinsen
+          steuern kann, es durchaus zu starken Konjunkturschwankungen
+          kommen mag.

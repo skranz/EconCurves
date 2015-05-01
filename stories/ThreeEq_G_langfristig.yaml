@@ -4,11 +4,13 @@ modelId: ThreeEq
 
 scenarioId: base
 
+timelineVars: [y_,r_,pi_]
+
 fixed: [MR,y_eq,piT]
 
 lang: de
 
-T: 4
+T: 6
 
 shocks:
   G_inc:
@@ -27,7 +29,7 @@ periods:
           und die gesamtwirtschaftliche Nachfrage y1 liegt genau auf dem
           Gleichgewichtsniveau von y_eq={{y_eq}},
           bei dem die Inflationsrate konstant bleibt.
-        show: [IS,MR,PC,r_, piT,y_]
+        show: [IS,MR,PC,r_, piT,y_,pi_]
   2:
 #    shocks: G_inc
     steps:
@@ -160,13 +162,38 @@ periods:
         task:
           pane: [PC_MR]
           findPoint: [y_mr,pi_mr]
+        success: >
+          Richtig. Die von der Zentralbank angestrebte 
+          Inflationsrate pi_mr = {{pi_mr}} und BIP 
+          y_mr = {{y_mr}} für die nächste
+          Periode befinden sich auf dem Schnittpunkt
+          der erwarteten Phillipkurve (PC3) und
+          der Geldregelkurve (MR).
+          
+          Je flacher die MR Kurve, desto höheres
+          Gewicht legt die Zentralbank auf das
+          Inflationsziel von piT={{piT}}%. Sie ist dafür auch bereit
+          das BIP stark unter das langfristige Gleichgewicht
+          von y_eq={{y_eq}} zu drücken.
+          
+          Bei einer steilen MR Kurve legt die Zentralbank
+          höhere Gewicht darauf, das BIP nicht allzustark
+          unter das langfristige Gleichgewicht zu drücken
+          und nimmt dafür eine höhere
+          Inflationsrate in Kauf. Solange die MR Kurve
+          aber nicht senkrecht ist, wird die Zentralbank
+          immer bereit sein zur Inflationsbekämpfung
+          das BIP durch Zinserhöhungen 
+          unter das langfristige Gleichgewicht 
+          zu fallen zu lassen.
+
       step_r_mr:
         show: [y_mr,pi_mr]
         tell:
         ask: >
           Bestimmen Sie nun den realen Zinssatz r2 den die
-          Zentralbank nun wählt um in der nächsten
-          Periode die angestrebte Inflationsrate
+          Zentralbank wählt, um in der nächsten
+          Periode das angestrebte Paar aus Inflationsrate
           und BIP zu implementieren.
         task:
           pane: [IS_]
@@ -178,21 +205,71 @@ periods:
   3:
     steps:
       step_start_IS:
-        lagshow: [IS,y_,r_,y_mr]
+        lagshow: [r_,y_]
         show: [IS,y_]
         tell: >
           In Periode 3 führt der höhere Zinssatz
-          zu einer Reduktion des BIP. 
-          Die Staatsausgaben bleiben weiterhin auf hohem Niveau,
-          aber vor allem die privaten Investitionen sind durch die
-          Inflationsbekämpfung der Zentralbank zurückgegangen.
-          Durch den Multiplikatoreffekt gab es auch einen Rückgang
+          zu einer Reduktion des BIP. Wir haben eine deutliche
+          Konjunkturdelle.
+          
+          Die Staatsausgaben wurden per Annahme dauerhaft erhöht.
+          Das heißt der Rückgang der Gesamtnachfrage basiert
+          vor allem auf einem Rückgang privater Investitionen
+          durch den höheren Zinsatz den die Zentralbank zur
+          Inflationsbekämpfung gewählt hat.
+          Durch den Multiplikatoreffekt gab es aber auch einen Rückgang
           des privaten Konsums.
+          
+          Wir haben hier ein klassisches "Crowding Out". Höhere
+          Staatsausgaben in Zeiten normaler Nachfrage und Beschäftigung
+          hat zu einem Zinssanstieg und Reduktion privater Investitionen
+          und Konsum geführt.
+          
       step_start_PC:
-        lagshow: [PC,pi_]
-        show: [PC,MR,pi_,Epi,y_]
+        lagshow: 
+        show: [PC,MR,next_PC,r_,piT,pi]
         tell: >
-          Im Inflationsdiagramm, sehen wir...
+          Die hohen Zinsen haben es geschafft die Inflationserwartungen
+          im Vergleich zur Vorperiode etwas zu reduzieren.
+          Die Zentralbank kann entsprechend die Zinsen etwas senken,
+          und erzielt eine leichte Erholung des BIP bei trotzdem
+          weiter sinkender Inflationsrate.
+          
+          In dieser und den darauffolgenden Perioden
+          steuert die Zentralbank
+          die Inflationsrate und und das BIP
+          langsam entlang der MR Kurve 
+          zurück in das langfristige Gleichgewicht...
   4:
     steps:
-    
+      step_all:
+        tell: >
+          In dieser und den darauffolgenden Perioden
+          steuert die Zentralbank
+          die Inflationsrate und und das BIP
+          langsam entlang der MR Kurve 
+          zurück in das langfristige Gleichgewicht...
+        lagshow: [IS,y_,r_]
+        show: [IS,PC,MR,next_PC,y_,r_,piT,pi_]
+  5:
+    steps:
+      step_all:
+        tell: >
+          In dieser und den darauffolgenden Perioden
+          steuert die Zentralbank
+          die Inflationsrate und und das BIP
+          langsam entlang der MR Kurve 
+          zurück in das langfristige Gleichgewicht...
+        lagshow: [IS,y_,r_]
+        show: [IS,PC,MR,next_PC,y_,r_,piT,pi_]
+  6:
+    steps:
+      step_all:
+        tell: >
+          In dieser und den darauffolgenden Perioden
+          steuert die Zentralbank
+          die Inflationsrate und und das BIP
+          langsam entlang der MR Kurve 
+          zurück in das langfristige Gleichgewicht...
+        lagshow: [IS,y_,r_]
+        show: [IS,PC,MR,next_PC,y_,r_,piT,pi_]

@@ -1,3 +1,16 @@
+has.pane.all.symbols = function(pane, symbols) {
+  restore.point("has.pane.all.symbols")
+  pane.symbols = c(pane$curves,names(pane$markers))
+  
+  lag = symbols[str.starts.with(symbols,"lag_")]
+  lag.base = str.right.of(lag, "lag_")
+  cur = setdiff(symbols,lag)
+
+  if (!all(lag.base %in% pane.symbols)) return(FALSE)
+  if (!all(cur %in% pane.symbols)) return(FALSE)
+  return(TRUE)
+}
+
 
 compute.marker.line = function(marker, val, xrange,yrange, lty=2, lwd=1, t=0, pane.name="", level=1) {
   restore.point("computer.marker.line")
