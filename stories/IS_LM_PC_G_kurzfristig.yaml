@@ -41,7 +41,7 @@ timelineVars: [y_,r_,i,pi_,P]
 
 lang: de
 
-T: 40
+T: 30
 
 shocks:
   G_inc:
@@ -367,7 +367,7 @@ periods:
           Thomas Clausing basierend auf Schularick & Taylor (AER, 2012):
           
             <a href="https://tcl89.shinyapps.io/creditboomsgonebust/" target="_blank">
-             https://tcl89.shinyapps.io/creditboomsgonebust/</a>
+             'tcl89.shinyapps.io/creditboomsgonebust' </a>
           
   
             - Die Inflationsrate ändert sich von {{lag_pi_}}%
