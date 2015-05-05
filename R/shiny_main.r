@@ -1,8 +1,10 @@
 
 examples.shiny.stories = function() {
-
+  library(EconCurves)
+  
   set.restore.point.options(display.restore.point = TRUE)
-  setwd("D:/libraries/EconCurves/EconCurves")
+  #setwd("D:/libraries/EconCurves/EconCurves")
+  setwd("~/libraries/EconCurves")
   init.ec()
   ec = get.ec()
   load.collection("makro.yaml")
@@ -112,7 +114,7 @@ stories.choose.ui = function(app=getApp(), ec=app$ec,...) {
   }
   descr.html = compile.to.html(coll$descr)
   ui = list(title.html,HTML(descr.html),panel.ui)
-  ui
+  fluidRow(column(offset=1, width=1,ui))
 }
 
 coll.run.story.btn = function(app=getApp(), ec=app$ec, storyId,...) {
