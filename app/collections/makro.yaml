@@ -1,13 +1,13 @@
 title: Makroökonomische Geschichten aus einfachen Modellen
 
 stories:
-  IS_LM_PC_G_kurzfristig:
   ThreeEq_G_langfristig:
+  IS_LM_PC_G_kurzfristig:
+
 
 
 descr: >
-  Autor: Sebastian Kranz, Universität Ulm
-  
+  Autor: (Sebastian Kranz, Universität Ulm)[http://www.uni-ulm.de/mawi/mawi-wiwi/mitarbeiter/skranz.html]  
   
   Unten sind zwei Beispiele von Geschichten
   und Übungsaufgaben, die auf einfachen makroökonomischen
@@ -45,10 +45,13 @@ footnotes:
       Natürlich ist es eine sehr kniffelige Aufgabe,
       die Kernpunkte der vielfältigen makroökonomischen
       Zusammenhänge auf einfache Modelle herunterzubrechen.
-      In vielerlei Hinsicht finde ich die Darstellung 
-      in Carlton .... sehr gut gelungen.
-      Die Geschichten oben sind zum Teil durch
-      dieses empfehlenswerte Lehrbuch inspiriert.
+      In vielerlei Hinsicht finde ich die Darstellung im neuen
+      Lehrbuch "Macroeconomics: Institutions, Instability, and the Financial System"
+      von  Wendy Carlin and David Soskice (2014) sehr gut gelungen.
+      Das  3-Gleichungsmodell aus der Übung oben ist in diesem
+      Lehrbuch schön dargestellt.
+      
+      
       Schön wäre es noch einfache einfache Geschichten und Modelle
       hinzuzufügen, die auf einfache Art und Weise
       den "Leverage Cycle", Immobilienblasen und Kreditkrisen
