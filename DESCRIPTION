@@ -12,4 +12,3 @@ License:
 Depends: restorepoint,codeUtils, sktools, dplyr, stringtools, grid,
          YamlObjects, nleqslv,whisker, markdown, shinyEvents, shiny,
          dygraphs, shinyBS, shinyAce
-Imports: RMaxima
