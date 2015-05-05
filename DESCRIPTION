@@ -11,4 +11,4 @@ License:
     Modells and Stories: Creative Commons, Non-Commercial
 Depends: restorepoint,codeUtils, sktools, dplyr, stringtools, grid,
          YamlObjects, nleqslv,whisker, markdown, shinyEvents, shiny,
-         dygraphs, shinyBS, shinyAce
+         dygraphs, shinyBS, shinyAce, RColorBrewer
