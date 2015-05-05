@@ -1,0 +1,73 @@
+story:
+    fields:
+        modelId: 
+        storyId: 
+        scenarioId:
+        scenario:
+        fixed: 
+        lang:
+        timelineVars:
+        T:
+        shocks:
+            type: shocks
+        periods:
+            type: storyPeriods  
+
+
+storyPeriods:
+    fieldType: storyPeriod
+
+storyPeriod:
+    fields:
+        t:
+        steps:
+            type: storySteps  
+
+storySteps:
+    fieldType: storyStep
+
+storyStep:
+    fields:
+        tell:
+        show:
+        lagshow:
+        hide:
+        laghide:
+        ask:
+        task:
+            type: stepTask
+        success:
+    allowOtherFields: true
+
+stepTask:
+    fields:
+        pane:
+            type: character
+        select:
+            type: taskSelect
+        find:
+            type: taskFind
+        findPoint:
+            type: taskFindPoint
+        shift:
+            type: taskShift
+    allowOtherFields: true
+    fieldType : task
+
+task:
+    fields:
+        symbol:
+    defaultField: symbol
+    allowOtherFields: true
+
+taskSelect:
+    parentType: task
+
+taskFind:
+    parentType: task
+
+taskFindPoint:
+    parentType: task
+
+taskShift:
+    parentType: task

@@ -1,0 +1,69 @@
+
+# stage form game
+model:
+	fields:
+		modelId:
+		info:
+			type: modelInfo
+		curves:
+		panes:
+		vars:
+		sequences:
+		shocks:
+		scenarios:
+		latex:
+	otherFields: FALSE
+	typeByFieldName: TRUE
+
+modelInfo:
+	fields:
+		label:
+		tags:
+		descr:
+	otherFields: TRUE
+
+modelId:
+	parentType: string
+
+curves:
+	fieldType: curve
+
+panes:
+	fieldType: panel
+
+vars:
+	fieldType: var
+
+sequences:
+	fieldType: sequence
+
+shocks:
+	fieldType: shock
+
+scenarios:
+	fieldType: scenario
+
+
+curve:
+
+panel:
+
+var:
+	fields:
+		formula:
+		xcurve:
+		ycurve:
+		x:
+		y:
+	defaultField: formula
+
+sequence:
+
+shock:
+
+scenario:
+	fields:
+		init:
+		axis:
+
+latex:

@@ -24,22 +24,27 @@ examples.story = function() {
 }
 
 
-load.story = function(storyId, file=paste0(storyId,".yaml"), dir=get.ec()$stories.path, ec = get.ec()) {
+load.story = function(storyId, file=paste0(storyId,".yaml"), dir=get.ec()$stories.path, text=NULL, ec = get.ec()) {
   restore.point("load.story")
   
-  tt = load.struct(name="story",file = paste0(dir,"/",file),typeName = "story")
+  
+  tt = load.struct(name="story",file = paste0(dir,"/",file),typeName = "story",text=text)
   es = as.environment(tt.object(tt,1))
+  es$yaml = attr(tt,"yaml")
+  Encoding(es$yaml) <- "UTF-8"
   es
 }
 
-init.story = function(es) {
+init.story = function(es, em=NULL) {
   restore.point("init.story")
   es$t = es$step.num = 1
   es$wait.for.answer = FALSE
   es$tol = 0.07
     
   init.story.periods(es)
-  em = load.model(es$modelId)
+  if (is.null(em))
+    em = load.model(es$modelId)
+  
   init.model(em)
   if (is.null(es$scenario))
     es$scenario = em$scenarios[[es$scenarioId]]

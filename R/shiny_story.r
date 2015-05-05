@@ -7,7 +7,7 @@ examples.shiny.story = function() {
   ec = get.ec()
   #es = load.story("ThreeEq_G_langfristig")
   #es = load.story("ThreeEqFixedM_G_langfristig")
-  es = load.story("IS_LM_PC_G_kurzfristig")
+  es = load.story("IS_LM_PC_lag_G_kurzfristig")
   
   
   init.story(es)
@@ -49,8 +49,9 @@ story.ui = function(app=getApp(), es=app$es) {
     column(4,
      fluidRow(
         actionButton("stNextBtn","Next"),
-        actionButton("stForwardBtn","Fast Forward"),
-        actionButton("stPrevBtn","Back")
+        actionButton("stForwardBtn",">>"),
+        actionButton("stPrevBtn","Prev"),
+        actionButton("stExitBtn","Exit")
       ),
       uiOutput("tellUI"),
       uiOutput("answerUI")
@@ -66,6 +67,8 @@ story.ui = function(app=getApp(), es=app$es) {
   buttonHandler("stNextBtn", story.next.btn.click)
   buttonHandler("stForwardBtn", story.forward.btn.click)
   buttonHandler("stPrevBtn", story.prev.btn.click)
+  buttonHandler("stExitBtn", exit.to.main)
+  
 
   ui
 }
@@ -96,7 +99,7 @@ story.process.click.answer = function(app=getApp(), es=app$es,xy, pane.name,...)
     shiny.tell.step.sol()
   } else {
     es$attempts = es$attempts+1
-    setUI(id = "answerUI",p(paste0("Not correct.", es$attempts, " attempts.")))
+    setUI(id = "answerUI",p(paste0("Not correct. (", es$attempts, " attempts.)")))
   } 
 }  
 

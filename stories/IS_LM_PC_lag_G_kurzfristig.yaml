@@ -1,24 +1,6 @@
-storyId: IS_LM_PC_G_kurzfristig
+storyId: IS_LM_PC_lag_G_kurzfristig
 
-modelId: IS_LM_PC
-
-title: Eine Wirtschaft mit fester Geldmenge kollabiert
-
-descr: >
-  Wir betrachten ein IS-LM Modell mit fester Geldmenge,
-  erweitert um Effizienzlöhne und Phillipskurve mit
-  adaptiven Inflationserwartungen.
-  
-  
-  Ein kurzfristiger Nachfrageschock generiert nach seinem Abklingen
-  zunächst nur recht sanfte Folgeschwankung für das BIP.
-  Nach anfänglicher Inflation, ergibt sich eine
-  zunächst harmlos wirkende Deflation, die aber später 
-  in Kombination einer Nominalzinsuntergrenze von
-  0% irgendwann zu einem Zusammenbruch der Wirtschaft führt.
-  Das Beispiel motiviert, wie ohne stabilisierende Geld- oder Fiskalpolitik
-  eine Makroökonomie inhärent instabil sein kann.
-  
+modelId: IS_LM_PC_lag
 
 scenario:
     init:
@@ -57,7 +39,7 @@ periods:
         tell: >
           <h4> Im Gleichgewicht </h4>
           Wir betrachten eine geschlossene Volkswirtschaft mit konstanter
-          Geldmenge M. Stellen Sie sich einen Haufen von Goldmünzen vor,
+          Geldmenge M. Stellen Sie sich einen Haufen von Silbermünzen vor,
           der sich nicht verändert.
           
           Wir starten ohne Inflation (pi{{t}}=0%) und einem BIP von
@@ -65,8 +47,7 @@ periods:
           dem die Inflationsrate konstant bleibt.
           
           Der Zinssatz r{{t}}={{r_}}% bildet sich durch den Schnittpunkt der IS und LM
-          Kurve. Die aktuelle Phillipskurve (PC{{t}}) beschreibt 
-          wie sich unter den aktuellen Inflationserwartungen, 
+          Kurve. Die aktuelle Phillipskurve (PC{{t}}) beschreibt, wie sich 
           die Inflation bei unterschiedlichen Werten des BIP y verändern
           würde.
           
@@ -98,7 +79,7 @@ periods:
           
           
           Warum steigen die Zinsen? Die höhere Nachfrage bedeutet,
-          dass heute mehr Geld (Gold) benötigt wird, um sich die Güter
+          dass heute mehr Geld (Silber) benötigt wird, um sich die Güter
           zu kaufen. Geldbesitzer verlangen einen höheren Zinssatz um
           den Geldnachfragern das Geld zur Verfügung zu stellen.
           
@@ -165,7 +146,7 @@ periods:
           Wir haben weiterhin hohe Inflationserwartungen,
           die auch die aktuelle Inflation hoch halten.
           
-          Da die Geldmenge M={{M}} (Anzahl der Goldmünzen) per Annahme
+          Da die Geldmenge M={{M}} (Anzahl der Silbermünzen) per Annahme
           konstant bleibt, das Preisniveau P={{P}} aber durch die Inflation
           nun stets steigt, nimmt die reale Geldmenge M/P ab.
           Eine Konsequenz der Reduktion der realen Geldmenge ist,
@@ -222,8 +203,7 @@ periods:
           eher Vorteilhaft in unserer Wirtschaft mit fester
           nominaler Geldmenge. 
           Die reale Geldmenge M/P steigt langsam und die Realzinsen r
-          sinken deshalb. Die Realzinssenkung kurbelt Investitionen an, und das BIP steigt
-          wieder.
+          sinken deshalb.
           
             - Die Inflationsrate ändert sich von {{lag_pi_}}%
               auf {{pi_}}%.
@@ -254,7 +234,7 @@ periods:
           einer Deflation unterhalb der Realzinsen liegen.
           
           ```
-          Nominalzins = Realzins + erwartete Inflation
+            Nominalzins = Realzins + erwartete Inflation
           ```
           
           Durch die zunehmende Deflation sinken die Nominalzinsen
@@ -281,7 +261,7 @@ periods:
           Wir sehen dies im Knick der LM Kurve. Wir nehmen
           an, dass niemand bereit ist negative Nominalzinsen
           für einen Kredit zu akzeptieren, da man stattdessen
-          lieber einfach die Goldmünzen behält.
+          lieber einfach die Silbermünzen behält.
           (In der Realität sind leicht negative Nominalzinsen
           möglich, wenn es unbequem oder riskant ist das Bargeld
           zu halten. Wir setzen aber einfacherheitshalber die
@@ -292,7 +272,7 @@ periods:
           
           
           ```
-              Realzins = erwartete Deflationsrate
+              Realzins = Deflationsrate
           ```
           
           
@@ -315,10 +295,7 @@ periods:
         tell: >
           <h3> Die Katastrophe nimmt ihren Lauf... </h3>
           Durch die Kontraktion des BIP steigt die Deflation
-          noch stärker an, da aufgrund der hohen
-          Arbeitslosigkeit Löhne stark fallen und in Folge
-          auch die Preise stark fallen.
-          Die Nominalzinsen bleiben auf dem
+          noch stärker an. Die Nominalzinsen bleiben auf dem
           0% Niveau. Die Realzinsen steigen noch stärker
           und das BIP sinkt noch schneller! Wir schliddern
           immer tiefer in eine riesige Wirtschaftskrise und es gibt keine
@@ -346,8 +323,8 @@ periods:
           fester Geldmenge 
           kollabieren lassen... 
           
-          
-          Dieses Ergebnis unseres Modell liefert durchaus eine gewisse
+        
+          Dies Ergebnis unseres Modell liefert durchaus eine gewisse
           Motivation für eine stabilisierende Geldpolitik
           durch eine Zentralbank (oder ggf. auch für eine
           stabilisierende Fiskalpolitik).
@@ -361,17 +338,12 @@ periods:
            <a href="http://en.wikipedia.org/wiki/Great_Depression" target="_blank">
               http://en.wikipedia.org/wiki/Great_Depression</a> 
           
-          Wenn Sie mehr über das historische Verhalten makroökonomischer und geldpolitischer
-          Indikatoren und den Zusammehang mit Krisen lernen wollen, schauen Sie doch 
-          mal in dieses interaktive RTutor Problemset von 
-          Thomas Clausing basierend auf Schularick & Taylor (AER, 2012):
           
-            <a href="https://tcl89.shinyapps.io/creditboomsgonebust/" target="_blank">
-             https://tcl89.shinyapps.io/creditboomsgonebust/</a>
-          
-  
+
             - Die Inflationsrate ändert sich von {{lag_pi_}}%
               auf {{pi_}}%.
+          
             - Die Realzinsen steigen von {{lag_r_}}% auf {{r_}}%
             - Die Nominalzinsen sind {{i}}%
+
             - Das BIP sinkt von {{lag_y_}} auf {{y_}}

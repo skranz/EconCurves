@@ -6,7 +6,10 @@ Date: 2015-01-12
 Author: Sebastian Kranz
 Maintainer: Sebastian Kranz <sebastian.kranz@uni-ulm.de>
 Description: Tools to illustrate textbook economic models that shift around curves
-License: GPL >= 2.0
+License: 
+    Code: GPL >= 2.0
+    Modells and Stories: Creative Commons, Non-Commercial
 Depends: restorepoint,codeUtils, sktools, dplyr, stringtools, grid,
-         YamlObjects, nleqslv,whisker, markdown, shinyEvents, shiny,dygraphs
+         YamlObjects, nleqslv,whisker, markdown, shinyEvents, shiny,
+         dygraphs, shinyBS, shinyAce
 Imports: RMaxima

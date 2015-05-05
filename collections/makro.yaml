@@ -1,0 +1,65 @@
+title: Makroökonomische Geschichten aus einfachen Modellen
+
+stories:
+  IS_LM_PC_G_kurzfristig:
+  ThreeEq_G_langfristig:
+
+
+descr: >
+  Autor: Sebastian Kranz, Universität Ulm
+  
+  
+  Unten sind zwei Beispiele von Geschichten
+  und Übungsaufgaben, die auf einfachen makroökonomischen
+  Modellen basieren. Die interaktive Darstellung basiert 
+  auf meinem R Paket EconCurves. Das Paket erlaubt es 
+  Modelle, Geschichten und Übungsaufgaben auf einfache Art
+  zu spezifizieren und
+  generiert hieraus die interaktive App.
+  Sie können die Beispiele ausprobieren und auch einen
+  Blick auf die Dateien werfen, in denen Modelle und Geschichten
+  definiert werden.
+  
+footnotes:
+  Anmerkungen:
+    title: Anmerkungen zu den Modellen
+    descr: >
+      Ich bin selbst Mikroökonom, aber man sollte ja
+      trotzdem versuchen, ein Grundwissen über 
+      makroökonomische Zusammenhänge zu haben.
+      
+      
+      Allerdings fand ich während meines Studiums 
+      viele einführende makroökonomische Modelle 
+      oft nur moderat hilfreich und mäßig überzeugend.
+      
+      
+      Beispielsweise, konnte ich mich nie wirklich
+      mit der Darstellung von
+      IS-LM Modellen ohne explizite
+      Modellierung von Inflation und
+      der dynamischen Wirtschaftsentwicklung anfreunden.
+
+      
+      Auch später behandelte, einfache dynamische Real-Business-Cycle Modelle,
+      bei denen jegliche Arbeitslosigkeit freiwillig ist,
+      fand ich nicht sonderlich überzeugend.
+      
+      
+      Und wo war eigentlich der Finanzsektor,
+      wo waren die Immobilienblasen, wo waren die
+      Bankenkrisen in den Modellen?
+      
+      
+      Natürlich ist es eine sehr kniffelige Aufgabe,
+      die Kernpunkte der vielfältigen makroökonomischen
+      Zusammenhänge auf einfache Modelle herunterzubrechen.
+      In vielerlei Hinsicht finde ich die Darstellung 
+      in Carlton .... sehr gut gelungen.
+      Die Geschichten oben sind zum Teil durch
+      dieses Lehrbuch inspiriert.
+      Schön wäre es noch einfache Modelle und Geschichten
+      hinzuzufügen, die auf einfache Art und Weise
+      den "Leverage Cycle", Immobilienblasen und Kreditkrisen
+      illustrieren. 
+  

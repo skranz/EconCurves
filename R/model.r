@@ -22,6 +22,9 @@ load.model = function(modelId, file=paste0(modelId,".yaml"), dir=get.ec()$models
   
   tt = load.struct(name="model",file = paste0(dir,"/",file),typeName = "model")
   em = as.environment(tt.object(tt,1))
+  em$yaml = attr(tt,"yaml")
+  Encoding(em$yaml) <- "UTF-8"
+
   em
 }
 
