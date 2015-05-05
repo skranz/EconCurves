@@ -3,14 +3,15 @@ examples.shiny.stories = function() {
   library(EconCurves)
   
   set.restore.point.options(display.restore.point = TRUE)
-  #setwd("D:/libraries/EconCurves/EconCurves")
-  setwd("~/libraries/EconCurves")
+  setwd("D:/libraries/EconCurves/EconCurves")
+  #setwd("~/libraries/EconCurves")
   init.ec()
   ec = get.ec()
   load.collection("makro.yaml")
 
   app = shinyStoriesApp(ec = ec)
   runEventsApp(app,launch.browser = rstudio::viewer)
+  runEventsApp(app,launch.browser = TRUE)
 
 }
 
@@ -51,7 +52,8 @@ shinyStoriesApp = function(ec = get.ec(),title = "Stories from simple economic m
 
   appInitHandler(initHandler = function(app,...) {
     restore.point("app.initHandler")
-    app$ec = ec
+    # copy ec for a new app instance
+    app$ec = as.environment(as.list(ec))
   }, app=app)
   
   app$ui = ui
@@ -114,7 +116,7 @@ stories.choose.ui = function(app=getApp(), ec=app$ec,...) {
   }
   descr.html = compile.to.html(coll$descr)
   ui = list(title.html,HTML(descr.html),panel.ui)
-  fluidRow(column(offset=1, width=1,ui))
+  fluidRow(column(offset=1, width=10,ui))
 }
 
 coll.run.story.btn = function(app=getApp(), ec=app$ec, storyId,...) {

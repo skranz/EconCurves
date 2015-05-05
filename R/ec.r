@@ -14,9 +14,15 @@ init.ec = function(path=getwd(),
   ec$stories.path = stories.path
   yaml.objects.settings(default.types.path=types.path)
   ec$types = load.types()
+  ec
 }
 
 get.ec = function() {
+  app = try(getApp(),silent=TRUE)
+  if (!is(app,"try-error")) {
+    if (!is.null(app[["ec"]]))
+      return(app[["ec"]])
+  }
   ec
 }
 
