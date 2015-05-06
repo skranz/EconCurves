@@ -120,6 +120,12 @@ shiny.pane.click = function(app=getApp(), es=app$es,pane.name,value,...) {
 story.next.btn.click = function(app=getApp(), es=app$es,...) {
   restore.point("stNextBtnClicked")
   #cat("stNextBtn was clicked...")
+  
+  if (isTRUE(es$wait.for.answer)) {
+    setUI(id = "answerUI",p(paste0("You have not yet answered the question.")))
+    return()
+  }
+  
   res = story.next.step(es=es)
   if (res$end) return()
   shiny.tell.step.task()
