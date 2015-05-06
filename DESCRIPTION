@@ -1,8 +1,8 @@
 Package: EconCurves
 Type: Package
 Title: Tools to illustrate textbook economic models that shift around curves
-Version: 0.1
-Date: 2015-01-12
+Version: 2015.05.06
+Date: 2015-05-06
 Author: Sebastian Kranz
 Maintainer: Sebastian Kranz <sebastian.kranz@uni-ulm.de>
 Description: Tools to illustrate textbook economic models that shift around curves
