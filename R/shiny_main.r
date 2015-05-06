@@ -53,7 +53,15 @@ shinyStoriesApp = function(ec = get.ec(),title = "Stories from simple economic m
   appInitHandler(initHandler = function(app,...) {
     restore.point("app.initHandler")
     # copy ec for a new app instance
-    app$ec = as.environment(as.list(ec))
+    nec = as.environment(as.list(ec))
+    nec$stories = lapply(nec$stories, function(es) {
+      as.environment(as.list(es))
+    })
+    nec$models = lapply(nec$models, function(em) {
+      as.environment(as.list(em))
+    })
+    app$ec = nec
+    
   }, app=app)
   
   app$ui = ui
