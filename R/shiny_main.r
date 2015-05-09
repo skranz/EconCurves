@@ -38,7 +38,7 @@ load.collection = function(file, dir = paste0(ec$main.path,"/collections"), stor
   invisible(ec)
 }
 
-shinyStoriesApp = function(ec = get.ec(),title = "Stories from simple economic models",...) {
+shinyStoriesApp = function(ec = get.ec(),title = "Stories from simple economic models", can.change.code = FALSE, ...) {
   restore.point("shinyStoriesApp")
   
   library(shinyEvents)  
@@ -47,6 +47,7 @@ shinyStoriesApp = function(ec = get.ec(),title = "Stories from simple economic m
   
   app = eventsApp()
   app$ec = ec
+  app$can.change.code = can.change.code 
   
   ui = fluidPage(title = title,uiOutput("storiesBaseUI"))
 
@@ -54,12 +55,12 @@ shinyStoriesApp = function(ec = get.ec(),title = "Stories from simple economic m
     restore.point("app.initHandler")
     # copy ec for a new app instance
     nec = as.environment(as.list(ec))
-    nec$stories = lapply(nec$stories, function(es) {
-      as.environment(as.list(es))
-    })
-    nec$models = lapply(nec$models, function(em) {
-      as.environment(as.list(em))
-    })
+    #nec$stories = lapply(nec$stories, function(es) {
+    #  as.environment(as.list(es))
+    #})
+    #nec$models = lapply(nec$models, function(em) {
+    #  as.environment(as.list(em))
+    #})
     app$ec = nec
     
   }, app=app)
@@ -129,11 +130,11 @@ stories.choose.ui = function(app=getApp(), ec=app$ec,...) {
 
 coll.run.story.btn = function(app=getApp(), ec=app$ec, storyId,...) {
   restore.point("coll.run.story.btn")
-  es = ec$stories[[storyId]]
+  es = as.environment(as.list(ec$stories[[storyId]]))
   app$es = es
   modelId = es$modelId
 
-  em = ec$models[[modelId]]  
+  em = as.environment(as.list(ec$models[[modelId]]))  
   app$em = em
   init.story(es, em=em)
   ui = story.ui(es=es)
@@ -147,29 +148,39 @@ coll.run.story.btn = function(app=getApp(), ec=app$ec, storyId,...) {
 coll.show.story.btn = function(app=getApp(), ec=app$ec, storyId,...) {
   restore.point("coll.show.story.btn")
   es = ec$stories[[storyId]]
+  
+  setBtn = NULL
+  
+  if (app$can.change.code) {
+    setBtn = actionButton("showStorySetBtn","Apply changes")
+  }
+  
   ui = list(
     aceEditor("storyYamlAce",value = es$yaml, mode="yaml"),
     bsAlert("showStoryAlert"),
-    actionButton("showStorySetBtn","Apply changes"),
+    setBtn,
     actionButton("showStoryExitBtn","Exit")
   )
   buttonHandler("showStoryExitBtn", exit.to.main)
-  buttonHandler("showStorySetBtn", storyId = storyId,
-    function(app=getApp(), ec=app$ec, storyId,...) {
-      new.es = try({
-        new.es = load.story(storyId = storyId)
-        new.es = init.story(es = new.es)
-        new.es
-      })
-      if (is(new.es,"try-error")) {
-        createAlert(session = app$session,"showStoryAlert",title = "Error:",content = as.character(new.es),style = "warning")
-      } else {
-        ec$stories[[storyId]] = new.es
-        createAlert(session = app$session,"showStoryAlert",title = "Changes are applied.",style = "success")
-        
+  
+  if (app$can.change.code) {
+    buttonHandler("showStorySetBtn", storyId = storyId,
+      function(app=getApp(), ec=app$ec, storyId,...) {
+        new.es = try({
+          new.es = load.story(storyId = storyId)
+          new.es = init.story(es = new.es)
+          new.es
+        })
+        if (is(new.es,"try-error")) {
+          createAlert(session = app$session,"showStoryAlert",title = "Error:",content = as.character(new.es),style = "warning")
+        } else {
+          ec$stories[[storyId]] = new.es
+          createAlert(session = app$session,"showStoryAlert",title = "Changes are applied.",style = "success")
+          
+        }
       }
-    }
-  )
+    )
+  }
   setUI("storiesBaseUI",ui)
 }
 

@@ -57,7 +57,7 @@ init.story = function(es, em=NULL) {
 
 step.task.symbols = function(step) {
   restore.point("step.task.symbols")
-  tasks = setdiff(names(step$task),"pane")
+  tasks = setdiff(names(step$task),c("pane","type") )
   symbols = unique(unlist(lapply(step$task[tasks], function(ta) ta$symbol)))
   symbols
 }

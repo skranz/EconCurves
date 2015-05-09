@@ -162,7 +162,7 @@ story.forward.btn.click = function(app=getApp(), es=app$es,...) {
 
 story.prev.btn.click = function(app=getApp(), es=app$es,...)  {
   restore.point("stPrevBtnClicked")
-  res = story.prev.step(es=es)
+  res = story.prev.step(es=es,update.es = TRUE)
   if (res$start) return()
   shiny.tell.step.task()
   shiny.tell.step.sol()
@@ -187,6 +187,7 @@ story.panes.ui = function(app=getApp(), es=app$es) {
 story.prev.step = function(es, t=es$t, step.num=es$step.num, update.es=TRUE) {
   restore.point("story.prev.step")  
 
+  start = FALSE
   if (step.num > 1) {
     step.num = step.num-1
   } else {
@@ -195,14 +196,19 @@ story.prev.step = function(es, t=es$t, step.num=es$step.num, update.es=TRUE) {
       period = get.story.period(es=es,t=t)
       step.num = length(period$steps)
     } else {
-      return(list(t=t, step.num=1, start=TRUE))
+      t = 1
+      step.num = 1
+      start = TRUE
     }
   }
   
-  if (update.es)
-    es$t = t; es$step.num = step.num
+  if (update.es) {
+    es$t = t
+    es$step.num = step.num
+    es$wait.for.answer = FALSE
+  }
   
-  return(list(t=t, step.num=step.num, start=FALSE))
+  return(list(t=t, step.num=step.num, start=start))
 }
 
 
