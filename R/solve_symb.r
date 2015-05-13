@@ -1,31 +1,24 @@
 examples.solve_symb = function() {
-  cond = quote((sum(R) == Smax) | ((sum(R) <= Smax) & all(m==0))) 
-  pryr:::call_tree(cond)
-  res = change.nested.call(cond,adapt.call=adapt.to.implicit.eq)
-  res
-    
   .u = 5
-  pattern = quote(.x + .y == . )
-  new = quote(.x == . -(.y))
+  pattern = quote(.x + .x == . )
+  new = quote(.x == (.)/2)
   call = quote((1+3+x)+z == 5)
+  call = quote(z+z == 5)
   
   li = match.pattern(call, pattern)
   
   substitute.call(new,li)
-  
-  
-  cond = quote(.a*.x + .x)
-  pryr:::call_tree(cond)
-  
+
 inv.rules.txt = 
 '
+(.x)    == . <=> .x == .
 log(.x) == . <=> .x == exp(.)
 .x + .y == . <=> .x == . - (.y)
 .y + .x == . <=> .x == . - (.y)
 .x - .y == . <=> .x == . + .y
 .y - .x == . <=> .x == -(.) + .y
-.x * .y == . <=> .x == . / .y
-.y * .x == . <=> .x == . / .y
+.x * .y == . <=> .x == (.) / (.y)
+.y * .x == . <=> .x == (.) / (.y)
 '
 inv.rules = parse.equation.rules(inv.rules.txt)
 
@@ -101,11 +94,27 @@ match.pattern = function(call, pattern, check.identical=TRUE) {
   }
   li = do.call(c,li)
   
-  # make sure that 
+  # make sure that identical placeholders are in fact identical
   if (check.identical) {
-    
+    if (!are.same.placeholders.identical(li))
+      return(NA)
   }
   li
+}
+
+are.same.placeholders.identical = function(li) {
+  restore.point("are.same.vars.identical")
+  names = names(li)
+  vars = names[duplicated(names)]
+  for (var in vars) {
+    inds = which(names == var)
+    first = inds[1]
+    for (i in inds[-1]) {
+      if (!identical(li[[first]],li[[i]]))
+        return(FALSE)
+    }
+  }
+  return(TRUE)
 }
 
 isolate.symbol = function(eq,sym, inv.rules) {
