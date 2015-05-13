@@ -7,9 +7,6 @@ story:
         fixed: 
         lang:
         timelineVars:
-        T:
-        shocks:
-            type: shocks
         periods:
             type: storyPeriods  
 

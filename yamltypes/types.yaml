@@ -8,8 +8,7 @@ model:
 		curves:
 		panes:
 		vars:
-		sequences:
-		shocks:
+		randomVars:
 		scenarios:
 		latex:
 	otherFields: FALSE
@@ -34,11 +33,12 @@ panes:
 vars:
 	fieldType: var
 
-sequences:
-	fieldType: sequence
-
 shocks:
 	fieldType: shock
+
+randomVars:
+	fieldType: randomVar
+
 
 scenarios:
 	fieldType: scenario
@@ -50,12 +50,22 @@ panel:
 
 var:
 	fields:
+		descr:
 		formula:
 		xcurve:
 		ycurve:
 		x:
 		y:
+		laginit:
 	defaultField: formula
+
+randomVar:
+	fields:
+		descr:
+		formula:
+		laginit:
+	defaultField: formula
+
 
 sequence:
 
@@ -63,7 +73,11 @@ shock:
 
 scenario:
 	fields:
+		T:
+			type: numeric
 		init:
 		axis:
+		shocks:
+			type: shocks
 
 latex:

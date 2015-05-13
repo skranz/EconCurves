@@ -8,6 +8,7 @@ examples.shiny.story = function() {
   #es = load.story("ThreeEq_G_langfristig")
   #es = load.story("ThreeEqFixedM_G_langfristig")
   es = load.story("IS_LM_PC_lag_G_kurzfristig")
+  es = load.story("LeverageCycleBase")
   
   
   init.story(es)

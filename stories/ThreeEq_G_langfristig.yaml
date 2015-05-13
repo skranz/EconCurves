@@ -20,9 +20,17 @@ descr: >
   
   Wir haben ein IS Kurve, die sich durch eine permanente 
   Staatsausgabenerhöhung verschiebt.
+  
+  
   Wir haben eine Phillipskurve,
-  die beschreibt, wie sich, durch unterschiedlich hohen Lohndruck, 
-  die Inflationsrate in Abhängigkeit des BIP verändert.
+  die beschreibt, wie sich die Gesamtwirtschaftliche Nachfrage (BIP)
+  auf die Inflationsrate auswirkt. Es gibt ein gleichgewichtiges BIP,
+  bei der die Inflationsrate konstant bleibt. Eine höhere Nachfrage führt
+  zu Lohndruck, den Firmen durch höhere Preisen weitergeben. Die Inflationsrate
+  erhöht sich Inflation. Ein BIP unter dem Gleichgewichtsniveau senkt die
+  Löhne aufgrund der hohen Arbeitslosigkeit. Dies wird von Firmen
+  durch niedrigere Preise weitergegeben und senkt die Inflationsrate.
+  
   Die Phillipskurve verschiebt sich, wenn sich Inflationserwartungen
   ändern. Wir betrachten einfache adaptive Erwartungen, die erwartete
   Inflationsrate ist einfach die Inflationsrate der Vorperiode.
@@ -31,7 +39,7 @@ descr: >
   Die Zentralbank steuert die Leitzinsen um die Wirtschaft stabil zu halten.
   Anders als im IS-LM Modell, wirken Zinsen aber erst eine Periode verspätet auf 
   die (Investions-)Nachfrage. Dies erschwert stabilisierende Geldpolitik.
-  Diese Komplikationen ist aber durchaus realistisch.
+  Diese Komplikation ist aber durchaus realistisch.
   
   
   Die Geldpolitik wird durch eine Geldregelkurve (MR) beschrieben.

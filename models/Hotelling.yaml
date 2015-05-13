@@ -1,0 +1,47 @@
+modelId: Hotelling
+
+info:
+  descr: Simple Hotelling model
+  
+curves:
+  inverse_demand:
+    eq: 'p_ == a-b*R_'
+    xy: [R_,p_]
+    color: black
+
+vars:
+  m:
+    descr: markup -- grows with interest rate
+    formula: '(1+i)*lag_m'
+    init: p-c
+  p:
+    descr: price
+    formula: m + c
+    init:
+      ycurve: inverse_demand
+      x: R
+  R:
+    descr: ressource amount extracted and consumed in current period
+    xcurve: inverse_demand
+    y: p
+    init:
+      descr: |
+        Either total ressource extration adds up to Smax or
+        some ressources remain in the earth and the 
+        markup is zero in every period. 
+      all_eq: |
+        (sum(R) == Smax) | 
+        ((sum(R)<= Smax) & all(m==0))
+
+
+scenarios:
+  base:
+    T: 2
+    params:
+      a: 100
+      b: 1
+      i: 0.05
+      Smax: 20
+    axis:
+      R_: [0,22]
+      p_: [0,101]

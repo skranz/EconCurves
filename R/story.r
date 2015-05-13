@@ -50,7 +50,6 @@ init.story = function(es, em=NULL) {
     es$scenario = em$scenarios[[es$scenarioId]]
   
   init.model.scen(em,scen = es$scenario)
-  init.model.shocks(em,shocks = es$shocks)
   simulate.model(em,T=es$T)
   es$em = em
 }

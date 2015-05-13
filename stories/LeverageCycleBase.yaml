@@ -1,0 +1,20 @@
+storyId: LeverageCycleBase
+
+modelId: LeverageCycle
+
+title: Example of Leverage Cycle
+descr: >
+
+scenarioId: base
+
+timelineVars: [p, p_adapt, p_fund]
+
+lang: en
+
+periods:
+  1:
+    steps:
+      init:
+        tell:
+        show: [p,p_fund, p_adapt,price_alpha]
+ 
