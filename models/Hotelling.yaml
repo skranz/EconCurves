@@ -28,10 +28,12 @@ vars:
       descr: |
         Either total ressource extration adds up to Smax or
         some ressources remain in the earth and the 
-        markup is zero in every period. 
-      all_eq: |
+        markup is zero in every period.
+      obs: all
+      eq: |
         (sum(R) == Smax) | 
         ((sum(R)<= Smax) & all(m==0))
+      guess: 'Smax / T'
 
 
 scenarios:

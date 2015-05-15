@@ -63,6 +63,7 @@ old.examples.curve = function() {
   find.variables(ca)
 }
 
+
 parse.formula = function(formula) {
   parse(text=formula)[[1]]
 }
