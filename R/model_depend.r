@@ -50,6 +50,11 @@ examples.model.dependencies = function() {
   em$vars = init.formula.partners(em,em$vars)
   init.vars.formulas(em)
   
+  fo.df = em$fo.df
+  res = dependency.graph(em$fo.df$dependsOn, add.exo=FALSE)
+  
+  em$fo.df
+  
   #init.model.scen(em)
   em$init.var
   em$sim = simulate.model(em,T = 200)
@@ -57,15 +62,73 @@ examples.model.dependencies = function() {
 
 }
 
-find.model.deps = function(em) {
-  deps = lapply(em$vars,function(var) {
-    expl_ = em$expl_[[var]]
-    impl_ = em$impl_[[var]]
-    
-    explicit = !is.null(expl_)
-    
-    
+dependency.graph = function(dependsOn, add.exo=FALSE) {
+  restore.point("dependencyGraph")
+
+  library(igraph)  
+
+  if (add.exo) {
+    syms = unique(c(names(dependsOn), unlist(dependsOn)))
+  } else {
+    syms = names(dependsOn)
+  }
+  g <- graph.empty(directed=TRUE) + vertices(syms)
+  for (i in seq_along(dependsOn)) {
+    sym = names(dependsOn)[i]
+    deps = intersect(dependsOn[[i]],syms)
+    if (length(deps)>0) {
+      g[from=deps,to=rep(sym,length(deps))] <- TRUE
+    }
+  }
+  
+  clusters = clusters(g,mode = "strong")$membership
+  names(clusters) = syms
+  
+  li = lapply(sort(unique(clusters)), function(clu) {
+    restore.point("njfndjnfbfzrba")
+    csyms = syms[clusters==clu] 
+    cvars = intersect(csyms, names(dependsOn))
+    cdependsOn = setdiff(unique(unlist(dependsOn[cvars])),cvars)
+    dependsOnClusters = clusters[intersect(cdependsOn,syms)]
+    if (length(dependsOnClusters)==0) dependsOnClusters=NULL
+    list(cluster=clu,size=length(cvars),vars=list(cvars), dependsOn = list(cdependsOn), dependsOnClusters=list(dependsOnClusters)) 
   })
+  cluster.df = as_data_frame(rbindlist(li))
+  
+  cluster.df$level = compute.dependsOn.levels(cluster.df$dependsOnClusters,use.names=FALSE)
+  
+  sym.df = data.frame(
+    name=syms,
+    cluster=clusters,
+    level = cluster.df$level[clusters]
+  )
+
+  nlist(g,sym.df, cluster.df)
+}
+
+compute.dependsOn.levels = function(dependsOn, use.names=TRUE) {
+  restore.point("compute.dependsOn.levels")
+  
+  levels = rep(NA_integer_, length(dependsOn))
+  if (!use.names) {
+    open = seq_along(dependsOn)
+    counter = 0
+    level = 1
+    while(TRUE) {
+      counter = counter+1
+      has.level = sapply(open,function(ind) {
+        length(intersect(dependsOn[[ind]],open))==0
+      })
+      levels[open[has.level]] = level
+      open = open[!has.level]
+      level = level+1
+      if (length(open)==0) break
+      if (counter>length(dependsOn))
+        stop("dependsOn has cycles")
+    }
+    return(levels)
+  }
+  stop("Not yet implemented for names")  
 }
 
 #' Find partner variables for xcut and ycut formulas
@@ -111,6 +174,7 @@ init.vars.formulas = function(em) {
   names(fo.df$dependsOn) = names(fo.df$curDependsOn) = names(fo.df$lagDependsOn) =
   names(fo.df$leadDependsOn) = fo.df$var
   
+  fo.df$dependsOn
   em$fo.df = fo.df
   
 }
