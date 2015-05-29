@@ -36,24 +36,26 @@ panes:
     xmarkers: [y_eq,y_,y_mr]
     ymarkers: [pi_,Epi,piT,next_Epi,pi_mr]
 
-#markers:
-#  y_:
-#    color: brown
+laginitMode: steady_state
 
 vars:
   y_: 
     xcurve: IS
     y: 'lag_r_'
+    laginit: y_eq
   # adaptive expectations
   Epi: 'lag_pi_'
   next_Epi: 'pi_'
   pi_:
     ycurve: PC
     x: y_
+    laginit: piT
   pi_mr:
     ycut: [next_PC,MR]
+    laginit: piT
   y_mr:
     xcut: [next_PC,MR]
+    laginit: y_eq
   r_:
     ycurve: IS
     x: y_mr
@@ -64,17 +66,32 @@ latex:
   y_mr: 'y_{mr}'
 
 
-shocks:
-  G_inc:
-    descr: Government spending increases
-    effects:
-      A: 'A*1.3'
-    start: 2
-    duration: 100
+
+# Params will be computed ex-ante for all T
+# they may be modified by shocks
+# Formulas either return a single value or a
+# vector of length T
+params:
+  A: 'Constant of the IS Curve'
+  a: 'Absolute slope of the IS Curve'
+  piT: 'Inflation target of the central bank'
+  alpha: >
+    Slope of Phillips Curve: 
+    measures how strongly output deviations from
+    y_eq affect inflation rate.
+  beta: Central banks weight on inflation target (weight on output gap is normalized to 1)
+  y_eq: >
+    Equilibrium output at which the inflation rate remains constant
+  eps:
+    descr: random output schocks. Not yet used
+    formula: 'rnorm(T,0, sigma.eps)'
+  sigma.eps:
+    formula: 0
 
 scenarios:
   base:
-    init:
+    T: 20
+    params:
       A: 15
       a: 2
       piT: 2
@@ -85,4 +102,12 @@ scenarios:
       y: [0,20]
       r: [0,10]
       pi: [-5,10]
+    shocks:
+      G_inc:
+        descr: Government spending increases
+        effects:
+          A: 'A*1.3'
+        start: 2
+        duration: 100
+
       

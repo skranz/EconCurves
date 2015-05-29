@@ -1,47 +1,62 @@
 
 # stage form game
 model:
-	fields:
-		modelId:
-		info:
-			type: modelInfo
-		curves:
-		panes:
-		vars:
-		randomVars:
-		scenarios:
-		latex:
-	otherFields: FALSE
-	typeByFieldName: TRUE
+    fields:
+        modelId:
+        info:
+            type: modelInfo
+        curves:
+        panes:
+        params:
+            type: modelParams
+        vars:
+        randomVars:
+        scenarios:
+        latex:
+        laginitMode:
+            type: string
+        initMode:
+            type: string
+    otherFields: FALSE
+    typeByFieldName: TRUE
 
 modelInfo:
-	fields:
-		label:
-		tags:
-		descr:
-	otherFields: TRUE
+    fields:
+        label:
+        tags:
+        descr:
+    otherFields: TRUE
 
 modelId:
-	parentType: string
+    parentType: string
 
 curves:
-	fieldType: curve
+    fieldType: curve
 
 panes:
-	fieldType: panel
+    fieldType: panel
+
+modelParams:
+    fieldType: modelParam
+
+modelParam:
+    fields:
+        descr:
+        formula:
+    defaultField: descr
 
 vars:
-	fieldType: var
+    fieldType: var
 
 shocks:
-	fieldType: shock
+    fieldType: shock
 
 randomVars:
-	fieldType: randomVar
+    fieldType: randomVar
 
 
 scenarios:
-	fieldType: scenario
+    fieldType: scenario
 
 
 curve:
@@ -49,22 +64,43 @@ curve:
 panel:
 
 var:
-	fields:
-		descr:
-		formula:
-		xcurve:
-		ycurve:
-		x:
-		y:
-		laginit:
-	defaultField: formula
+    fields:
+        descr:
+        formula:
+        eq:
+        xcurve:
+        ycurve:
+        x:
+        y:
+        laginit:
+            type: varInit
+        init:
+            type: varInit
+    defaultField: formula
+
+varInit:
+    fields:
+        descr:
+        formula:
+        xcurve:
+        ycurve:
+        x:
+        y:
+        obs:
+        eq:
+        guess:
+    defaultField: formula
+
 
 randomVar:
-	fields:
-		descr:
-		formula:
-		laginit:
-	defaultField: formula
+    fields:
+        descr:
+        formula:
+        laginit:
+            type: varInit
+        init:
+            type: varInit
+    defaultField: formula
 
 
 sequence:
@@ -72,12 +108,12 @@ sequence:
 shock:
 
 scenario:
-	fields:
-		T:
-			type: numeric
-		init:
-		axis:
-		shocks:
-			type: shocks
+    fields:
+        T:
+            type: numeric
+        params:
+        axis:
+        shocks:
+            type: shocks
 
 latex:

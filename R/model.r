@@ -193,12 +193,14 @@ make.shocks.table = function(shocks) {
   as_data_frame(dt)  
 }
 
-init.model = function(em) {
+init.model = function(em,find.explicit=TRUE, solve.systems=TRUE,...) {
   init.model.curves(em)
   init.model.panes(em)
   init.model.vars(em)
-  init.model.randomVars(em)
-  
+  #init.model.randomVars(em)
+  if (find.explicit)
+    solve.model.explicit(em,solve.systems=solve.systems,...)
+  em$sim.fun = make.sim.fun(em)
 }
 
 
@@ -241,8 +243,8 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
   restore.point("init.model.scen")
   
   env = new.env()
-  for (par in names(scen$init)) {
-    val = scen$init[[par]]
+  for (par in names(scen$params)) {
+    val = scen$params[[par]]
     if (is.character(val)) {
       val = eval(parse(text=val),new.env)
     } else {
@@ -270,7 +272,7 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
   
   em$T = scen$T
   
-  compute.initial.period(em)
+  #compute.initial.period(em)
 }
 
 
@@ -409,7 +411,7 @@ subst.var = function(call, var, subs, subset=FALSE) {
   res
 }
 
-init.model.vars = function(em) {
+old.init.model.vars = function(em) {
   restore.point("init.model.vars")
 
   # create types
@@ -417,8 +419,8 @@ init.model.vars = function(em) {
     restore.point("hfhhfuehuh")
     var$type = get.model.var.type(var)
     var$name = attr(var,"name")
-    if (is.null(var$laginit))
-      var$laginit = var$name
+    #if (is.null(var$laginit))
+    #  var$laginit = var$name
     var
   })
 

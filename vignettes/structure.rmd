@@ -1,0 +1,23 @@
+---
+title: "Structure of EconCurves"
+author: "Sebastian Kranz"
+date: "20. Mai 2015"
+output: html_document
+---
+
+## Initial values
+
+One can specify different ways to specify initial values of variables and lagged variables.
+
+### Default:
+
+Possible modes for default initial values:
+  - NA initliazed with NA
+  - "like_t" initialized like in period t (will typically fail for lagged variables)
+  - "steady_state" set lag_var = var and solve system of equations
+
+Default modes:
+  - laginit: NA
+  - init: "like_t" computed as in period t
+  
+One can overwrite the defaults for specific variables by specifying the init and / or laginit fields manually. 
