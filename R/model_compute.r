@@ -50,6 +50,8 @@ examples.model.dependencies = function() {
   init.par.df(em)
   par.df = em$par.df
 
+  sim = sim.fun(T = em$T,par.mat = as.matrix(par.df),var.names = em$var.names)
+
   Rprof(tmp <- tempfile())
   for (i in 1:500)
     sim = sim.fun(T = em$T,par.mat = as.matrix(par.df),var.names = em$var.names)
@@ -579,7 +581,9 @@ init.par.df = function(em, T=em$T, shocks=em$shocks) {
   par.df = cbind(data.frame(t=0:(T+1)), as.data.frame(em$init.par))
   
   for (shock in shocks) {
-    shock.t = shock$start:(shock$start+shock$duration-1)
+    if (shock$start>T+1) next
+    
+    shock.t = shock$start:min(T+1,(shock$start+shock$duration-1))
     shock.pars = names(shock$effects)
     for (par in shock.pars) {
       formula_ = parse.as.call(shock$effects[[par]])
