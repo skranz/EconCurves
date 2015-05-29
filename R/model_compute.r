@@ -595,6 +595,15 @@ init.par.df = function(em, T=em$T, shocks=em$shocks) {
   invisible(par.df)
 }
 
+
+get.model.var.type = function(var) {
+  restore.point("get.model.var.type")
+  types = c("xcurve","ycurve","formula","xcut","ycut")
+  not.null = sapply(types, function(type) {!is.null(var[[type]])})
+  types[not.null]
+}
+
+
 # faster version with fewer checks
 mynleqslv = function (x, fn, jac = NULL, ..., method = c("Broyden", "Newton")[1], 
     global = c("dbldog", "pwldog", "cline", "qline", "gline", 
@@ -613,3 +622,13 @@ mynleqslv = function (x, fn, jac = NULL, ..., method = c("Broyden", "Newton")[1]
         jacobian, con, new.env(), PACKAGE = "nleqslv")
     out
 }
+
+# not yet implemented
+make.model.jacobi = function(em) {
+  ex = do.call(expression, em$impl)
+  lapply(em$impl,function(call) {
+    deriv(call,vars)
+  })
+
+}
+
