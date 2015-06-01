@@ -34,23 +34,38 @@ examples.model.dependencies = function() {
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
-  em = load.model("AdaptivePricesRandom")
   em = load.model("ThreeEq")
+  em = load.model("Hotelling")
   
   
   init.model(em,solve.systems = TRUE)
+  sim = simulate.model(em)
   
-  
+  #cat.sim.fun(em)
   fo.df = em$fo.df
   ifo.df = em$ifo.df
   lifo.df = em$lifo.df
+  ofo.df = em$ofo.df
   sim.fun = em$sim.fun
   
+  eq_ = ofo.df$eq_[[1]]
+  call = quote(
+    (all(R >= 0)) & 
+    (
+      (sum(R) == first(Smax)) |
+      (
+        (sum(R) <= first(Smax)) & 
+        all(m == 0)
+      )
+    )
+  )
+  eval(call,sim)  
+  
   init.model.scen(em)
-  init.par.df(em)
-  par.df = em$par.df
+  compute.par.mat(em)
+  par.mat = em$par.mat
 
-  sim = sim.fun(T = em$T,par.mat = as.matrix(par.df),var.names = em$var.names)
+  sim = sim.fun(T = em$T,par.mat = par.mat,var.names = em$var.names)
 
   Rprof(tmp <- tempfile())
   for (i in 1:500)
@@ -72,6 +87,37 @@ examples.model.dependencies = function() {
   em$sim = simulate.model(em,T = 200)
   c(sd(sim$p),sd(sim$p_adapt),sd(sim$p_fund))
 
+}
+
+simulate.model = function(em, scen.name = names(em$scenarios)[1], scen = em$scenarios[[scen.name]], init.scen=TRUE, compute.par=TRUE) {
+  restore.point("simulate.model")
+  if (init.scen)
+    init.model.scen(em,scen = scen)
+  
+  if (compute.par)
+    compute.par.mat(em)
+
+  em$var.mat = em$sim.fun(T = em$T,par.mat = em$par.mat,var.names = em$var.names)
+  var.mat = em$var.mat
+  par.mat = em$par.mat  
+  T = em$T
+
+  
+  par.df = par.mat[2:(T+1),,drop=FALSE]
+  lag.par.df  = par.mat[1:(T),,drop=FALSE]
+  lead.par.df = par.mat[3:(T+2),,drop=FALSE]
+  
+  colnames(lag.par.df) = paste0("lag_", colnames(par.mat))
+  colnames(lead.par.df) = paste0("lead_", colnames(par.mat))
+
+  var.mat = em$var.mat
+  var.df = var.mat[2:(T+1),,drop=FALSE]
+  lag.var.df = var.mat[1:(T),,drop=FALSE]
+  colnames(lag.var.df) = paste0("lag_", colnames(var.mat))
+  
+  sim = as.data.frame(cbind(var.df,par.df,lag.var.df,lag.par.df,lead.par.df))
+  em$sim = sim
+  invisible(sim)
 }
 
 fo.code.subst.li = function(fo.df,var.names=NULL, par.names = NULL) {
@@ -100,6 +146,151 @@ fo.code.subst.li = function(fo.df,var.names=NULL, par.names = NULL) {
   c(li1,li2,li3,li4,li5)
 }
 
+make.outer.sim.fun = function(em, inner.sim.fun= em$inner.sim.fun, parent.env=parent.frame()) {
+  restore.point("make.outer.sim.fun")
+  ofo.df = em$ofo.df
+  
+  subst.li = fo.code.subst.li(fo.df = ofo.df, var.names = em$var.names, par.names=em$par.names)
+  
+  # return value of function that nleqslv calls
+  impl_ = lapply(ofo.df$impl_, substitute.call, env=subst.li)  
+  names(impl_) = NULL
+  criterion = as.call(c(list(as.symbol("c")),impl_))
+
+  endo = ofo.df$var
+  insert.x = lapply(seq_along(endo), function(i) {
+    substitute(init.var.mat[ti,var] <- x[[i]],list(i=i,var=endo[[i]],ti=ofo.df$ti[[i]]))
+  }) 
+  insert.x = as.call(c(list(as.symbol("{")),insert.x))
+
+  
+  # init.x 
+  # need better code that takes into account guess
+  
+  if (FALSE) {
+    #restore.point("ndjnfjdngjg")
+    rhs = lapply(seq_along(endo), function(i) {
+      substitute(var.mat[ti-1,var],list(var=endo[[i]]))
+    }) 
+    rhs = as.call(c(list(as.symbol("c")),rhs))
+    start = substitute(start.x <- rhs, list(rhs=rhs)) 
+  }
+
+  init.x = substitute(start.x <- runif(num.endo), list(num.endo=length(endo))) 
+
+
+    
+  fun.body = substitute({
+    # init outer variables with their guess value
+    init.x
+    
+    # default set of rows
+    ti = (2:(T+1))
+    
+    # init var.mat matrix if it does not exist
+    if (is.null(var.mat)) {
+      nvar = length(var.names)
+      var.mat = matrix(0,nrow=(T+2),ncol=nvar)
+      colnames(var.mat) = var.names
+    } 
+    
+  
+    init.var.mat = var.mat
+    fn = function(x,T,ti,par.mat, init.var.mat, inner.sim.fun) {
+      insert.x
+      
+      var.mat = inner.sim.fun(T=T,par.mat=par.mat,var.mat=init.var.mat)
+      
+      vec <- criterion
+      sum(vec^2)
+    }
+    # solve 
+    res = optims(par=start.x,fn=fn,T=T,ti=ti,par.mat=par.mat, init.var.mat=init.var.mat,inner.sim.fun=inner.sim.fun)
+    if (!res$ok) warning("Outer search did not converge.")
+    x = res$par
+    
+    insert.x
+    var.mat = inner.sim.fun(T=T, par.mat=par.mat,var.mat=init.var.mat)
+    var.mat
+  },list(criterion=criterion, insert.x=insert.x, init.x=init.x)
+  )
+  
+  fun = function(T,par.mat, var.mat=NULL, var.names=NULL) {}
+  body(fun) <- fun.body
+  
+  
+  fun.env = new.env(parent=parent.env)
+  fun.env$inner.sim.fun = inner.sim.fun
+  environment(fun) = fun.env  
+
+  
+  # compile function with byte code complier
+  compfun = compiler::cmpfun(fun)
+  
+  compfun
+
+}
+
+
+create.sim.fun = function(em) {
+  restore.point("create.sim.fun")
+  if (NROW(em$ofo.df)==0) {
+    em$sim.fun = make.inner.sim.fun(em)
+  } else {
+    em$inner.sim.fun = make.inner.sim.fun(em)
+    em$sim.fun = make.outer.sim.fun(em,inner.sim.fun = em$inner.sim.fun)
+  }
+  invisible(em)
+}
+
+make.inner.sim.fun = function(em) {
+  restore.point("make.inner.sim.fun")
+
+  lifo.inner = make.inner.compute.code(fo.df=em$lifo.df, em=em)
+  if (!is.null(em$ifo.df)) {
+    fo.start = 3
+    ifo.inner = make.inner.compute.code(fo.df=em$ifo.df, em=em)
+  } else {
+    fo.start = 2
+    ifo.inner = NULL
+  }
+  
+  fo.inner = make.inner.compute.code(fo.df=em$fo.df, em=em, lag.as.start=TRUE)
+
+  fun.body = substitute(
+    {
+      # init var.df matrix if it does not exist
+      if (is.null(var.mat)) {
+        nvar = length(var.names)
+        var.mat = matrix(0,nrow=(T+2),ncol=nvar)
+        colnames(var.mat) = var.names
+      } 
+      
+      
+      # Compute laginit
+      ti = 1
+      lifo.inner
+      
+      ti = 2
+      ifo.inner
+      
+      for (ti in fo.start:(T+2)) 
+        fo.inner
+      
+      return(var.mat)
+    }, 
+    list(lifo.inner=lifo.inner,ifo.inner=ifo.inner,fo.inner=fo.inner,fo.start=fo.start)
+  )
+  fun = function(T,par.mat, var.mat=NULL, var.names=NULL) {}
+  body(fun) <- fun.body
+  
+  # compile function with byte code complier
+  compfun = compiler::cmpfun(fun)
+  
+  compfun
+}
+
+
 make.inner.compute.code = function(fo.df,  var.names=em$var.names, par.names = em$par.names, em=NULL, all.implicit = FALSE, lag.as.start=FALSE) {
   restore.point("make.inner.compute.code")
   
@@ -110,7 +301,7 @@ make.inner.compute.code = function(fo.df,  var.names=em$var.names, par.names = e
   expl_ = fo$expl_[[1]]
   substitute.call(expl_,subst.li)
   
-  clusters = sort(unique(fo.df$cluster))
+  clusters = sort(setdiff(unique(fo.df$cluster),NA))
   clu = 2
   li =lapply(clusters, function(clu) {
     rows = which(fo.df$cluster == clu)
@@ -171,62 +362,19 @@ make.inner.compute.code = function(fo.df,  var.names=em$var.names, par.names = e
   inner  
 }
 
-make.sim.fun = function(em) {
-  restore.point("make.sim.fun")
-
-  lifo.inner = make.inner.compute.code(fo.df=em$lifo.df, em=em)
-  if (!is.null(em$ifo.df)) {
-    fo.start = 3
-    ifo.inner = make.inner.compute.code(fo.df=em$ifo.df, em=em)
-  } else {
-    fo.start = 2
-    ifo.inner = NULL
-  }
-  
-  fo.inner = make.inner.compute.code(fo.df=em$fo.df, em=em, lag.as.start=TRUE)
-
-  fun.body = substitute(
-    {
-      # init var.df matrix if it does not exist
-      if (is.null(var.mat)) {
-        nvar = length(var.names)
-        var.mat = matrix(0,nrow=(T+2),ncol=nvar)
-        colnames(var.mat) = var.names
-      } 
-      
-      
-      # Compute laginit
-      ti = 1
-      lifo.inner
-      
-      ti = 2
-      ifo.inner
-      
-      for (ti in fo.start:(T+2)) 
-        fo.inner
-      
-      return(var.mat)
-    }, 
-    list(lifo.inner=lifo.inner,ifo.inner=ifo.inner,fo.inner=fo.inner,fo.start=fo.start)
-  )
-  fun = function(T,par.mat, var.mat=NULL, var.names=NULL) {}
-  body(fun) <- fun.body
-  
-  # compile function with byte code complier
-  compfun = compiler::cmpfun(fun)
-  
-  compfun
-}
 
 fo.solve = function(fo.df, add.dep=FALSE, solve.systems=!TRUE) {
   restore.point("fo.solve")
+  if (any(fo.df$outer))
+    restore.point("fo.solve.with.outer")
+
   
   if (is.null(fo.df)) return(NULL)
   if (add.dep) {
     fo.df = fo.add.dependencies(fo.df)
   }
   
-  clusters = unique(fo.df$cluster)
+  clusters = setdiff(unique(fo.df$cluster),NA)
   fo.df$solved = FALSE
   for (clu in clusters) {
     rows = which(fo.df$cluster == clu)
@@ -260,7 +408,9 @@ fo.solve = function(fo.df, add.dep=FALSE, solve.systems=!TRUE) {
 }
 
 fo.add.dependencies = function(fo.df) {
-  res = dependency.graph(fo.df$dependsOn, add.exo=FALSE)
+  if (any(fo.df$outer))
+    restore.point("fo.add.dependencies")
+  res = dependency.graph(fo.df$dependsOn[!fo.df$outer], add.exo=FALSE)
   fo.df = left_join(fo.df, res$sym.df,by ="var")
   fo.df  
 }
@@ -385,7 +535,8 @@ init.model.vars = function(em) {
 
   em$vars = init.formula.partners(em,em$vars)
   init.vars.formulas(em)
-
+  
+  
   em$fo.df = fo.add.dependencies(em$fo.df)
   if (!is.null(em$ifo.df))
     em$ifo.df = fo.add.dependencies(em$ifo.df)
@@ -397,6 +548,30 @@ init.model.vars = function(em) {
   #lifo.df = em$lifo.df
   
   invisible(em)
+}
+
+
+init.ofo.df = function(em) {
+  restore.point("init.outer.vars")
+  ofo.df = NULL
+  rows = which(is.true(em$ifo.df$outer))
+  if (length(rows)>0) {
+    iofo = em$ifo.df[rows,]
+    iofo$ti = 2
+    em$ifo.df = em$ifo.df[-rows,]
+  } else {
+    iofo = NULL
+  }
+  rows = which(is.true(em$lifo.df$outer))
+  if (length(rows)>0) {
+    liofo = em$ifo.df[rows,]
+    liofo$ti = 1
+    em$lifo.df = em$lifo.df[-rows,]
+  } else {
+    liofo = NULL
+  }
+  em$ofo.df = rbind(liofo,iofo)
+  em$has.outer = NROW(em$ofo.df) > 0
 }
 
 
@@ -481,12 +656,12 @@ init.vars.formulas = function(em) {
   names(fo.df$dependsOn) = fo.df$var
   em$lifo.df = fo.df
 
-  
+  init.ofo.df(em)
+  invisible(em)
 }
 
 init.var.formula = function(em, fo, var=fo$name, phase=c("t","init","laginit")[1], list.wrap=FALSE, steady.state = FALSE, lag.subst.li=NULL) {
   restore.point("init.var.formula")
-  
   
   if (steady.state) {
     lag.names = paste0("lag_",em$var.names)
@@ -507,6 +682,7 @@ init.var.formula = function(em, fo, var=fo$name, phase=c("t","init","laginit")[1
     curve.name = fo[[type]]
     curve = em$curves[[curve.name]]
   }  
+  
    
   if (type== "xcurve") { 
     eq_ = subst.var(curve$eq_, var = curve$yvar, subs = fo$y, subset=FALSE)
@@ -530,18 +706,23 @@ init.var.formula = function(em, fo, var=fo$name, phase=c("t","init","laginit")[1
     curve = em$curves[[curve.name]]
     eq_ = subst.var(curve$eq_, var = curve$xvar, subs = xvar, subset=FALSE)
     eq_ = subst.var(eq_, var = curve$yvar, subs = yvar, subset=FALSE)
+  } else if (type=="eq") {
+    eq_ = parse.as.call(fo$eq)
+    restore.point("adnjnfjnfhdhfdfbdb")
   }
 
   if (steady.state) {
     eq_   = substitute.call(eq_,lag.subst.li)
   }
+  
+  impl_ = adapt.to.implicit.eq(eq_)
     
-  impl_ = substitute(lhs-(rhs),list(lhs=get.lhs(eq_),rhs=get.rhs(eq_)))
+  #impl_ = substitute(lhs-(rhs),list(lhs=get.lhs(eq_),rhs=get.rhs(eq_)))
 
   if (list.wrap) {
-    res = list(var=var,type=type,expl_=list(expl_),impl_=list(impl_),eq_=list(eq_))
+    res = list(var=var,type=type,expl_=list(expl_),impl_=list(impl_),eq_=list(eq_),outer=as.logical(is.true(fo$outer)))
   } else {
-    res = list(var=var,type=type,expl_=expl_,impl_=impl_,eq_=eq_)
+    res = list(var=var,type=type,expl_=expl_,impl_=impl_,eq_=eq_,outer=as.logical(is.true(fo$outer)))
   }
   
   dep.li = compute.var.dependsOn(em,var, impl_, list.wrap=list.wrap)
@@ -552,7 +733,7 @@ init.var.formula = function(em, fo, var=fo$name, phase=c("t","init","laginit")[1
 
 get.var.formula.type = function(fo) {
   restore.point("get.var.formula.type")
-  types = c("xcurve","ycurve","formula","xcut","ycut")
+  types = c("xcurve","ycurve","formula","xcut","ycut","eq")
   not.null = sapply(types, function(type) {!is.null(fo[[type]])})
   types[not.null]
 }
@@ -568,7 +749,8 @@ compute.var.dependsOn = function(em,var, formula_ = em$impl_[[var]], list.wrap=F
 }
 
 find.em.par.names = function(em) {
-  all = unique(c(unlist(em$fo.df$dependsOn),
+  all = unique(c(unlist(em$ofo.df$dependsOn),
+                 unlist(em$fo.df$dependsOn),
                  unlist(em$ifo.df$dependsOn),
                  unlist(em$lifo.df$dependsOn)))
   pars = setdiff(all,c(em$var.names,
@@ -576,10 +758,32 @@ find.em.par.names = function(em) {
   pars
 }
 
-init.par.df = function(em, T=em$T, shocks=em$shocks) {
+compute.par.mat = function(em, T=em$T, shocks=em$shocks, seed=NULL) {
   restore.point("compute.par.df")
-  par.df = cbind(data.frame(t=0:(T+1)), as.data.frame(em$init.par))
+  scen = em$scen
   
+  if (!is.null(seed))
+    set.seed(seed)
+  
+  # Init parameter list
+  par.li = em$init.par
+  par.li[names(scen$init.par)] = scen$init.par
+  par.li$T=as.numeric(T)
+  par.li$t=0:(T+1)
+  
+  #par.li$.ti = 2:(T+1)
+  
+  
+  for (i in seq_along(par.li)) {
+    if (is.call(par.li[[i]])) {
+      par.li[[i]] = eval(par.li[[i]], par.li)
+    }
+  }
+  #par.li = par.li[setdiff(colnames(par.li),".ti")]
+  
+  par.df = as.data.frame(par.li)
+
+  # add shocks  
   for (shock in shocks) {
     if (shock$start>T+1) next
     
@@ -591,8 +795,8 @@ init.par.df = function(em, T=em$T, shocks=em$shocks) {
       par.df[[par]][shock.t+1] = val
     }
   }
-  em$par.df = par.df
-  invisible(par.df)
+  em$par.mat = as.matrix(par.df)
+  invisible(em$par.mat)
 }
 
 
@@ -621,6 +825,24 @@ mynleqslv = function (x, fn, jac = NULL, ..., method = c("Broyden", "Newton")[1]
     out <- .Call("nleqslv", x, fn1, jac1, method, global, xscalm, 
         jacobian, con, new.env(), PACKAGE = "nleqslv")
     out
+}
+
+cat.sim.fun = function(em) {
+  if (!is.null(em$inner.sim.fun)) {
+    cat("\n",
+      '\n#restore.point("inner.sim.fun")',
+      '\ninner.sim.fun <-',
+      deparse1(em$inner.sim.fun,collapse = "\n"),
+      "\n\n"
+    )
+  }
+  cat("\n",
+    '\n#restore.point("sim.fun")',
+    '\nsim.fun <-',
+    deparse1(em$sim.fun,collapse = "\n"),
+    "\n\n"
+  )
+  
 }
 
 # not yet implemented

@@ -1,13 +1,16 @@
-modelId: ThreeEq
+modelId: XThreeEq
 
 info:
-  descr: Basic three-equation macro model
+  descr: Extended three-equation macro model
 
 curves:
   IS: 
-    eq: 'y  == A - a*r'
+    #eq: 'y  == G + C + I'
+    eq: 'y == G + C0 + c*(y-T) + I0 - aI * r'
     xy: [y,r]
-    color: red 
+    color: red
+    #insert: [G,C,I]
+    #subst: {y: y_, r: r_}
   PC:
     eq: 'pi == Epi +alpha*(y-y_eq)'
     xy: [y,pi]
@@ -39,6 +42,19 @@ panes:
 laginitMode: steady_state
 
 vars:
+  I:
+    descr: Investments. Depend on interest rate
+    formula: I0 - aI * r_
+  C:
+    descr: Keynesian consumption function
+    formula: C0 + c*(y_-T)
+  T:
+    descr: Tax income
+    formula: tau*y_
+  D:
+    descr: Goverment debt
+    formula: lag_D + G - T
+    laginit: D0
   y_: 
     xcurve: IS
     y: 'lag_r_'
@@ -88,17 +104,23 @@ params:
     Equilibrium output at which the inflation rate remains constant
   eps:
     descr: random output schocks. Not yet used
-    formula: 'rnorm(T+2,0, sigma.eps)'
+    formula: 'rnorm(T,0, sigma.eps)'
   sigma.eps:
-    formula: 1
+    formula: 0
 
 scenarios:
   base:
     T: 20
     params:
-      A: 15
-      a: 2
-      piT: 0
+#      A: 15
+      D0: 0
+      I0: 5
+      aI: 0.5
+      c: 0.3
+      C0: 2
+      tau: 0.5
+      G: 6
+      piT: 2
       alpha: 1
       beta: 1
       y_eq: 10
@@ -110,8 +132,8 @@ scenarios:
       G_dec:
         descr: Government spending decreases
         effects:
-          A: 'A*0.85'
-        start: 2
+          G: 'G*0.85'
+        start: 6
         duration: 100
 
       

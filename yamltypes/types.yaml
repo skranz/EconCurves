@@ -86,8 +86,9 @@ varInit:
         ycurve:
         x:
         y:
-        obs:
         eq:
+        outer:
+        periods:
         guess:
     defaultField: formula
 

@@ -10,10 +10,12 @@ curves:
     color: black
 
 vars:
-  m:
-    descr: markup -- grows with interest rate
+  mRule:
+    descr: markup -- follows Hotelling's Rule, i.e. it grows with interest rate
     formula: '(1+i)*lag_m'
     init: p-c
+  m:
+    formula: 'pmin(mRule, a-c)'
   p:
     descr: price
     formula: m + c
@@ -29,21 +31,26 @@ vars:
         Either total ressource extration adds up to Smax or
         some ressources remain in the earth and the 
         markup is zero in every period.
-      obs: all
+      outer: TRUE
       eq: |
-        (sum(R) == Smax) | 
-        ((sum(R)<= Smax) & all(m==0))
-      guess: 'Smax / T'
-
+        (all(R >= 0)) &
+        (
+          (sum(R) == first(Smax)) | 
+          ((sum(R)<= first(Smax)) & all(m==0))
+        )
+      lower: '0'
+      upper: 'Smax / T'
+      start: '0.5*(Smax/T)'
 
 scenarios:
   base:
-    T: 2
+    T: 20
     params:
       a: 100
       b: 1
-      i: 0.05
-      Smax: 20
+      i: 0.1
+      Smax: 200
+      c: 20
     axis:
       R_: [0,22]
       p_: [0,101]

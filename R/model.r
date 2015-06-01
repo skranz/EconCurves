@@ -40,28 +40,6 @@ load.model = function(modelId, file=paste0(modelId,".yaml"), dir=get.ec()$models
 
 
 
-compute.par.df = function(em, T, shocks) {
-  restore.point("compute.par.df")
-  
-  par.df = cbind(data.frame(t=0:(T+1)), as.data.frame(em$init.par))
-  
-  for (shock in shocks) {
-    shock.t = shock$start:(shock$start+shock$duration-1)
-    shock.pars = names(shock$effects)
-    for (par in shock.pars) {
-      formula_ = parse.as.call(shock$effects[[par]])
-      val = eval(formula_, par.df[shock.t+1,])
-      par.df[[par]][shock.t+1] = val
-    }
-  }
-  em$par.df      = par.df[2:(T+1),,drop=FALSE]
-  em$lag.par.df  = par.df[1:(T),,drop=FALSE]
-  em$lead.par.df = par.df[3:(T+2),,drop=FALSE]
-  
-  colnames(em$lag.par.df) = paste0("lag_", colnames(em$par.df))
-  colnames(em$lead.par.df) = paste0("lead_", colnames(em$par.df))
-      
-}
 
 
 #' transform shocks list into a data frame with one row
@@ -89,13 +67,14 @@ make.shocks.table = function(shocks) {
 }
 
 init.model = function(em,find.explicit=TRUE, solve.systems=TRUE,...) {
+  init.model.params(em)
   init.model.curves(em)
   init.model.panes(em)
   init.model.vars(em)
   #init.model.randomVars(em)
   if (find.explicit)
     solve.model.explicit(em,solve.systems=solve.systems,...)
-  em$sim.fun = make.sim.fun(em)
+  create.sim.fun(em)
 }
 
 
@@ -134,19 +113,26 @@ init.model.shocks = function(em, shocks=em$shocks) {
   invisible(em$shocks)
 }
 
+init.model.params = function(em) {
+  em$init.par = lapply(em$params, function(param) {
+    param = param$formula
+    if (is.null(param)) return(param)
+    attributes(param)=NULL
+    if (is.character(param)) param = parse.as.call(param)
+    param
+  }) 
+  
+}
+
 init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scenarios[[scen.name]]) {
   restore.point("init.model.scen")
   
-  env = new.env()
-  for (par in names(scen$params)) {
-    val = scen$params[[par]]
-    if (is.character(val)) {
-      val = eval(parse(text=val),new.env)
-    } else {
-      attributes(val)=NULL
-    }
-    env[[par]] = val
-  }
+  scen$T = as.numeric(scen$T)
+  scen$init.par = lapply(scen$params, function(param) {
+    attributes(param)=NULL
+    if (is.character(param)) param = parse.as.call(param)
+    param
+  }) 
   
   # init axis ranges
   em$panes = lapply(em$panes, function(pane) {
@@ -156,18 +142,11 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
     pane
   })
   
-  scen$init.par = as.list(env)
   em$scen = scen
-  em$init.par = scen$init.par
-  em$par.names = names(em$init.par)
-  em$lag.par.names = paste0("lag_",em$par.names)
-  
   em$shocks = scen$shocks
   init.model.shocks(em)
   
   em$T = scen$T
-  
-  #compute.initial.period(em)
 }
 
 
