@@ -1,11 +1,11 @@
 
 examples.shiny.story = function() {
 
-  set.restore.point.options(display.restore.point = TRUE)
+  set.restore.point.options(display.restore.point = !TRUE)
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
-  #es = load.story("ThreeEq_G_langfristig")
+  es = load.story("ThreeEq_G_langfristig")
   #es = load.story("ThreeEqFixedM_G_langfristig")
   es = load.story("IS_LM_PC_lag_G_kurzfristig")
   es = load.story("LeverageCycleBase")
@@ -104,10 +104,15 @@ story.process.click.answer = function(app=getApp(), es=app$es,xy, pane.name,...)
   } 
 }  
 
-shiny.pane.click = function(app=getApp(), es=app$es,pane.name,value,...) {
+shiny.pane.click = function(app=getApp(), es=app$es,pane.name,id, session, value,...) {
   #args = list(...)
   restore.point("shiny.pane.click")
+  if (length(value)==0) 
+    return()
+  restore.point("shiny.pane.click.with.val")
   xy = c(x=value$x,y=value$y)
+  cat("\nclick: ")
+  print(value)
   
   # outside a task just continue
   if (!is.true(es$wait.for.answer)) {
@@ -177,7 +182,7 @@ story.panes.ui = function(app=getApp(), es=app$es) {
     plotId = paste0(pane$name,"_PanePlot")
     clickId = paste0(pane$name,"_PaneClick")
     changeHandler(id=clickId, shiny.pane.click, pane.name=pane$name)
-    plotOutput(outputId = plotId,clickId = clickId, width="250px",height="250px")
+    plotOutput(outputId = plotId,click = clickId, width="250px",height="250px")
   })
   names(li) = NULL
   ui = HTML(html.table(li,ncol=2))

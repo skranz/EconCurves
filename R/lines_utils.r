@@ -56,7 +56,7 @@ point.to.line.distance = function(xy,line, dim="xy") {
 
 find.nearest.line.point = function(xy, line, dim="xy") {
   restore.point("find.nearests.line.point")
-  
+  xy = unlist(xy)
   if (line$type=="marker") {
     if (line$axis == "x") return(c(line$x[1],xy[2]))
     if (line$axis == "y") return(c(xy[1],line$y[1]))

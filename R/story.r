@@ -5,7 +5,7 @@ examples.story = function() {
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
-  #es = load.story("ThreeEq_G_langfristig")
+  es = load.story("ThreeEq_G_langfristig")
   es = load.story("ThreeEqFixedM_G_langfristig")
   es = load.story("IS_LM_PC_G_kurzfristig")
   init.story(es)
@@ -49,8 +49,15 @@ init.story = function(es, em=NULL) {
   if (is.null(es$scenario))
     es$scenario = em$scenarios[[es$scenarioId]]
   
+  if (!is.null(es$T)) {
+    es$T = as.numeric(es$T)
+    es$scenario$T = es$T 
+  } else {
+    es$T = as.numeric(es$scenario$T)
+  }
+  
   init.model.scen(em,scen = es$scenario)
-  simulate.model(em,T=es$T)
+  simulate.model(em)
   es$em = em
 }
 
@@ -325,7 +332,7 @@ check.shift.answer = function(es,xy,pane.name,task, em=es$em,t=es$t)  {
 
 # Find a marker
 check.find.answer = function(es,xy,pane.name,task, em=es$em,t=es$t, val = as.list(em$sim[t,]), tol=es$tol) {
-  restore.point("console.ask.find")
+  restore.point("check.find.answer")
   symbol = task$find$symbol
   ref.val = val[[symbol]]
   pane = em$panes[[pane.name]]

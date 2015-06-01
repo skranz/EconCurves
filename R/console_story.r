@@ -122,7 +122,7 @@ ask.task.on.console = function(es, t=1, step=1, num.attempts=1) {
   
   ret = TRUE
   for (attempt in 1:num.attempts) {
-    xy = locator(1)
+    xy = unlist(locator(1))
     ret = check.click.answer(es=es,xy = xy,pane.name = pane.name,t = t,step.num = step,task = task)
     if (ret) break
     if (!ret & attempt<num.attempts)
