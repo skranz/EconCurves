@@ -35,12 +35,20 @@ examples.model.dependencies = function() {
   init.ec()
   ec = get.ec()
   em = load.model("ThreeEq")
-  em = load.model("Hotelling")
-  
+  em = load.model("GreenParadox")
+  check.model(em)
   
   init.model(em,solve.systems = TRUE)
   sim = simulate.model(em)
   
+  
+  Rprof(tmp <- tempfile())
+  for (i in 1:3)
+    sim = sim = simulate.model(em)
+  Rprof()
+  summaryRprof(tmp)
+  unlink(tmp)
+
   #cat.sim.fun(em)
   fo.df = em$fo.df
   ifo.df = em$ifo.df
@@ -116,8 +124,24 @@ simulate.model = function(em, scen.name = names(em$scenarios)[1], scen = em$scen
   colnames(lag.var.df) = paste0("lag_", colnames(var.mat))
   
   sim = as.data.frame(cbind(var.df,par.df,lag.var.df,lag.par.df,lead.par.df))
+  sim = add.sim.extra.vars(em,sim)
   em$sim = sim
   invisible(sim)
+}
+
+add.sim.extra.vars = function(em, sim) {
+  restore.point("add.sim.extr.vars")
+  evs = em$extraVars
+  if (length(evs)==0) return(sim)
+  
+  evs = sapply(evs, function(ev) ev$formula)
+  code = paste0(names(evs),"=",evs, collapse=",\n")
+  lag_code = paste0("lag_",names(evs),"=lag(",names(evs),")", collapse=",\n")
+
+  code = paste0("mutate(sim,",code,",",lag_code,")")
+  call = parse.as.call(code)
+  new.sim = eval(call)
+  new.sim
 }
 
 fo.code.subst.li = function(fo.df,var.names=NULL, par.names = NULL) {
@@ -317,15 +341,19 @@ make.inner.compute.code = function(fo.df,  var.names=em$var.names, par.names = e
       endo = fo.df$var[rows]
       fo.df$impl_[rows]
       
-      inner = as.call(c(list(as.symbol("c")),fo.df$impl_[rows]))
       xsubst = lapply(seq_along(endo), function(i) {
         substitute(x[i],list(i=i))
       })
       names(xsubst) = endo
-      inner = substitute.call(inner, xsubst)
-      
-      inner = substitute.call(inner, subst.li)
-      
+
+      # substitute original impl_ formula with x, par.mat and var.mat
+      impl_ = lapply(fo.df$impl_[rows], function(call) {
+        call = substitute.call(call, xsubst)
+        call = substitute.call(call, subst.li)
+        call
+      })      
+      inner = as.call(c(list(as.symbol("c")),impl_))
+  
       assign = lapply(seq_along(endo), function(i) {
         substitute(var.mat[ti,var] <- res[[i]],list(i=i,var=endo[[i]]))
       }) 
@@ -813,6 +841,7 @@ mynleqslv = function (x, fn, jac = NULL, ..., method = c("Broyden", "Newton")[1]
     global = c("dbldog", "pwldog", "cline", "qline", "gline", 
         "hook", "none")[1], xscalm = c("fixed", "auto")[1], jacobian = FALSE) 
 {
+    #restore.point("mynleqslv")
     fn1 <- function(par) fn(par, ...)
     jac1 <- if (!is.null(jac)) 
         function(par) jac(par, ...)
@@ -852,5 +881,45 @@ make.model.jacobi = function(em) {
     deriv(call,vars)
   })
 
+}
+
+check.model = function(em) {
+  restore.point("check.model")
+  
+  # all known symbols
+  syms = c(names(em$vars),names(em$params), names(em$extraVars))
+  li = lapply(em$scenarios, function(scen) names(scen$params))
+  syms = unique(c(syms, unlist(li)))
+  syms = c(syms, paste0("lag_",syms),paste0("lead_",syms),"t")
+  
+  check.formula = function(obj,field="formula",name=get.name(obj),section="") {
+    if (length(field)>1) {
+      code = paste0("obj", paste0("[['",field,"']]",collapse=""))
+      val = eval(parse(text=code))
+    } else {
+      val = obj[[field]]
+    }
+    
+    if (length(val)==0) return(TRUE)
+    vars = find.variables(parse.as.call(val))
+    unknown = setdiff(vars,syms)
+    if (length(unknown)>0) {
+      str = paste0("\n\nReference to unknown symbol ", paste0(unknown,collapse=", "), " in ", section, " -> ", name, " -> ",field)
+      cat(str)
+      return(FALSE)
+    }
+  }
+  
+  # check variables
+  lapply(em$vars, check.formula, section="vars")
+  lapply(em$vars, check.formula, section="vars", field=c("init","formula"))
+  lapply(em$vars, check.formula, section="vars", field=c("init","eq"))
+  lapply(em$vars, check.formula, section="vars", field=c("laginit","formula"))
+  lapply(em$extraVars, check.formula, section="extraVars")
+  lapply(em$panes, check.formula, section="panes", field="xmarker")
+  lapply(em$panes, check.formula, section="panes", field="ymarker")
+
+  invisible(TRUE)
+  
 }
 

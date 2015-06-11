@@ -7,11 +7,12 @@ examples.model = function() {
   em = load.model("ThreeEqFixedM")
   em = load.model("IS_LM_PC")
   em = load.model("AdaptivePricesRandom")
+  em = load.model("GreenParadox")
   
   init.model(em)
   init.model.scen(em)
-  em$init.var
-  em$sim = simulate.model(em,T = 200)
+  sim = simulate.model(em)
+
   c(sd(sim$p),sd(sim$p_adapt),sd(sim$p_fund))
   
   library(moments)
@@ -136,7 +137,6 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
   
   # init axis ranges
   em$panes = lapply(em$panes, function(pane) {
-    restore.point("jndngjdng")
     pane$xrange = scen$axis[[pane$xvar]]
     pane$yrange = scen$axis[[pane$yvar]]
     pane

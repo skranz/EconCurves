@@ -366,6 +366,7 @@ term.to.poly = function(term, var, is.expanded=FALSE) {
   bases = lapply(bc.li, function(bc) bc$base)  
   coefs = lapply(bc.li, function(bc) bc$coef)  
 
+  
   #bc.df = data_frame(bases, coefs)
   # combine coefs of same bases
   ubases=unique(bases)
@@ -383,10 +384,11 @@ term.to.poly = function(term, var, is.expanded=FALSE) {
   # extract coefficients
   ucoefs=vector("list",length(ubases))
   for (i in seq_along(ubases)) {
-    inds = which(bases==ubases[[i]])
+    inds = which(sapply(bases, function(base) identical(base,ubases[[i]])))
     coef = unflatten.term(coefs[inds],"+")
     ucoefs[[i]] = coef
   }
+
   
   list(bases=ubases, coefs=ucoefs,const=const)
 }

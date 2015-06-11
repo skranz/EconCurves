@@ -5,50 +5,50 @@ info:
 
 curves:
   IS: 
-    eq: 'y  == A - a*r'
-    xy: [y,r]
+    eq: 'y_  == A - a*r_'
+    xy: [y_,r_]
     color: red 
   PC:
-    eq: 'pi == Epi +alpha*(y-y_eq)'
-    xy: [y,pi]
+    eq: 'pi_ == Epi +alpha*(y_-y_eq)'
+    xy: [y_,pi_]
     color: blue
   next_PC:
-    eq: 'pi == next_Epi +alpha*(y-y_eq)'
-    xy: [y,pi]
+    eq: 'pi_ == next_Epi +alpha*(y_-y_eq)'
+    xy: [y_,pi_]
     color: cyan
   MR:
-    eq: 'y  == y_eq -alpha*beta*(pi-piT)'
-    xy: [y,pi]
+    eq: 'y_  == y_eq -alpha*beta*(pi_-piT)'
+    xy: [y_,pi_]
     color: green
 
 panes:
   IS_:
     pos: [1,1]
-    xy: [y,r]
+    xy: [y_,r_]
     curves: [IS]
-    xmarkers: [y_eq,y_,y_mr]
-    ymarkers: [r_]
+    xmarkers: [y_eq,y,y_mr]
+    ymarkers: [r]
 
   PC_MR:
     pos: [1,2]
-    xy: [y,pi]
+    xy: [y_,pi_]
     curves: [PC,MR,next_PC]
-    xmarkers: [y_eq,y_,y_mr]
-    ymarkers: [pi_,Epi,piT,next_Epi,pi_mr]
+    xmarkers: [y_eq,y,y_mr]
+    ymarkers: [pi,Epi,piT,next_Epi,pi_mr]
 
 laginitMode: steady_state
 
 vars:
   y_: 
     xcurve: IS
-    y: 'lag_r_'
+    y: 'lag_r'
     laginit: y_eq
   # adaptive expectations
-  Epi: 'lag_pi_'
-  next_Epi: 'pi_'
+  Epi: 'lag_pi'
+  next_Epi: 'pi'
   pi_:
     ycurve: PC
-    x: y_
+    x: y
     laginit: piT
   pi_mr:
     ycut: [next_PC,MR]

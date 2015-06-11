@@ -1,15 +1,16 @@
 
 examples.shiny.story = function() {
 
-  set.restore.point.options(display.restore.point = !TRUE)
+  set.restore.point.options(display.restore.point = TRUE)
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
   es = load.story("ThreeEq_G_langfristig")
   #es = load.story("ThreeEqFixedM_G_langfristig")
-  es = load.story("IS_LM_PC_lag_G_kurzfristig")
-  es = load.story("LeverageCycleBase")
-  
+  #es = load.story("IS_LM_PC_lag_G_kurzfristig")
+  #es = load.story("LeverageCycleBase")
+  es = load.story("Hotelling_story")
+
   
   init.story(es)
   es$t = 1

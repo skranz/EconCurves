@@ -1,0 +1,24 @@
+storyId: Hotelling_story
+
+modelId: Hotelling
+
+title: 'Illustration of the Hotelling model'
+
+descr:
+
+scenarioId: base
+
+timelineVars: [p,m,R]
+
+lang: en
+
+
+periods:
+  1:
+    steps:
+      base:
+        show: [inverse_demand,p,m,lag_m,R,lag_R]
+  2:
+    steps:
+      base:
+        show: [inverse_demand,p,m,lag_m,R,lag_R]

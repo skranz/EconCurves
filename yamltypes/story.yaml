@@ -1,15 +1,30 @@
 story:
     fields:
         modelId: 
-        storyId: 
+        storyId:
+        storyType:
         scenarioId:
         scenario:
+        descr:
+        title:
         fixed: 
         lang:
         timelineVars:
+        default:
         periods:
-            type: storyPeriods  
+            type: storyPeriods
+        parts:
+            type: scenryParts
+          
+scenryParts:
+    fieldType: scenryPart
 
+scenryPart:
+    fields:
+        tell:
+        scens:
+        params:
+        plots:
 
 storyPeriods:
     fieldType: storyPeriod

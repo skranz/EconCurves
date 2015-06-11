@@ -5,7 +5,41 @@ date: "20. Mai 2015"
 output: html_document
 ---
 
-## Initial values
+# Model, Scenarios, and Story
+
+## Model
+
+A model will contain all information to simulate a model if we have given values of exogenous parameters. In addition it can contain "default" values for panes, or scenarios, which can be overwritten or extended by particular stories.
+
+Core elements of a model:
+  
+    - endogenous variables and their equations for period t and initial values
+    
+Optional elements:
+    
+    - curves that may be shown in stories and which can be used for defining variables
+    - panes in which curves can be shown and which stories can use
+    - a description of all exogenous parameters
+    - a basic scenario
+      
+## Scenario
+
+A scenario specifies the models exogenous parameters and stuff like axis limits of panes that will depend on those parameters.
+
+  - T: the number of periods
+  - params: starting values for all exogenous parameters
+  - shocks: shocks can change parameters in certain periods
+  - axis: limits for pane axis
+
+## Story
+
+A story is a particular analysis of a model which will be accompagnied by economic interpretation and can also take the form of interactive exercises.
+
+## Lab
+
+Allows a user to change parameters or a model: experimenting in a simple fashion
+
+# Initial values
 
 One can specify different ways to specify initial values of variables and lagged variables.
 

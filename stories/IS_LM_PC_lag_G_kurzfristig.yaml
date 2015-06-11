@@ -3,7 +3,8 @@ storyId: IS_LM_PC_lag_G_kurzfristig
 modelId: IS_LM_PC_lag
 
 scenario:
-    init:
+    T: 40
+    params:
       pi_start: 0
       M: 2.5
       A: 15
@@ -17,20 +18,19 @@ scenario:
       y: [0,20]
       r: [-3,10]
       pi: [-5,10]
+    shocks:
+      G_inc:
+        effects:
+          A: 'A*1.5'
+        start: 3
+        duration: 1
 
 
 timelineVars: [y_,r_,i,pi_,P]
 
 lang: de
 
-T: 40
 
-shocks:
-  G_inc:
-    effects:
-      A: 'A*1.5'
-    start: 3
-    duration: 1
 
 periods:
   1:

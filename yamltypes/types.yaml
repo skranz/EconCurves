@@ -10,7 +10,7 @@ model:
         params:
             type: modelParams
         vars:
-        randomVars:
+        extraVars:
         scenarios:
         latex:
         laginitMode:
@@ -47,6 +47,16 @@ modelParam:
 
 vars:
     fieldType: var
+
+extraVars:
+    fieldType: extraVar
+
+extraVar:
+    fields:
+        descr:
+        formula:
+    defaultField: formula
+
 
 shocks:
     fieldType: shock

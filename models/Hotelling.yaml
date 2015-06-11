@@ -7,7 +7,16 @@ curves:
   inverse_demand:
     eq: 'p_ == a-b*R_'
     xy: [R_,p_]
-    color: black
+    color: brown
+
+panes:
+  demand_:
+    pos: [1,1]
+    xy: [R_,p_]
+    curves: [inverse_demand]
+    xmarkers: [R,lag_R]
+    ymarkers: [p,m,lag_m]
+
 
 vars:
   mRule:
@@ -52,5 +61,5 @@ scenarios:
       Smax: 200
       c: 20
     axis:
-      R_: [0,22]
-      p_: [0,101]
+      R_: [0,102]
+      p_: [0,110]
