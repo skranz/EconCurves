@@ -203,7 +203,30 @@ make.outer.sim.fun = function(em, inner.sim.fun= em$inner.sim.fun, parent.env=pa
   init.x = substitute(start.x <- runif(num.endo), list(num.endo=length(endo))) 
 
 
-    
+  has.lower = !sapply(ofo.df$lower, is.null)
+  if (all(has.lower)) {
+    lower.calls = lapply(ofo.df$lower, substitute.call, env=subst.li)
+    lower.calls = lapply(lower.calls,function(call) substitute((x)[1], list(x=call)))
+    names(lower.calls) = NULL
+    lower.c = as.call(c(list(as.symbol("c")),lower.calls))
+    lower.assign = substitute(lower <- rhs, list(rhs=lower.c))
+  } else {
+    lower.assign=quote(lower<-NULL)
+  }
+  
+  has.upper = !sapply(ofo.df$upper, is.null)
+  if (all(has.upper)) {
+    upper.calls = lapply(ofo.df$upper, substitute.call, env=subst.li)
+    upper.calls = lapply(upper.calls,function(call) substitute((x)[1], list(x=call)))
+    names(upper.calls) = NULL
+    upper.c = as.call(c(list(as.symbol("c")),upper.calls))
+    upper.assign = substitute(upper <- rhs, list(rhs=upper.c))
+  } else {
+    upper.assign=quote(upper<-NULL)
+  }
+
+  
+  
   fun.body = substitute({
     # init outer variables with their guess value
     init.x
@@ -228,15 +251,19 @@ make.outer.sim.fun = function(em, inner.sim.fun= em$inner.sim.fun, parent.env=pa
       vec <- criterion
       sum(vec^2)
     }
+    
+    lower.assign
+    upper.assign
+    
     # solve 
-    res = optims(par=start.x,fn=fn,T=T,ti=ti,par.mat=par.mat, init.var.mat=init.var.mat,inner.sim.fun=inner.sim.fun)
+    res = optims(par=start.x,fn=fn,T=T,ti=ti,par.mat=par.mat, init.var.mat=init.var.mat,inner.sim.fun=inner.sim.fun, lower=lower, upper=upper)
     if (!res$ok) warning("Outer search did not converge.")
     x = res$par
     
     insert.x
     var.mat = inner.sim.fun(T=T, par.mat=par.mat,var.mat=init.var.mat)
     var.mat
-  },list(criterion=criterion, insert.x=insert.x, init.x=init.x)
+  },list(criterion=criterion, insert.x=insert.x, init.x=init.x, lower.assign = lower.assign, upper.assign= upper.assign)
   )
   
   fun = function(T,par.mat, var.mat=NULL, var.names=NULL) {}
@@ -580,13 +607,25 @@ init.model.vars = function(em) {
 
 
 init.ofo.df = function(em) {
-  restore.point("init.outer.vars")
+  restore.point("init.ofo.df")
   ofo.df = NULL
   rows = which(is.true(em$ifo.df$outer))
   if (length(rows)>0) {
     iofo = em$ifo.df[rows,]
     iofo$ti = 2
     em$ifo.df = em$ifo.df[-rows,]
+    iofo$lower = lapply(em$vars[iofo$var], function(var) {
+      val = var$init$lower
+      if (is.null(val)) return(NULL)
+      parse.as.call(val)
+    })    
+    iofo$upper = lapply(em$vars[iofo$var], function(var) {
+      val = var$init$upper
+      if (is.null(val)) return(NULL)
+      parse.as.call(val)
+    })    
+  
+    
   } else {
     iofo = NULL
   }
@@ -595,6 +634,18 @@ init.ofo.df = function(em) {
     liofo = em$ifo.df[rows,]
     liofo$ti = 1
     em$lifo.df = em$lifo.df[-rows,]
+    
+    liofo$lower = lapply(em$vars[liofo$var], function(var) {
+      val = var$laginit$lower
+      if (is.null(val)) return(NULL)
+      parse.as.call(val)
+    })    
+    liofo$upper = lapply(em$vars[liofo$var], function(var) {
+      val = var$laginit$upper
+      if (is.null(val)) return(NULL)
+      parse.as.call(val)
+    })    
+
   } else {
     liofo = NULL
   }
