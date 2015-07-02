@@ -289,27 +289,3 @@ shiny.plot.lines = function(lines,app=getApp(), es=app$es, em=es$em,pane.names=n
   setText("plotCounter",sample(1:1000,1))
 }
 
-
-html.table = function(content, nrow=NULL,ncol=NULL) {
-  #content = 1:10; nrow=NULL; ncol=2
-  restore.point("html.table")
-  content = sapply(content, as.character)
-  n = length(content)
-  if (is.null(nrow) & is.null(ncol)) {
-    nrow=n
-    ncol=1
-  } else if (is.null(nrow)) {
-    nrow = ceiling(n/ncol)
-  } else if (is.null(ncol)) {
-    ncol = ceiling(n/nrow)
-  }
-  
-  txt = sapply(1:nrow, function(r) {
-    inds = seq.int(1+(r-1)*ncol,min(r*ncol,n))
-    rtxt = paste0("  <td>",content[inds],"</td>",collapse="\n")
-    rtxt = paste0("<tr>\n",rtxt,"\n<tr>")
-    rtxt
-  })
-  txt = paste0("<table>",paste0(txt,collapse="\n"),"</table>")
-  txt
-}

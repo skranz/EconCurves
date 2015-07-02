@@ -36,13 +36,30 @@ load.story = function(storyId, file=paste0(storyId,".yaml"), dir=get.ec()$storie
 
 init.story = function(es, em=NULL) {
   restore.point("init.story")
+  
+  if (is.null(em))
+    em = load.model(es$modelId)
+  es$em = em
+  init.model(em = es$em)
+  
+  if (is.null(es[["storyType"]])) es$storyType = "dynamics"
+  
+  if (es$storyType=="dynamics") {
+    init.dynry(es,em=em)
+  } else if (es$storyType=="scenarios") {
+    init.scenry(es,em=em)
+  } else {
+    stop(paste0("Unknown storyType ", es$storyType, " specified in story file." ))
+  }
+  
+}
+
+init.dynry = function(es) {
   es$t = es$step.num = 1
   es$wait.for.answer = FALSE
   es$tol = 0.07
     
   init.story.periods(es)
-  if (is.null(em))
-    em = load.model(es$modelId)
   
   init.model(em)
   if (is.null(es$scenario))
@@ -50,14 +67,14 @@ init.story = function(es, em=NULL) {
   
   if (!is.null(es$T)) {
     es$T = as.numeric(es$T)
-    es$scenario$T = es$T 
+    es$scenario$params$T = es$T 
   } else {
-    es$T = as.numeric(es$scenario$T)
+    es$T = as.numeric(es$scenario$params$T)
   }
   
   init.model.scen(em,scen = es$scenario)
   simulate.model(em)
-  es$em = em
+  
 }
 
 step.task.symbols = function(step) {

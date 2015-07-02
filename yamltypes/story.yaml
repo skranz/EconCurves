@@ -25,6 +25,9 @@ scenryPart:
         scens:
         params:
         plots:
+        statements:
+        quiz:
+        background:
 
 storyPeriods:
     fieldType: storyPeriod

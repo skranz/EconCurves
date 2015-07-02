@@ -94,8 +94,8 @@ params:
 
 scenarios:
   base:
-    T: 20
     params:
+      T: 20
       A: 15
       a: 2
       piT: 0

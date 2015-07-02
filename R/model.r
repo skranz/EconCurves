@@ -76,6 +76,7 @@ init.model = function(em,find.explicit=TRUE, solve.systems=TRUE,...) {
   if (find.explicit)
     solve.model.explicit(em,solve.systems=solve.systems,...)
   create.sim.fun(em)
+  em$initialized = TRUE
 }
 
 
@@ -128,7 +129,7 @@ init.model.params = function(em) {
 init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scenarios[[scen.name]]) {
   restore.point("init.model.scen")
   
-  scen$T = as.numeric(scen$T)
+  scen$params$T = as.numeric(scen$params$T)
   scen$init.par = lapply(scen$params, function(param) {
     attributes(param)=NULL
     if (is.character(param)) param = parse.as.call(param)
@@ -146,7 +147,7 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
   em$shocks = scen$shocks
   init.model.shocks(em)
   
-  em$T = scen$T
+  em$T = scen$params$T
 }
 
 

@@ -24,24 +24,3 @@ green.paradox = function() {
  
 }
 
-#' Simulate multiple scenarios
-#' 
-#' @param em the model
-#' @param scen.params A list with different parameters used in the different scenarios
-#' @param base.scen The basic scenario which specifies all the parameters that are not changed by scen.params
-#' @param repl the number of replications for each scenario
-#' @param lapply.fun the lapply function, may change e.g. to mcapply to simulate scenarioes parallely on a multicore.
-simulate.scenarios = function(em, scen.params, base.scen = em$scen, repl=1, lapply.fun = lapply) {
-  
-  li = lapply.fun(seq_along(scen.params), function(i) {
-    restore.point("simulate.scenarios.inner")
-    scen.name = names(scen.params)[i]
-    params = scen.params[[i]]
-    scen = base.scen
-    scen$params[names(params)] = params
-    sim = simulate.model(em, scen=scen, init.scen=TRUE)
-    data.table(.scen=scen.name,sim)
-   })
-  sim = as_data_frame(rbindlist(li))
-  sim
-}

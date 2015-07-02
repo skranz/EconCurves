@@ -43,7 +43,7 @@ examples.model.dependencies = function() {
   
   
   Rprof(tmp <- tempfile())
-  for (i in 1:3)
+  for (i in 1:100)
     sim = sim = simulate.model(em)
   Rprof()
   summaryRprof(tmp)
@@ -99,6 +99,10 @@ examples.model.dependencies = function() {
 
 simulate.model = function(em, scen.name = names(em$scenarios)[1], scen = em$scenarios[[scen.name]], init.scen=TRUE, compute.par=TRUE) {
   restore.point("simulate.model")
+  
+  if (!isTRUE(em$initialized)) 
+    init.model(em)
+  
   if (init.scen)
     init.model.scen(em,scen = scen)
   
