@@ -29,11 +29,16 @@ award:
   
 }
 
-parse.quiz.yaml = function(yaml, quiz.id=paste0("quiz_",sample.int(10e10,1))) {
+parse.quiz.yaml = function(yaml,quiz.id =paste0("quiz_",sample.int(10e10,1))) {
   restore.point("parse.quiz.yaml")
   library(YamlObjects)
-  qu = read.yaml(text=yaml)
-  
+  if (is.null(li)) {
+    qu = read.yaml(text=yaml)
+  }
+  init.quiz(qu, quiz.id)
+}
+
+init.quiz = function(qu, quiz.id=paste0("quiz_",sample.int(10e10,1))) {
   if (is.null(qu[["id"]])) {
     qu$id = quiz.id
   }
@@ -44,6 +49,7 @@ parse.quiz.yaml = function(yaml, quiz.id=paste0("quiz_",sample.int(10e10,1))) {
   qu$parts = lapply(seq_along(qu$parts), function(ind) init.quiz.part(qu$parts[[ind]],ind,qu))
   
   qu    
+  
 }
 
 init.quiz.part = function(part, part.ind=1, qu=NULL) {
@@ -74,78 +80,96 @@ init.quiz.part = function(part, part.ind=1, qu=NULL) {
     stop(paste0("The quiz with question ", part$question, " has neither defined the field 'answer' nor the field 'choices'."))
   } 
   
+  expl = part[["expl"]]
+  if (!is.null(expl))
+    expl = markdownToHTML(text=expl,encoding = "UTF-8", fragment.only=TRUE)
+  
   if (is.null(part$success)) {
-    part$success = "<p>correct</p>"
+    part$success = paste0("<p><b>Correct.</b>",expl,"</p>")
   } else {
     part$success =  markdownToHTML(text=part$success,encoding = "UTF-8", fragment.only=TRUE)
   }
   if (is.null(part$failure)) {
-    part$failure = "<p>not correct</p>"
+    part$failure = paste0("<p><b>Not correct.</b>",expl,"</p>")
   } else {
     part$failure =  markdownToHTML(text=part$failure,encoding = "UTF-8", fragment.only=TRUE)
   }
   
   
   part$id = paste0(qu$id,"__part", part.ind) 
-  part$answerId = paste0(part$id,"__answer")
+  part$inputId = paste0(part$id,"__answer")
   part$checkBtnId = paste0(part$id,"__checkBtn")
-  part$resultId = paste0(part$id,"__resultUI")
+  part$explId = paste0(part$id,"__explainUI")
   part$ui = quiz.part.ui(part)
-  
+
   
   part
 }
 
-quiz.ui = function(qu) {
-  pli = lapply(qu$parts, function(part) {
-    wellPanel(part$ui)
-  })
+quiz.ui = function(qu, in.well.panel=TRUE) {
+  
+  if (in.well.panel) {
+    pli = lapply(qu$parts, function(part) {
+      wellPanel(part$ui)
+    })
+  } else {
+    pli = lapply(qu$parts, function(part) {
+      part$ui
+    })
+  }
   pli
 }
 
 quiz.part.ui = function(part) {
   head = list(
-    HTML(paste0("<p>",part$question,"</p>"))
+    HTML(paste0("<hr>",part$question))
   )
   if (part$type=="numeric") {
-    answer = numericInput(part$answerId, label = "",value = NULL)  
+    answer = numericInput(part$inputId, label = "",value = NULL)  
   } else if (part$type =="text") {
-    answer = textInput(part$answerId, label = "",value = "")  
+    answer = textInput(part$inputId, label = "",value = "")  
   } else if (part$type=="mc") {
-    answer = checkboxGroupInput(part$answerId, "",part$choices)
+    answer = checkboxGroupInput(part$inputId, "",part$choices)
   } else if (part$type=="sc") {
-    answer = radioButtons(part$answerId, "",part$choices, selected=NA)
+    answer = radioButtons(part$inputId, "",part$choices, selected=NA)
   }
   
-  button = actionButton(part$checkBtnId,label = "check")
-  list(head,answer,button, uiOutput(part$resultId))
+  button = bsButton(part$checkBtnId,label = "check", size="small")
+  setUI(part$explId,NULL)
+  list(head,answer,button, uiOutput(part$explId))
+  
 }
 
-add.quiz.handlers = function(qu){
+add.quiz.handlers = function(qu, check.fun=NULL, set.ui=TRUE){
   restore.point("add.quiz.handlers")
   for (part in qu$parts) {
-    buttonHandler(part$checkBtnId,fun = click.check.quiz, part=part, qu=qu)
+    buttonHandler(part$checkBtnId,fun = click.check.quiz, part=part, qu=qu, check.fun=check.fun, set.ui=set.ui)
   }
 }
 
-click.check.quiz = function(app=getApp(), part, qu, ...) {
+click.check.quiz = function(app=getApp(), part, qu,check.fun=NULL, set.ui=TRUE, tol=1e-8, ...) {
+  answer = getInputValue(part$inputId)
   restore.point("click.check.quiz")
-  answer = getInputValue(part$answerId)
   
   if (part$type =="numeric") {
     answer = as.numeric(answer)
-    correct = is.true(abs(answer-part$answer)<part$roundto)
+    correct = is.true(abs(answer-part$answer)<=max(part$roundto,tol))
   } else {
     correct = setequal(answer,part$answer)
   }
-  if (correct) {
-    cat("Correct!")
-    setUI(part$resultId,HTML(part$success))
-  } else {
-    cat("Wrong")
-    setUI(part$resultId,HTML(part$failure))
-  }
   
+  if (set.ui) {
+    if (correct) {
+      cat("Correct!")
+      setUI(part$explId,HTML(part$success))
+    } else {
+      cat("Wrong")
+      setUI(part$explId,HTML(part$failure))
+    }
+  }
+  if (!is.null(check.fun)) {
+    check.fun(qu=part,answered=TRUE,correct=correct)
+  }
 }
 
 
@@ -177,12 +201,13 @@ statement.ui = function(st, check.fun=NULL, choices=c("true","false")) {
   
   input = radioButtons(st$inputId, label="", choices=ch, selected=FALSE, inline=TRUE)
   ui = list(
-    HTML(st$yn),
+    HTML(paste0("<hr>",st$yn)),
     input,
     bsButton(st$checkBtnId,label = "check",size = "extra-small"),
     uiOutput(st$explId)
   )
   buttonHandler(st$checkBtnId, check.statement.handler,st=st,check.fun=check.fun)
+  setUI(st$explId,NULL)
   ui
 }
 

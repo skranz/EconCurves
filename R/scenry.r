@@ -9,10 +9,11 @@ green.paradox = function() {
   sim$scenario = "baseline"
     
   es = load.story("GreenParadox_quiz")
+  
   #options(warn=3)
   sim = init.story(es)
-  
   app = shinyScenryApp(es = es)
+  
   runEventsApp(app,launch.browser = rstudio::viewer)
   
   sim = init.scenry.part(es,2)
@@ -72,7 +73,23 @@ init.scenry.part.questions = function(part) {
     st
   })
   
+  
+  
   ui.li = lapply(part$stas, function(st) st$ui)
+  
+  qu.ind.base = qu.ind.base + length(part$stas)+1
+  if (!is.null(part[["quiz"]])) {
+    part$quizes = lapply(seq_along(part$quiz), function(i) {
+      qu = part$quiz[[i]]
+      qu = init.quiz(qu, quiz.id = paste0("scenry_quiz__",i))
+      qu$ui = quiz.ui(qu,in.well.panel = FALSE)
+      add.quiz.handlers(qu=qu,check.fun = scenry.check.question,set.ui=FALSE)
+      qu
+    })
+    qu.ui.li = lapply(part$quizes, function(qu) qu$ui)  
+    ui.li = c(ui.li, qu.ui.li)
+  }
+
   names(ui.li) = NULL
   part$qu.ui = ui.li
   if (length(part$qu.ui)==0) part$qu.ui = NULL
@@ -183,7 +200,7 @@ shinyScenryApp = function(es,...) {
 
   appInitHandler(initHandler = function(app,...) {
     restore.point("app.initHandler")
-    app$es = es
+    app$es = as.environment(as.list(es))
   }, app=app)
   
   app$ui = ui
@@ -269,7 +286,9 @@ scenry.show.part = function(app=getApp(),es=app$es, part.num = es$part.num, init
   )
 
   if (length(part$background)>0) {
-    bg.ui = HTML(compile.part.txt(c(part$background), es=es,out = "html"))   
+    bg.ui = compile.part.txt(c(part$background), es=es,out = "html")
+    bg.ui = paste0("<h4>", part.num," ", part$title, "</h4>", bg.ui)
+    bg.ui = HTML(bg.ui)
   } else {
     bg.ui = NULL
   }
@@ -285,7 +304,9 @@ scenry.show.part = function(app=getApp(),es=app$es, part.num = es$part.num, init
   }
   tabs = c(tabs, list(
     tabPanel(title = "Baseline"),
-    tabPanel(title = "Model")    
+    tabPanel(title = "Model",
+      aceEditor("scenryModelYamlAce",value = es$em$yaml, mode="yaml")
+    )    
   ))
 
   tabset = do.call(tabsetPanel, tabs)
@@ -314,8 +335,17 @@ scenry.part.output.ui = function(app= getApp(),es=app$es, part.num = es$part.num
     plots = es$defaults$plots
   }
   ref = names(plots)
-  names(plots) = sc("scenryPlot_",seq_along(plots))
-
+  
+  rc = ref.to.rowcol(ref)
+  
+  col.share = round((rc$colspan / max(rc$end.col)*100))
+  
+  part$plotIds = sc("scenryPlot_",seq_along(plots),"__",col.share)
+  names(plots) = part$plotIds
+  
+#  names(plots) = sc("scenryPlot_",seq_along(plots))
+ 
+  
   if (length(plots)==0) {
     es$plots = NULL
     return(NULL)
@@ -332,10 +362,10 @@ scenry.part.output.ui = function(app= getApp(),es=app$es, part.num = es$part.num
   })
   es$plots = plots
   
-  rc = ref.to.rowcol(ref)
+
   
   li = lapply(seq_along(plots), function(i) {
-    plotId = paste0("scenryPlot_",i)
+    plotId = part$plotIds[[i]]
     clickId = paste0("scenryPlot_",i,"__click")
     #changeHandler(id=clickId, shiny.pane.click, pane.name=pane$name)
     plotOutput(outputId = plotId,click = clickId, width="100%",height="250px")
