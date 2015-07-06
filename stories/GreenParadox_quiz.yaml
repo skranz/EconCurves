@@ -1,4 +1,4 @@
-storyId: GreenParadoxScenry
+storyId: GreenParadoxQuiz
 modelId: GreenParadox
 
 storyType: scenarios
@@ -145,17 +145,15 @@ parts:
           ressources be extracted in each of the T periods?
           (You can try out changing the simulations.)
         answer: 0
-        explain: |
+        expl: |
           Only if the interest rate is 0, markups, prices and the
           amount of extracted ressources will stay constant in every
           period.
           
-          Note: If we would have an infinite horizon model (T=$\infty$),
-          the Hotelling model only yields sensible results if we
+          Note that if we have an infinite horizon model (T=$\infty$),
+          the Hotelling model only yields sensible results if we hae
           have a strictly positive interest rate.
-
-    
-  treaty1:
+  leakage1:
     title: 'Partial climate treaty and Carbon Leakage'  
     tell: |
       Let us now compare the effects of a partial climate treaty.
@@ -166,19 +164,49 @@ parts:
       treaty that restricts their use of fosil fuels to a level `start_q_tr`.
       For now, we assume that the treaty starts immediately.
       
+      Play around with the parameters `alpha` and `start_q_tr` to see how they affect 
+      the results.
+  
+    background: |
+      
       We see how the treaty reduces the total CO2 emmissions compared to the
       scenario without any treaty. However, part of the
       reduction in the treaty countries is offset by the increased emmissions in
       the non-treaty countries.
-      The reason is that the reduced demand from treaty
-      countries reduces the price for fosil fuels and thereby spurs the fosil fuel
-      usage in non-treaty countries. Furthermore if the emmission cap stays constant,
-      treaty countries may use more carbon in later years than without a treatment,
-      since prices stay at lower levels in all periods.
       
-      Play around with the parameters `alpha` and `start_q_tr` to see how they affect 
-      the results.
-  
+      This effect is often referred as "Carbon Leakage": The carbon emmissions that
+      are saved somewhere, sometime can leak out at some other place or time.
+      
+      The reason for Carbon leakage in our setting is that the reduced demand from treaty
+      countries reduces the price for fosil fuels and thereby spurs the fosil fuel
+      usage in non-treaty countries.
+      
+      Furthermore if the emmission cap stays constant,
+      treaty countries may use more carbon in later years than without a treatment.
+      That effect arises because producers have more ressources left in later years
+      and therefore sell them at lower prices in those later years.
+
+    quiz:
+      Q1:
+        question: |
+          If 50% of the world participates in a treaty that caps their CO2 emmissions
+          at 50% of their emmission in period t=1 without any treaty (business-as-usual),
+          by how much will the treaty reduce **world wide** CO2 emmission in t=1 compared to 
+          no treaty?
+        choices:
+          - By 50%
+          - By 25%
+          - By less than 25%*
+          - Between 25% and 50%
+          - By more than 50%
+        expl: |
+          If the non-treaty countries kept
+          their CO2 emmissions constant, the treaty would reduce world-wide
+          CO2 emmissions by 25%. However, the lower demand from treaty countries
+          will reduce prices for fossil fuels. Due to the lower prices, non-treaty
+          countries will consumer more fossil fuels and emmit more CO2 if the treaty
+          is in place. This "carbon leakage" causes total emmission to be reduced
+          by less than 25%.
     scens:
       no_treaty:
         params:
@@ -194,22 +222,60 @@ parts:
       3: plot_vs_timeline(., var="R", title="Extraction by Country")
       4: plot_vs_timeline(., var="cumR", title= "Cummulated Extraction by Country")
 
-  leakage:
+  leakage2:
     title: Carbon Leakage in Partial Climate Treaty
     tell: |
-      We now study carbon leakage in some more detail...
+      We now study more systematically how for a given climate treaty
+      that obliges member states to emmit at most `start_q_tr`,
+      the world wide CO2 emmissions vary as a function of the fraction
+      of the world that participates in the treaty.
+      
+      You can see from the plot that only with sufficiently large
+      participation there is a reduction of total CO2 emmissions.
 
     plots: 
-        1: scenPlot(.,x="alpha",y="R",t=1,title="Extraction in first period")
-        2: scenPlot(.,x="alpha",y="cumR",t=20, title="Total Extraction")
-        3: scenPlot(.,x="alpha",y="shareCumOut",t=20, title="Share total extraction outsiders")
+        1A: scenPlot(.,x="alpha",y="R",t=1,title="Extraction in first period")
+        1B: scenPlot(.,x="alpha",y="cumR",t=20, title="Total Extraction")
+        2: scenPlot(.,x="alpha",y="shareCumOut",t=20, title="Share total extraction outsiders")
     params:
       start_q_tr: 10
-      alpha: seq(0,1, by=0.1)
+      alpha: seq(0.01,0.99, by=0.1)
   greenParadox:
     tell: |
-      We see above that some carbon leakage takes place ...
-    
+      Before we looked at treaties that start immediately and have a constant
+      emmission level for all years.
+      
+      We now assume that a treaty starts in period `start_t` and that the
+      emmission cap shrinks by the percentage `shrink` each year.
+      
+      Somewhat paradoxically, such treaties that take time to be enforced
+      or who shrink the allowed emmissions over time,
+      can have the negative effect that
+      current CO2 emmissions increase due to the treaty. The reason is that
+      owners of fossil fuels ressources correctly predict that the the treaty
+      will reduce future profits from fossil fuel sales. This means keeping
+      fossil fuels in the earth is less attractive and owners have stronger
+      incentives to sell more fossil fuel today.
+      Hans-Werner Sinn calls this effect the "Green Paradoxon".
+      
+      Play around with the parameters of the treaty to see when and how strongly
+      the green paradoxon arises in our model.
+      The underlying model is still the simple
+      Hotelling Model augmented by the treaty.
+    scens:
+      no_treaty:
+        params:
+          alpha: 0
+      treaty:
+        params:
+          alpha: 0.75
+          start_q_tr: 10
+          start_t: 5
+          shrink: 0.05
+    plots:
+      1A: myplot(.,y="R",title="Extraction")
+      1B: myplot(.,y="cumR",title="Cummulated Extraction")
+      2: myplot(.,y="p", title="Fossil Fuel Prices")
 
 scens:
   no_treaty:
