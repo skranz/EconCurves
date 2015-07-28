@@ -1,17 +1,13 @@
 
-examples.shiny.story = function() {
+examples.shiny.dynry = function() {
+
 
   set.restore.point.options(display.restore.point = TRUE)
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
   es = load.story("ThreeEq_G_langfristig")
-  #es = load.story("ThreeEqFixedM_G_langfristig")
-  #es = load.story("IS_LM_PC_lag_G_kurzfristig")
-  #es = load.story("LeverageCycleBase")
-  es = load.story("Hotelling_story")
-
-  
+  es = load.story("IS_LM_PC_G_kurzfristig")
   init.story(es)
   es$t = 1
   app = shinyStoryApp(es)
@@ -45,7 +41,10 @@ shinyStoryApp = function(es,...) {
   app
 }
 
-story.ui = function(app=getApp(), es=app$es) {
+
+
+
+dynry.ui = function(app=getApp(), es=app$es) {
   restore.point("story.ui")
   ui = fluidRow(
     column(4,

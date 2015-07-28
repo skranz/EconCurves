@@ -1,0 +1,148 @@
+modelId: Capital3Eq
+
+info:
+  descr: |
+    A three equation model with endogenous capital formation
+
+curves:
+  wPS:
+    descr: The price-setting real wage equation
+    eq: w_ == (1/1+mu)* lambda*tau* K^kappa * L_^(lambda-1)
+    xy: [L_,w_]
+    color: blue 
+  wWS:
+    descr: The real wage-setting curve
+    eq: w_ == w_min + (L_ / L_max)*(w_max-w_min)
+#    eq: w_ == ws1 * L_
+    color: red
+    xy: [L_,w_]
+  WWS:
+    descr: The nominal wage-setting curve
+    eq: w_ == EP*(w_min + (L_ / L_max)*(w_max-w_min))
+    xy: [L_,w_]
+    color: orange 
+  
+
+panes:
+  labour_market:
+    pos: [1,1]
+    xy: [L_,w_]
+    curves: [wPS,wWS,WWS]
+    xmarkers: [L,L_eq,L_max]
+    ymarkers: [W,w,w_eq]
+
+#laginitMode: steady_state
+
+vars:
+# Determination of capital and investments
+  K:
+    descr: capital stock
+    formula: lag_K * (1-delta) + lag_I
+    init: K0
+    laginit: K0
+  I:
+    descr: |
+      Investments follow the rule of thumb that current
+      marginal cost of renting one extra unit of capital
+      will be equal to past marginal revenues from
+      that unit of capital. This formula simplifies
+      as below.
+    eq: lag_MPK == (delta+0.01*r) / (1+mu)
+    init: delta*K
+    laginit: delta*K
+  MPK:
+    descr: Marginal product of capital
+    formula: (kappa*y) / K
+    
+# Labor market if inflation expectiation were correct
+  L_eq:
+    descr: the equilibrium labor supply if inflation expectation are correct
+    xcut: [wPS, wWS]
+  w_eq:
+    descr: the real wage if inflation expectations are correct
+    ycut: [wPS, wWS]
+# Total demand, production and labor
+  y:
+    descr: the total demand for goods
+    formula: min(I + G + C, y_max)
+  yS:
+    descr: total output
+    formula: tau * K^(kappa) * L^(lambda)
+  y_max:
+    descr: total output
+    formula: tau * K^(kappa) * (L_max*0.95)^(lambda)
+  L:
+    descr: equilibrium labor supply
+    eq: y == yS
+  u:
+    descr: unemployment rate
+    formula: (L_max-L)/L_max
+  C:
+    descr: consumption
+    formula: C0+ MPC*(y - Tax)
+  S:
+    descr: savings
+    formula: y-C
+  Tax:
+    descr: the paid taxes
+    formula: tax_rate*y
+# nominal wages, prices and inflation
+  W:
+    descr: nominal wages
+    ycurve: [WWS]
+    x: L 
+  P:
+    descr: the new price level is a markup on nominal wages 
+    formula: (1+mu)*W
+    init: 1
+    laginit: 1
+  # adaptive expectations
+  Epi: 
+    descr: expected inflation, simply the past inflation rate
+    formula: 'lag_pi'
+    init: pi0
+    laginit: pi0
+  EP:
+    descr: the expected price level
+    formula: 'lag_P * (1+0.01*Epi)'
+    init: 1
+    laginit: 1
+  pi:
+    descr: the actual inflation rate
+    formula: (P-lag_P)/lag_P
+    init: pi0
+    laginit: pi0
+  r:
+    descr: the real interest rate
+    formula: i-Epi
+
+scenarios:
+  base:
+    params:
+      T: 10
+      tax_rate: 0.2
+      i: 5
+      mu: 0.1
+      delta: 0.1
+      tau: 1
+      pi0: 2
+      C0: 20
+      G: 30
+      MPC: 0.8
+      w_min: 0
+      w_max: 100
+      kappa: 1
+      lambda: 1
+      K0: 100
+      L_max: 100
+    axis:
+      y_: [0,20]
+      r_: [0,10]
+      pi_: [-5,10]
+    shocks:
+#      A_dec:
+#        descr: Demand decreases
+#        effects:
+#          C0: 'C0*0.5'
+#        start: 5
+#        duration: 100

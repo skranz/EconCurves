@@ -1,4 +1,16 @@
 examples.impl_cond = function() {
+  env = sim
+  inspect.condition(env=sim, only.show = function(val) !all(is.true(val)),
+    (all(R >= 0)) &
+    (all(p >= c)) &
+    all(R == alpha*intreaty*(pmin(q_tr,100-p))+(1-alpha*intreaty)*(100-p)) &
+    (
+      (sum(R) == first(Smax)) | 
+      ((sum(R)<= first(Smax)) & first(m==0)) |
+      (first(alpha)==1 & all(R == q_tr | m==0))
+    )
+  )
+  
   cond = quote(sum(R)<= Smax)
   
   cond = quote((sum(R) == Smax) | ((sum(R) <= Smax) & all(m==0))) 
@@ -13,13 +25,15 @@ examples.impl_cond = function() {
   )
   adapt.to.implicit.eq(cond)
   
-  pmax(
-    max(abs(max(0 - (R), 0))),
-    pmin(
-      abs(sum(R) - (first(Smax))), 
-      pmax(
-        max(sum(R) - (first(Smax)), 0),
-        max(abs(abs(m - (0))))
+  quote(
+    pmax(
+      max(abs(max(0 - (R), 0))),
+      pmin(
+        abs(sum(R) - (first(Smax))), 
+        pmax(
+          max(sum(R) - (first(Smax)), 0),
+          max(abs(abs(m - (0))))
+        )
       )
     )
   )
@@ -30,6 +44,22 @@ examples.impl_cond = function() {
     
   cond = quote(1+2+(1+3*x))
   pryr:::call_tree(cond)
+}
+
+simple.constr.to.implicit = function(x) {
+  restore.point("simple.constr.to.implicit")
+  
+  funs = find.funs(x)
+  if (is.symbol(x)) return(x)
+  name = as.character(x[[1]])
+  if (name=="==") {
+    x = substitute(lhs-(rhs),list(lhs=x[[2]],rhs=x[[3]]))
+  } else if (name=="<=") {
+    x = substitute(rhs-(lhs),list(lhs=x[[2]],rhs=x[[3]]))
+  } else if (name==">=") {
+    x = substitute(lhs-(rhs),list(lhs=x[[2]],rhs=x[[3]]))
+  }
+  x
 }
 
 # transform equality or inequality, possibly with logical operators
@@ -50,7 +80,7 @@ adapt.to.implicit.eq = function(x,nested=TRUE, squared=TRUE) {
     } else if (name == "all" | name == "any") { 
       inner = x[[2]]
       if (nested)
-        inner = adapt.to.implicit.eq(inner, nested=TRUE)
+        inner = adapt.to.implicit.eq(inner, nested=TRUE, squared=squared)
       
       if (name=="all") {
         x = substitute(max((inner)^2),list(inner=inner))
@@ -62,8 +92,8 @@ adapt.to.implicit.eq = function(x,nested=TRUE, squared=TRUE) {
       rhs = x[[3]]
       
       if (nested) {
-        lhs = adapt.to.implicit.eq(lhs, nested=TRUE)
-        rhs = adapt.to.implicit.eq(rhs, nested=TRUE)
+        lhs = adapt.to.implicit.eq(lhs, nested=TRUE, squared=squared)
+        rhs = adapt.to.implicit.eq(rhs, nested=TRUE, squared=squared)
       }
       if (name=="|" | name=="||") {
         x = substitute(pmin(lhs,rhs),list(lhs=lhs,rhs=rhs))
@@ -71,7 +101,7 @@ adapt.to.implicit.eq = function(x,nested=TRUE, squared=TRUE) {
         x = substitute(pmax(lhs,rhs),list(lhs=lhs,rhs=rhs))
       }
     } else if (name=="(" | nested) {
-      x = adapt.to.implicit.eq(x[[2]], nested=nested)
+      x = adapt.to.implicit.eq(x[[2]], nested=nested, squared=squared)
       #x=substitute((inner), list(inner=inner))
     }
     
@@ -85,7 +115,7 @@ adapt.to.implicit.eq = function(x,nested=TRUE, squared=TRUE) {
     } else if (name == "all" | name == "any") { 
       inner = x[[2]]
       if (nested)
-        inner = adapt.to.implicit.eq(inner, nested=TRUE)
+        inner = adapt.to.implicit.eq(inner, nested=TRUE, squared=squared)
       
       if (name=="all") {
         x = substitute(max(abs(inner)),list(inner=inner))
@@ -97,8 +127,8 @@ adapt.to.implicit.eq = function(x,nested=TRUE, squared=TRUE) {
       rhs = x[[3]]
       
       if (nested) {
-        lhs = adapt.to.implicit.eq(lhs, nested=TRUE)
-        rhs = adapt.to.implicit.eq(rhs, nested=TRUE)
+        lhs = adapt.to.implicit.eq(lhs, nested=TRUE, squared=squared)
+        rhs = adapt.to.implicit.eq(rhs, nested=TRUE, squared=squared)
       }
       if (name=="|" | name=="||") {
         x = substitute(pmin(lhs,rhs),list(lhs=lhs,rhs=rhs))
@@ -106,7 +136,7 @@ adapt.to.implicit.eq = function(x,nested=TRUE, squared=TRUE) {
         x = substitute(pmax(lhs,rhs),list(lhs=lhs,rhs=rhs))
       }
     } else if (name=="(" | nested) {
-      x = adapt.to.implicit.eq(x[[2]], nested=nested)
+      x = adapt.to.implicit.eq(x[[2]], nested=nested, squared=squared)
       #x=substitute((inner), list(inner=inner))
     }
     
@@ -146,4 +176,29 @@ change.nested.call <- function(x, adapt.atomic=NULL, adapt.name=NULL, adapt.call
     stop("Don't know how to handle type ", typeof(x), 
       call. = FALSE)
   }
+}
+
+
+inspect.condition = function(cond, env = parent.frame(), quoted=FALSE,tab.size=2, only.show=NULL) {
+  if (!quoted) cond= substitute(cond)
+  restore.point("inspect.condition")
+  
+  inner.inspect.cond = function(cond, env, level=0) {
+    str = deparse1(cond)
+    val = eval(cond, env)
+    if (!is.null(only.show)) {
+      show = all(is.true(only.show(val)))
+    } else {
+      show = TRUE
+    }
+    if (show) {
+      spaces = paste0(rep(" ", tab.size*level),collapse="")
+      cat(paste0("\n",level,":",spaces, str,": ", paste0(val, collapse=",")))
+    }
+    if (length(cond)>1) {
+      for (i in 2:length(cond)) 
+        inner.inspect.cond(cond[[i]],env=env, level=level+1)
+    }  
+  }
+  inner.inspect.cond(cond, env, level=0)
 }

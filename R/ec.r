@@ -1,5 +1,19 @@
 ec = new.env()
 
+# check the package for bugs
+check.econ.curves = function() {
+  txt = NULL
+  codetools::checkUsagePackage("EconCurves",
+    report = function(str)  txt <<- c(txt,str),
+    suppressLocalUnused = TRUE  
+  ) 
+  txt
+  rows = str.starts.with(txt,"examples.")
+  rows = rows | has.substr(txt,"no visible global function definition")
+  txt = txt[!rows]
+  cat(paste0(1:NROW(txt),": ", txt, collapse="\n"))
+  invisible(txt)
+}
 
 init.ec = function(path=getwd(),
     models.path = paste0(path,"/models"),

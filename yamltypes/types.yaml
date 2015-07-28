@@ -10,6 +10,8 @@ model:
         params:
             type: modelParams
         vars:
+        program:
+            type: modelProgram
         extraVars:
         scenarios:
         latex:
@@ -19,6 +21,24 @@ model:
             type: string
     otherFields: FALSE
     typeByFieldName: TRUE
+
+modelProgram:
+    fields:
+        descr:
+        minimize:
+        maximize:
+        constraints:
+            type: constraints
+    otherFields: FALSE
+
+constraints:
+    fieldType: constraint
+
+constraint:
+    fields:
+        descr:
+        formula:
+
 
 modelInfo:
     fields:
@@ -82,6 +102,10 @@ var:
         ycurve:
         x:
         y:
+        outer:
+        lower:
+        upper:
+        start:
         laginit:
             type: varInit
         init:
@@ -98,6 +122,9 @@ varInit:
         y:
         eq:
         outer:
+        lower:
+        upper:
+        start:
         periods:
         guess:
     defaultField: formula

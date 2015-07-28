@@ -12,18 +12,9 @@ example.plot.pane = function() {
   sim = em$sim
 
   
-  make.periods = function(t) {
-    if(t==1) return(1)
-    return(c(t-1,t))
-  }
-  t = 2
   IS = em$panes[[1]]
   MR_PC = em$panes[[2]]
   
-  par(mfrow=c(1,2))
-  plot.pane(em=em,pane=IS, periods=make.periods(t),show.grid=FALSE)
-  plot.pane(em=em,pane=MR_PC, periods=make.periods(t),show.grid=FALSE)
- 
 }
 
 draw.line = function(line,lwd.factor=1,...) {

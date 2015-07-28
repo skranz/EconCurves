@@ -288,7 +288,7 @@ example.flatten.term = function() {
 
 flatten.to = function(call, from="+", to="fplus", nested=TRUE) {
   if (length(call)<=1) return(call)
-  if (term[[1]]==from) {
+  if (call[[1]]==from) {
     li = flatten.term(call, op=from)
     return(as.call(c(list(as.symbol(to)),li)))
   }

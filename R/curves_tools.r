@@ -63,7 +63,7 @@ curve.x.value = function(cu, y) {
 
 #' Get the y-value of an curve
 curve.y.value = function(xy, x) {
-  approx(x=cu$xy$x,y=cu$xy$y, xout=x, method="linear")$y
+  approx(x=xy$x,y=xy$y, xout=x, method="linear")$y
 }
 
 #' Find the intersections of two curves on a pane

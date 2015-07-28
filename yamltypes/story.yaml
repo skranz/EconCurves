@@ -1,5 +1,7 @@
 story:
     fields:
+        author:
+        license:
         modelId: 
         storyId:
         storyType:

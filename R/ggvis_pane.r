@@ -41,26 +41,16 @@ ggvis.plot.pane <- function(em,periods=1, pane=em$panes[[1]], lwd=3, opacity=1,g
     cu.df
   })
   cu.df = bind_rows(cu.li)
-    
-  
-  
-  
-  
+
   library(ggvis)
   if (is.null(gg)) {
-    gg = ggvis(data = cu.df,x=~x, y=~y,stroke:=~color, strokeWidth := lwd,opacity:=0.9, fill = ~t) %>%
-#    scale_numeric("x", domain = xrange) %>%
-#    scale_numeric("y", domain = yrange) %>%
+    gg = ggvis(data = cu.df,x=~x, y=~y,stroke := ~color, strokeWidth := lwd,opacity:=0.9, fill = ~t) %>%
      add_axis("x", title = pane$xvar) %>% 
      add_axis("y", title = pane$yvar) %>%
      layer_lines()
   } else {
     gg = gg %>% 
        layer_lines(data = cu.df)
-#        layer_points(data = cu.df,x=~x, y=~y, 
-#          stroke=~curve, fill=~curve, strokeWidth := lwd,
-#          opacity:=opacity
-#         )
   }
   
   gg 

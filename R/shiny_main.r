@@ -1,15 +1,32 @@
 
 examples.shiny.stories = function() {
   library(EconCurves)
-  
   set.restore.point.options(display.restore.point = TRUE)
+
+  add.restore.point.test(scenario.test = function(env,name,...) {
+    if (exists("em",env,inherits = FALSE)) {
+      if (is.null(env$em) & name!="init.story") {
+        stop("em is null")
+      }
+      #if (!is.null(env$em$T) & length(env$em$T)==0) {
+      #  stop("length(em$T) ==0")
+      #}
+      
+    }
+  })
+
   setwd("D:/libraries/EconCurves/EconCurves")
   #setwd("~/libraries/EconCurves")
   init.ec()
   ec = get.ec()
   load.collection("makro.yaml")
+  load.collection("hotelling.yaml")
 
   app = shinyStoriesApp(ec = ec)
+  
+  
+  #coll.run.story.btn(storyId = "GreenParadoxQuiz")
+  
   runEventsApp(app,launch.browser = rstudio::viewer)
   runEventsApp(app,launch.browser = TRUE)
 
@@ -130,17 +147,18 @@ stories.choose.ui = function(app=getApp(), ec=app$ec,...) {
 
 coll.run.story.btn = function(app=getApp(), ec=app$ec, storyId,...) {
   restore.point("coll.run.story.btn")
-  es = as.environment(as.list(ec$stories[[storyId]]))
-  app$es = es
-  modelId = es$modelId
+  app=getApp()
+  app$es = as.environment(as.list(ec$stories[[storyId]]))
+  modelId = app$es$modelId
 
-  em = as.environment(as.list(ec$models[[modelId]]))  
-  app$em = em
-  init.story(es, em=em)
-  ui = story.ui(es=es)
+  app$em = as.environment(as.list(ec$models[[modelId]]))  
+  app$es$em = app$em
+
+  init.story(es = app$es, em=app$em)
+  ui = story.ui(es=app$es)
 
   setUI("storiesBaseUI",ui)
-  shiny.tell.step.task()
+  run.story(app$es)
 
 }
 

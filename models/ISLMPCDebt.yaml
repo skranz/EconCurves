@@ -1,0 +1,134 @@
+modelId: ThreeEqDebt
+
+info:
+  descr: |
+    Three equation macro model with endogenous fiscal policy
+    and debt limit.
+
+curves:
+  IS0: 
+    eq: 'y_  == mult*(C0 + I0 + G0 - a*r_)'
+    xy: [y_,r_]
+    color: purple 
+  IS: 
+    eq: 'y_  == mult*(C0 + I0 + G0 + Gadd - a*r_)'
+    xy: [y_,r_]
+    color: red
+  LM:
+    eq: 'r_  == pmax(-Epi, -M/P+b*y_)'
+    xy: [y_,r_]
+    color: green
+  PC:
+    eq: 'pi_ == Epi +alpha*(y_-y_eq)'
+    xy: [y_,pi_]
+    color: blue
+
+panes:
+  IS_LM:
+    pos: [1,1]
+    xy: [y_,r_]
+    curves: [IS,LM]
+    xmarkers: [y_eq,y,y_mr]
+    ymarkers: [r]
+  PC:
+    pos: [1,2]
+    xy: [y_,pi_]
+    curves: [PC]
+    xmarkers: [y_eq,y]
+    ymarkers: [pi,Epi,piT]
+
+laginitMode: steady_state
+
+vars:
+  mult:
+    descr: Keynesian consumption multiplicator
+    formula: '1 / (1-MPC*(1-tax_rate))'
+  Gadd:
+    
+  G:
+    formula: G + Gadd
+  Gdebt:
+    formula: (1+i)*lag_Gdebt + (G - Tax)
+    init: init_debt
+    laginit: 0
+  y: 
+    xcurve: IS
+    y: 'lag_r'
+    laginit: y_eq
+  # adaptive expectations
+  Epi: 'lag_pi'
+  pi:
+    ycurve: PC
+    x: y
+    laginit: piT
+  rcut:
+    descr: real interest rate if we ignore zero bound on nominal interest rate
+    ycut: [IS,LM]
+  r:
+    descr: real interest rate that accounts for zero bound on nominal interest rate
+    formula: max(rcut,-Epi)
+  i:
+    descr: nominal interest rate
+    formula: 'r + Epi'
+  Tax:
+    formula: tax_rate * y
+
+program:
+  minimize:
+    descr: |
+      Government minimizes  discounted sum of 
+      squared deviation of output y[t] 
+      from a goal output y_goal
+    formula: sum( delta_gov^t * pmax(y_goal-y,0)^2)
+  constraints:
+    debtCeiling:
+      formula: debt <= max_debt
+    
+    
+# Params will be computed ex-ante for all T
+# they may be modified by shocks
+# Formulas either return a single value or a
+# vector of length T
+params:
+  A: 'Constant of the IS Curve'
+  a: 'Absolute slope of the IS Curve'
+  piT: 'Inflation target of the central bank'
+  alpha: >
+    Slope of Phillips Curve: 
+    measures how strongly output deviations from
+    y_eq affect inflation rate.
+  beta: Central banks weight on inflation target (weight on output gap is normalized to 1)
+  y_eq: >
+    Equilibrium output at which the inflation rate remains constant
+  eps:
+    descr: random output schocks. Not yet used
+    formula: 'rnorm(T+2,0, sigma.eps)'
+  sigma.eps:
+    formula: 1
+
+scenarios:
+  base:
+    params:
+      T: 5
+#      A: 10
+      A: 15
+      a: 2
+      piT: 0
+      alpha: 1
+      beta: 1
+      y_eq: 10
+      y_goal: 12
+      delta_gov: 0.8
+      init_debt: 0
+      max_debt: 0
+    axis:
+      y_: [0,20]
+      r_: [0,10]
+      pi_: [-5,10]
+    shocks:
+#      A_dec:
+#        descr: Demand decreases
+#        effects:
+#          A: 'A*0.85'
+#        start: 20
+#        duration: 100

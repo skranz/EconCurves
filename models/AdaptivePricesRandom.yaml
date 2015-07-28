@@ -1,7 +1,10 @@
-modelId: LeverageCycle
+modelId: AdaptivePrices
 
 info:
-  descr: Trying to find a simple model of a leverage cycle
+  descr: |
+    Try to better understand the effects 
+    of adaptive price setting on 
+    volatility.
   
 vars:
   dp:
@@ -9,7 +12,9 @@ vars:
     formula: 'p - lag_p'
     laginit: '0'
   p_adapt:
-    descr: Purely adaptive component of price with no link to fundamentals
+    descr: |
+      Purely adaptive component of price with no link to fundamentals
+      Simply extrapolate old price level
     formula: 'lag_p + lag_dp'
   dp_fund:
     descr: Change in fundamental value (we can have autocorrelation)
@@ -45,6 +50,15 @@ panes:
     xmarkers: [alpha]
     ymarkers: [p,p_fund,p_adapt]
 
+# Params will be computed ex-ante for all T
+# they may be modified by shocks
+# Formulas either return a single value or a
+# vector of length T
+params:
+  eps_mean: 0
+  eps_sigma: 5
+  eps_fund:
+    formula: 'rnorm(1,eps_mean,eps_sigma)'
 
 scenarios:
   base:

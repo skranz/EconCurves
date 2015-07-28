@@ -27,14 +27,13 @@ award:
   
   runEventsApp(app, launch.browser=rstudio::viewer)
   
+  
 }
 
 parse.quiz.yaml = function(yaml,quiz.id =paste0("quiz_",sample.int(10e10,1))) {
   restore.point("parse.quiz.yaml")
   library(YamlObjects)
-  if (is.null(li)) {
-    qu = read.yaml(text=yaml)
-  }
+  qu = read.yaml(text=yaml)
   init.quiz(qu, quiz.id)
 }
 

@@ -1,11 +1,17 @@
-modelId: ThreeEq
+modelId: ThreeEqDebt
 
 info:
-  descr: Basic three-equation macro model
+  descr: |
+    Three equation macro model with endogenous fiscal policy
+    and debt limit.
 
 curves:
+  IS0: 
+    eq: 'y_  == mult*(C0 + I0 + G0 - a*r_)'
+    xy: [y_,r_]
+    color: purple 
   IS: 
-    eq: 'y_  == A - a*r_'
+    eq: 'y_  == mult*(C0 + I0 + G0 + Gadd - a*r_)'
     xy: [y_,r_]
     color: red 
   PC:
@@ -39,6 +45,15 @@ panes:
 laginitMode: steady_state
 
 vars:
+  mult:
+    descr: Keynesian consumption multiplicator
+    formula: '1 / (1-MPC*(1-tax))' 
+  G:
+    formula: G + Gadd
+  Gdebt:
+    formula: (1+i)*lag_debt + G - tax
+    init: init_debt
+    laginit: 0
   y: 
     xcurve: IS
     y: 'lag_r'
@@ -51,26 +66,38 @@ vars:
     x: y
     laginit: piT
   pi_mr:
-    ycut: [next_PC,MR]
+    ycut: [MR,next_PC]
     laginit: piT
   y_mr:
-    xcut: [next_PC,MR]
+    xcut: [MR,next_PC]
     laginit: y_eq
   rcut:
     ycurve: IS
     x: y_mr
   r:
-    formula: pmax(rcut,-Epi)
+    formula: max(rcut,-Epi)
   i:
     descr: nominal interest rate
-    formula: 'r + Epi' 
-latex:
-  Epi: 'E\pi'
-  pi: '\pi'
-  y_mr: 'y_{mr}'
-
-
-
+    formula: 'r + Epi'
+  tax:
+    formula: 0 * y
+  G:
+    descr: goverment spending, will be solved in optimization problem
+    outer: TRUE
+    start: 0
+    laginit: 0
+program:
+  minimize:
+    descr: |
+      Government minimizes  discounted sum of 
+      squared deviation of output y[t] 
+      from a goal output y_goal
+    formula: sum( delta_gov^t * pmax(y_goal-y,0)^2)
+  constraints:
+    debtCeiling:
+      formula: debt <= max_debt
+    
+    
 # Params will be computed ex-ante for all T
 # they may be modified by shocks
 # Formulas either return a single value or a
@@ -95,21 +122,26 @@ params:
 scenarios:
   base:
     params:
-      T: 20
+      T: 5
+#      A: 10
       A: 15
       a: 2
       piT: 0
       alpha: 1
       beta: 1
       y_eq: 10
+      y_goal: 12
+      delta_gov: 0.8
+      init_debt: 0
+      max_debt: 0
     axis:
       y_: [0,20]
       r_: [0,10]
       pi_: [-5,10]
     shocks:
-      G_dec:
-        descr: Government spending decreases
-        effects:
-          A: 'A*0.85'
-        start: 2
-        duration: 100
+#      A_dec:
+#        descr: Demand decreases
+#        effects:
+#          A: 'A*0.85'
+#        start: 20
+#        duration: 100

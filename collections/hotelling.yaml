@@ -1,0 +1,20 @@
+title: Hotelling Model and the Green Paradox
+
+stories:
+  GreenParadoxQuiz:
+
+
+descr: |
+  Author: [Sebastian Kranz, Ulm University](https://www.uni-ulm.de/mawi/mawi-wiwi/mitarbeiter/skranz.html)
+  
+  Pick an economic illustration below and press run.
+  
+footnotes:
+  Anmerkungen:
+    title: Remarks
+    descr: >
+    	So far no attempt at all is made to calibrate the
+    	simple model to any data. The simulations shall
+    	just illustrate some effect if we take the dynamic
+    	optimization considerations of suppliers of 
+    	fossil fuels into account.

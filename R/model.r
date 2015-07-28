@@ -8,6 +8,7 @@ examples.model = function() {
   em = load.model("IS_LM_PC")
   em = load.model("AdaptivePricesRandom")
   em = load.model("GreenParadox")
+  em = load.model("HongStein")
   
   init.model(em)
   init.model.scen(em)
@@ -15,8 +16,8 @@ examples.model = function() {
 
   c(sd(sim$p),sd(sim$p_adapt),sd(sim$p_fund))
   
-  library(moments)
-  c(kurtosis(sim$p),kurtosis(sim$p_adapt),kurtosis(sim$p_fund))
+  #library(moments)
+  #c(kurtosis(sim$p),kurtosis(sim$p_adapt),kurtosis(sim$p_fund))
   
   sim = em$sim
   dyplot.timelines(em$sim,cols = c(em$var.names, names(em$randomVars)),em = em)
@@ -67,16 +68,21 @@ make.shocks.table = function(shocks) {
   as_data_frame(dt)  
 }
 
-init.model = function(em,find.explicit=TRUE, solve.systems=TRUE,...) {
+init.model = function(em,find.explicit=TRUE, solve.systems=TRUE,skip.if.initialized=TRUE,...) {
+  restore.point("init.model")
+  if (skip.if.initialized & is.true(em$initialized))
+    return(invisible())
   init.model.params(em)
   init.model.curves(em)
+  #em$curves[[1]]$name
   init.model.panes(em)
   init.model.vars(em)
   #init.model.randomVars(em)
   if (find.explicit)
-    solve.model.explicit(em,solve.systems=solve.systems,...)
+    solve.model.explicit(em,solve.systems=solve.systems)
   create.sim.fun(em)
   em$initialized = TRUE
+  invisible(em)
 }
 
 
@@ -130,6 +136,8 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
   restore.point("init.model.scen")
   
   scen$params$T = as.numeric(scen$params$T)
+  em$T = scen$params$T
+  
   scen$init.par = lapply(scen$params, function(param) {
     attributes(param)=NULL
     if (is.character(param)) param = parse.as.call(param)
@@ -147,7 +155,7 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
   em$shocks = scen$shocks
   init.model.shocks(em)
   
-  em$T = scen$params$T
+
 }
 
 
@@ -208,10 +216,11 @@ find.model.par = function(em, find.par=NULL, extra.lhs=NULL, scen=NULL) {
 
 init.model.curves = function(em) {
   restore.point("init.model.curves")
-  
   curve = em$curves[[1]]
   em$curves = lapply(em$curves, function(curve) {
-    curve$name = get.name(curve)
+    restore.point("kdfgnjdgkj")
+    if (is.null(curve$name))
+      curve$name = get.name(curve)
     curve$eq_ = parse.as.call(text=curve$eq)
     curve$impl_ = substitute(lhs-(rhs),list(lhs=get.lhs(curve$eq_),rhs=get.rhs(curve$eq_)))
     
@@ -222,6 +231,8 @@ init.model.curves = function(em) {
     
     c(curve, res)
   })
+  restore.point("init.model.curves.end")
+
   invisible(em$curves)
 }
 

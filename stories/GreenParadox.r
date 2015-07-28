@@ -8,7 +8,6 @@ myplot = function(sim, x="t",y="R", color="scenario",fill=color, alpha=0.7, size
     p = p + ggtitle(title)
   p
 }
-colnames(sim)
 
 compute.extra = function(sim,...) {
   library(tidyr)

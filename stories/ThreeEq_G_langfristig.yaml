@@ -49,22 +49,31 @@ descr: |
   
 
 
-scenarioId: base
+scenario:
+  params:
+    T: 10
+    A: 15
+    a: 2
+    piT: 0
+    alpha: 1
+    beta: 1
+    y_eq: 10
+  axis:
+    y_: [0,20]
+    r_: [0,10]
+    pi_: [-5,10]
+  shocks:
+    G_inc:
+      effects:
+        A: 'A*1.3'
+      start: 2
+      duration: 100
 
-timelineVars: [y_,r_,pi_]
+timelineVars: [y,r,pi]
 
 fixed: [MR,y_eq,piT]
 
 lang: de
-
-T: 10
-
-shocks:
-  G_inc:
-    effects:
-      A: 'A*1.3'
-    start: 2
-    duration: 100
 
 periods:
   1:
@@ -76,12 +85,12 @@ periods:
           und die gesamtwirtschaftliche Nachfrage y1 liegt genau auf dem
           Gleichgewichtsniveau von y_eq={{y_eq}},
           bei dem die Inflationsrate konstant bleibt.
-        show: [IS,MR,PC,r_, piT,y_,pi_]
+        show: [IS,MR,PC,r, piT,y,pi]
   2:
 #    shocks: G_inc
     steps:
       step_IS:
-        lagshow: [IS,y_,MR,PC,piT,r_]
+        lagshow: [IS,y,MR,PC,piT,r]
         tell: >
           In Periode 2 entscheidet sich die Regierung,
           unerwarteterweise, die Staatsausgaben langfristig auf ein
@@ -105,10 +114,10 @@ periods:
           (Clicken Sie in die Abbildung)
         task:
           pane: [IS_]
-          find: y_ 
+          find: y 
         success: >
-          Richtig, das neue BIP, y2={{y_}}, befindet sich auf dem Schnittpunkt
-          zwischen dem vorherigem Zinssatz, r1={{r_}}, und der neuen IS
+          Richtig, das neue BIP, y2={{y}}, befindet sich auf dem Schnittpunkt
+          zwischen dem vorherigem Zinssatz, r1={{r}}, und der neuen IS
           Kurve.
       step_PC_MR:
         laghide: [MR,PC,piT]
@@ -138,12 +147,12 @@ periods:
           Bestimmen Sie die resultierende Inflationsrate in Periode 2.
         task:
           pane: [PC_MR]
-          find: pi_
+          find: pi
         success: >
-          Richtig. Sie finden die neue Inflationsrate von pi{{t}}={{pi_}}%
+          Richtig. Sie finden die neue Inflationsrate von pi{{t}}={{pi}}%
           als vertikalen Wert
           der Phillipskurve (PC{{t}}) an der Stelle des neuen BIP,
-          y{{t}}={{y_}}.
+          y{{t}}={{y}}.
           
           Aufgrund der unerwarteten Staatsausgabenerhöhung
           liegt also die tatsächliche Inflationsrate
@@ -181,7 +190,7 @@ periods:
           einfach die Inflation der vorherigen Periode ist.
           (Adaptive Erwartungen).
           Das heißt, die Inflationserwartung Epi3 in Periode 3 ist
-          die aktuelle Inflationsrate pi2={{pi_}}% und liegt somit
+          die aktuelle Inflationsrate pi2={{pi}}% und liegt somit
           über der aktuellen Inflationserwartung von
           Epi2={{Epi}}%.
       step_next_PC:
@@ -246,20 +255,20 @@ periods:
           und BIP zu implementieren.
         task:
           pane: [IS_]
-          find: [r_]
+          find: [r]
         success: >
-          Richtig. Wir finden den realen Zinssatz von r2={{r_}}%, den die
+          Richtig. Wir finden den realen Zinssatz von r2={{r}}%, den die
           Zentralbank anstrebt, am Schnittpunkt des angestrebten
           BIP y_mr2={{y_mr}} mit der IS2-Kurve.
   3:
     steps:
       step_start_IS:
-        lagshow: [r_,y_]
-        show: [IS,y_]
+        lagshow: [r,y]
+        show: [IS,y]
         tell: >
           In Periode 3 führt der höhere Zinssatz
           zu einer Reduktion des BIP 
-          von y2={{lag_y_}} auf y3={{y_}}.
+          von y2={{lag_y}} auf y3={{y}}.
           Wir haben eine deutliche Konjunkturdelle.
           
           
@@ -281,7 +290,7 @@ periods:
           
       step_start_PC:
         lagshow: 
-        show: [PC,MR,next_PC,r_,piT,pi]
+        show: [PC,MR,next_PC,r,piT,pi]
         tell: >
           Die hohen Zinsen haben es geschafft die Inflationserwartungen
           im Vergleich zur Vorperiode etwas zu reduzieren.
@@ -309,8 +318,8 @@ periods:
           von pi={{piT}}% und y={{y_eq}}.
         
   
-          Die aktuelle Inflation sinkt von {{lag_pi_}}% auf
-          {{pi_}}% und das BIP steigt von {{lag_y_}} auf {{y_}}.
+          Die aktuelle Inflation sinkt von {{lag_pi}}% auf
+          {{pi}}% und das BIP steigt von {{lag_y}} auf {{y}}.
   
-        lagshow: [IS,y_,r_]
-        show: [IS,PC,MR,next_PC,y_,r_,piT,pi_]
+        lagshow: [IS,y,r]
+        show: [IS,PC,MR,next_PC,y,r,piT,pi]

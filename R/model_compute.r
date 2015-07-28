@@ -1,100 +1,24 @@
-# To speed up computation, it is helpful to categorize variables in different dimensions:
-#
-# init vs laginit vs t:
-#     we perform separate categorizations for the computation of the 
-#     initial value, the lagged initial value and the period t value
-#     of a variable.
-#
-# explicit vs implicit: 
-#     do we have an explicit formula or just an implicit formula
-#
-# inner vs outer: 
-#     inner: we can directly compute the variable in period t (default)
-#     outer: we need to
-#       run the simulation several times to find the variable values
-#       that fulfill the condition. outer variables are very computational intensive
-#       and will be a special case. We first look at inner variables
-#
-# level:
-#     The computation level. A variable of level k can be computed using only variable
-#     from lower levels or a variable of the same cluster from the current level.
-#     Usually parameters will have a lower level than variables. 
-#
-# cluster:
-#     One or several variables can form a cluster. 
-#     Variables in the same cluster are at the same level.
-#     A cluster of one variable is called a singleton.
-#
-# direct: TRUE or FALSE
-#
-#      A variable with an explicit formula that forms a singleton cluster.
-#      Direct variables can be computed much faster
 
 examples.model.dependencies = function() {
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
-  em = load.model("ThreeEq")
-  em = load.model("GreenParadox")
+  em = load.model("GreenParadoxProgram")
+  em = load.model("FiscalDebt")
+  em = load.model("Capital3Eq")
   check.model(em)
   
-  init.model(em,solve.systems = TRUE)
+  init.model(em,solve.systems = !TRUE)
+  fo.df = em$fo.df
   sim = simulate.model(em)
+  inner.sim.report(em)
   
-  
-  Rprof(tmp <- tempfile())
-  for (i in 1:100)
-    sim = sim = simulate.model(em)
+  em$sim.fun
+  View(sim[1:10,])
   Rprof()
-  summaryRprof(tmp)
-  unlink(tmp)
-
-  #cat.sim.fun(em)
-  fo.df = em$fo.df
-  ifo.df = em$ifo.df
-  lifo.df = em$lifo.df
-  ofo.df = em$ofo.df
-  sim.fun = em$sim.fun
-  
-  eq_ = ofo.df$eq_[[1]]
-  call = quote(
-    (all(R >= 0)) & 
-    (
-      (sum(R) == first(Smax)) |
-      (
-        (sum(R) <= first(Smax)) & 
-        all(m == 0)
-      )
-    )
-  )
-  eval(call,sim)  
-  
-  init.model.scen(em)
-  compute.par.mat(em)
-  par.mat = em$par.mat
-
-  sim = sim.fun(T = em$T,par.mat = par.mat,var.names = em$var.names)
-
-  Rprof(tmp <- tempfile())
-  for (i in 1:500)
-    sim = sim.fun(T = em$T,par.mat = as.matrix(par.df),var.names = em$var.names)
-  Rprof()
-  summaryRprof(tmp)
-  unlink(tmp)
-  
+summaryRprof(tmp)
+unlink(tmp)
  
-  
-  fo.df = em$fo.df
-  fo.df = fo.add.dependencies(fo.df)  
-  fo.df = fo.solve(fo.df)
-  
-  em$fo.df
-  
-  #init.model.scen(em)
-  em$init.var
-  em$sim = simulate.model(em,T = 200)
-  c(sd(sim$p),sd(sim$p_adapt),sd(sim$p_fund))
-
 }
 
 simulate.model = function(em, scen.name = names(em$scenarios)[1], scen = em$scenarios[[scen.name]], init.scen=TRUE, compute.par=TRUE) {
@@ -149,6 +73,8 @@ add.sim.extra.vars = function(em, sim) {
 }
 
 fo.code.subst.li = function(fo.df,var.names=NULL, par.names = NULL) {
+  restore.point("fo.code.subst.li")
+  
   make.subst.li = function(names, df="var.mat", ti="ti", df.names=names) {
     subst = paste0(df,'[',ti,',"',df.names,'"]')
     li = lapply(subst, parse.as.call)
@@ -160,7 +86,7 @@ fo.code.subst.li = function(fo.df,var.names=NULL, par.names = NULL) {
   li1 = make.subst.li(var.names, df = "var.mat",ti="ti")
   lag.var.names = paste0("lag_",var.names)
   li2 = make.subst.li(lag.var.names, df = "var.mat",ti="ti-1", df.names=var.names)
-
+  
   if (is.null(par.names)) {
     par.names = setdiff(unique(do.call(c,fo.df$dependsOn)),c(var.names,lag.var.names))
     par.names = unique(str.right.of(par.names,"lag_"))
@@ -170,70 +96,175 @@ fo.code.subst.li = function(fo.df,var.names=NULL, par.names = NULL) {
   li3 = make.subst.li(par.names, df = "par.mat",ti="ti")
   li4 = make.subst.li(paste0("lag_",par.names), df = "par.mat",ti="ti-1", df.names=par.names)
   li5 = make.subst.li(paste0("lead_",par.names), df = "par.mat",ti="ti+1",df.names=par.names)
+  li6 = make.subst.li(paste0("lag_lead_",par.names), df = "par.mat",ti="ti",df.names=par.names)
   
-  c(li1,li2,li3,li4,li5)
+  c(li1,li2,li3,li4,li5,li6)
+}
+
+init.program = function(em) {
+  pr = em$program
+  if (is.null(pr)) return(NULL)
+  
+  prog = list()
+  
+  if (!is.null(pr$minimize)) {
+    prog$objective_ = parse.as.call(pr$minimize$formula, allow.null = FALSE)
+    prog$goal = "min"
+  } else if (!is.null(pr$maximize)) {
+    prog$objective_ = parse.as.call(pr$maximize$formula, allow.null = FALSE)
+    prog$goal = "max"
+  } else {
+    prog$objective_ = NULL
+    prog$goal = "solve"
+  }
+  
+  prog$org_constr_ = lapply(pr$constraints, function(con) {
+    parse.as.call(con$formula)
+  })
+  prog$constr_ = lapply(prog$org_constr_, function(con) {
+    if (prog$objective_ == NULL) {
+      return(adapt.to.implicit.eq(con)) 
+    } else {
+      return(simple.constr.to.implicit(con))
+    }
+  })
+  
+  em$prog = prog
+  invisible(prog)
 }
 
 make.outer.sim.fun = function(em, inner.sim.fun= em$inner.sim.fun, parent.env=parent.frame()) {
   restore.point("make.outer.sim.fun")
+  init.program(em)
   ofo.df = em$ofo.df
+  
+  ofo.ti = function(period) {
+    if (period == "main") {
+      ti = quote(2:(T+1))
+    } else if (period == "init") {
+      ti = 2
+    } else if (period == "laginit") {
+      ti = 1
+    }
+    ti    
+  }
+  ofo.len = function(period) {
+    if (period == "main") {
+      len = quote(T)
+    } else{
+      len = 1
+    }
+    len   
+  }
+
   
   subst.li = fo.code.subst.li(fo.df = ofo.df, var.names = em$var.names, par.names=em$par.names)
   
   # return value of function that nleqslv calls
-  impl_ = lapply(ofo.df$impl_, substitute.call, env=subst.li)  
-  names(impl_) = NULL
-  criterion = as.call(c(list(as.symbol("c")),impl_))
+  prog = em$prog
+  constr_ = lapply(prog$constr_, substitute.call, env=subst.li )
+  obj_ = substitute.call(prog$objective_, env=subst.li )
 
-  endo = ofo.df$var
-  insert.x = lapply(seq_along(endo), function(i) {
-    substitute(init.var.mat[ti,var] <- x[[i]],list(i=i,var=endo[[i]],ti=ofo.df$ti[[i]]))
+  names(constr_) = NULL
+
+  # init x vector and specify its length
+  is.len1 = sapply(ofo.df$period, function(per) per == "init" | per == "laginit")
+  assign.len.x = substitute(len.x <- num.len1 + T * num.lenT, list(num.len1=sum(is.len1), num.lenT = sum(!is.len1)))
+  init.x = substitute(start.x <- runif(len.x)) 
+  
+
+  all.lower = all(!sapply(ofo.df$lower, is.null))
+  if (all.lower) {
+    lower.init = quote(lower <- numeric(len.x))
+  } else {
+    lower.init=quote(lower<-NULL)
+  }
+  all.upper = all(!sapply(ofo.df$upper, is.null))
+  if (all.upper) {
+    upper.init = quote(upper <- numeric(len.x))
+  } else {
+    upper.init=quote(upper<-NULL)
+  }
+
+  lower.assign = upper.assign = NULL
+  if (all.lower | all.upper) {
+    lower.upper.assign = lapply(seq_along(ofo.df$var), function(i) {
+      period = ofo.df$period[[i]]
+      len = ofo.len(period)
+      if (all.lower) {
+        lower.call = substitute.call(ofo.df$lower[[i]], env=subst.li)
+        lower.assign = substitute(lower[x.ind] <- lower.call, list(lower.call=lower.call))
+      }
+      if (all.upper) {
+        upper.call = substitute.call(ofo.df$upper[[i]], env=subst.li)
+        upper.assign = substitute(upper[x.ind] <- upper.call, list(upper.call=upper.call))
+      }
+      
+      substitute({
+          x.ind <- x.start + 1:(len) 
+          lower.assign
+          upper.assign
+          x.start <- x.start + (len)
+        },list(len=len, lower.assign=lower.assign, upper.assign=upper.assign))
+    }) 
+    lower.upper.assign = as.call(c(list(as.symbol("{")),lower.upper.assign))
+  } else {
+    lower.upper.assign = NULL
+  }
+  
+  insert.x = lapply(seq_along(ofo.df$var), function(i) {
+    period = ofo.df$period[[i]]
+    ti = ofo.ti(period)
+    len = ofo.len(period)
+    substitute({
+        x.ind <- x.start + 1:(len) 
+        init.var.mat[ti,var] <- x[x.ind]
+        x.start <- x.start + (len)
+      },list(var=ofo.df$var[[i]],ti=ti, len=len))
   }) 
   insert.x = as.call(c(list(as.symbol("{")),insert.x))
 
-  
-  # init.x 
-  # need better code that takes into account guess
-  
-  if (FALSE) {
-    #restore.point("ndjnfjdngjg")
-    rhs = lapply(seq_along(endo), function(i) {
-      substitute(var.mat[ti-1,var],list(var=endo[[i]]))
-    }) 
-    rhs = as.call(c(list(as.symbol("c")),rhs))
-    start = substitute(start.x <- rhs, list(rhs=rhs)) 
-  }
-
-  init.x = substitute(start.x <- runif(num.endo), list(num.endo=length(endo))) 
-
-
-  has.lower = !sapply(ofo.df$lower, is.null)
-  if (all(has.lower)) {
-    lower.calls = lapply(ofo.df$lower, substitute.call, env=subst.li)
-    lower.calls = lapply(lower.calls,function(call) substitute((x)[1], list(x=call)))
-    names(lower.calls) = NULL
-    lower.c = as.call(c(list(as.symbol("c")),lower.calls))
-    lower.assign = substitute(lower <- rhs, list(rhs=lower.c))
+  if (length(obj_)>0) {
+    fn.assign = substitute(
+      fn <- function(x,T,ti,par.mat, init.var.mat, inner.sim.fun) {
+          x.start = 0
+          insert.x
+          var.mat = inner.sim.fun(T=T,par.mat=par.mat,var.mat=init.var.mat)
+          (obj_)
+      }, list(obj_=obj_,insert.x = insert.x )
+    )
   } else {
-    lower.assign=quote(lower<-NULL)
-  }
-  
-  has.upper = !sapply(ofo.df$upper, is.null)
-  if (all(has.upper)) {
-    upper.calls = lapply(ofo.df$upper, substitute.call, env=subst.li)
-    upper.calls = lapply(upper.calls,function(call) substitute((x)[1], list(x=call)))
-    names(upper.calls) = NULL
-    upper.c = as.call(c(list(as.symbol("c")),upper.calls))
-    upper.assign = substitute(upper <- rhs, list(rhs=upper.c))
-  } else {
-    upper.assign=quote(upper<-NULL)
-  }
+    fn.assign = quote(fn <- NULL)
+  }  
 
-  
+  if (length(constr_)>0) {
+    criterion = as.call(c(list(as.symbol("c")),constr_))
+
+    constr.assign = substitute(
+      ineq.fn <- function(x,T,ti,par.mat, init.var.mat, inner.sim.fun) {
+        x.start = 0
+        insert.x
+        var.mat = inner.sim.fun(T=T,par.mat=par.mat,var.mat=init.var.mat)
+        
+        #-(criterion)
+        criterion
+      }, list(criterion=criterion, insert.x=insert.x)
+    )
+  } else {
+    constr.assign = quote(ineq.fn <- NULL)
+  }  
   
   fun.body = substitute({
     # init outer variables with their guess value
+    assign.len.x
     init.x
+    
+    # set ti=1 for lower and upper init
+    ti=1
+    lower.init
+    upper.init
+    x.start = 0
+    lower.upper.assign
     
     # default set of rows
     ti = (2:(T+1))
@@ -245,29 +276,21 @@ make.outer.sim.fun = function(em, inner.sim.fun= em$inner.sim.fun, parent.env=pa
       colnames(var.mat) = var.names
     } 
     
-  
     init.var.mat = var.mat
-    fn = function(x,T,ti,par.mat, init.var.mat, inner.sim.fun) {
-      insert.x
-      
-      var.mat = inner.sim.fun(T=T,par.mat=par.mat,var.mat=init.var.mat)
-      
-      vec <- criterion
-      sum(vec^2)
-    }
     
-    lower.assign
-    upper.assign
+    fn.assign
+    constr.assign
     
     # solve 
-    res = optims(par=start.x,fn=fn,T=T,ti=ti,par.mat=par.mat, init.var.mat=init.var.mat,inner.sim.fun=inner.sim.fun, lower=lower, upper=upper)
+    res = optims(par=start.x,fn=fn,ineq.fn = ineq.fn, T=T,ti=ti,par.mat=par.mat, init.var.mat=init.var.mat,inner.sim.fun=inner.sim.fun,lower=lower, upper=upper)
     if (!res$ok) warning("Outer search did not converge.")
     x = res$par
     
+    x.start = 0
     insert.x
     var.mat = inner.sim.fun(T=T, par.mat=par.mat,var.mat=init.var.mat)
     var.mat
-  },list(criterion=criterion, insert.x=insert.x, init.x=init.x, lower.assign = lower.assign, upper.assign= upper.assign)
+  },list(fn.assign=fn.assign,constr.assign=constr.assign,criterion=criterion, insert.x=insert.x, assign.len.x = assign.len.x, init.x=init.x, lower.init=lower.init, upper.init=upper.init, lower.upper.assign=lower.upper.assign)
   )
   
   fun = function(T,par.mat, var.mat=NULL, var.names=NULL) {}
@@ -314,6 +337,7 @@ make.inner.sim.fun = function(em) {
 
   fun.body = substitute(
     {
+      #restore.point("inner.sim.fun")
       # init var.df matrix if it does not exist
       if (is.null(var.mat)) {
         nvar = length(var.names)
@@ -329,7 +353,7 @@ make.inner.sim.fun = function(em) {
       ti = 2
       ifo.inner
       
-      for (ti in fo.start:(T+2)) 
+      for (ti in fo.start:(T+1)) 
         fo.inner
       
       return(var.mat)
@@ -364,6 +388,7 @@ make.inner.compute.code = function(fo.df,  var.names=em$var.names, par.names = e
       code.li = lapply(rows, function(row) {
         code = substitute(lhs<-rhs, 
              list(lhs=as.symbol(fo.df$var[[row]]),rhs=fo.df$expl_[[row]]))
+        code = fo.substitute.index.vars(code, em=em, var.names=var.names, par.names=par.names)
         code = substitute.call(code, subst.li)
         code
       })
@@ -403,13 +428,17 @@ make.inner.compute.code = function(fo.df,  var.names=em$var.names, par.names = e
       }
       code = substitute({
           start
-          res = mynleqslv(x=start.x,ti=ti,par.mat=par.mat, var.mat=var.mat,
+          sol = mynleqslv(x=start.x,ti=ti,par.mat=par.mat, var.mat=var.mat,
             fn = function(x,ti,par.mat, var.mat) {
             inner
-          })$x
+          })
+          if (max(abs(sol$fvec))> 1e-07) {
+            warning(paste0("Could not solve ", paste0(endo, collapse=", "), " for ti = ", paste0(ti, collapse=", ")," max deviation = ",max(abs(sol$fvec)) ))
+          }
+          res = sol$x
           assign
         },
-        list(inner=inner, start=start,assign=assign)
+        list(inner=inner, start=start,assign=assign,endo=endo)
       )
       list(code)  
     }
@@ -424,8 +453,6 @@ make.inner.compute.code = function(fo.df,  var.names=em$var.names, par.names = e
 
 fo.solve = function(fo.df, add.dep=FALSE, solve.systems=!TRUE) {
   restore.point("fo.solve")
-  if (any(fo.df$outer))
-    restore.point("fo.solve.with.outer")
 
   
   if (is.null(fo.df)) return(NULL)
@@ -454,6 +481,7 @@ fo.solve = function(fo.df, add.dep=FALSE, solve.systems=!TRUE) {
       vars = fo.df$var[rows]
       eqs = fo.df$eq_[rows]
       
+      restore.point("fo.solve.systems")
       
       sol = sym.solve.eqs(eqs=eqs, vars=vars)
       if (sol$solved) {
@@ -505,7 +533,7 @@ dependency.graph = function(dependsOn, add.exo=FALSE) {
     if (length(dependsOnClusters)==0) dependsOnClusters=NULL
     list(cluster=clu,size=length(cvars),vars=list(cvars), dependsOn = list(cdependsOn), dependsOnClusters=list(dependsOnClusters)) 
   })
-  cluster.df = as_data_frame(rbindlist(li))
+  cluster.df = dplyr::as_data_frame(rbindlist(li))
   
   cluster.df$level = compute.dependsOn.levels(cluster.df$dependsOnClusters,use.names=FALSE)
   
@@ -574,6 +602,7 @@ init.formula.partners = function(em, fos) {
 }
 
 solve.model.explicit = function(em,...) {
+  restore.point("solve.model.explicit")
   em$fo.df = fo.solve(em$fo.df,...)
   em$ifo.df = fo.solve(em$ifo.df,...)
   em$lifo.df = fo.solve(em$lifo.df,...)
@@ -585,7 +614,7 @@ init.model.vars = function(em) {
 
   # create types
   em$vars = lapply(em$vars, function(var) {
-    restore.point("hfhhfuehuh")
+    #restore.point("hfhhfuehuh")
     var$type = get.model.var.type(var)
     var$name = attr(var,"name")
     var
@@ -609,67 +638,44 @@ init.model.vars = function(em) {
   invisible(em)
 }
 
-
-init.ofo.df = function(em) {
-  restore.point("init.ofo.df")
-  ofo.df = NULL
-  rows = which(is.true(em$ifo.df$outer))
-  if (length(rows)>0) {
-    iofo = em$ifo.df[rows,]
-    iofo$ti = 2
-    em$ifo.df = em$ifo.df[-rows,]
-    iofo$lower = lapply(em$vars[iofo$var], function(var) {
-      val = var$init$lower
-      if (is.null(val)) return(NULL)
-      parse.as.call(val)
-    })    
-    iofo$upper = lapply(em$vars[iofo$var], function(var) {
-      val = var$init$upper
-      if (is.null(val)) return(NULL)
-      parse.as.call(val)
-    })    
-  
-    
-  } else {
-    iofo = NULL
-  }
-  rows = which(is.true(em$lifo.df$outer))
-  if (length(rows)>0) {
-    liofo = em$ifo.df[rows,]
-    liofo$ti = 1
-    em$lifo.df = em$lifo.df[-rows,]
-    
-    liofo$lower = lapply(em$vars[liofo$var], function(var) {
-      val = var$laginit$lower
-      if (is.null(val)) return(NULL)
-      parse.as.call(val)
-    })    
-    liofo$upper = lapply(em$vars[liofo$var], function(var) {
-      val = var$laginit$upper
-      if (is.null(val)) return(NULL)
-      parse.as.call(val)
-    })    
-
-  } else {
-    liofo = NULL
-  }
-  em$ofo.df = rbind(liofo,iofo)
-  em$has.outer = NROW(em$ofo.df) > 0
-}
-
-
 init.vars.formulas = function(em) {
   restore.point("init.vars.formulas")
+  
+  li.to.fo.ofo.df = function(li, period="main") {
+    outer = sapply(li, function(fo) fo$type=="outer")  
+    fo.df = dplyr::as_data_frame(rbindlist(li[!outer]))
+    names(fo.df$eq_) = names(fo.df$expl_) = names(fo.df$impl_) = 
+    names(fo.df$dependsOn) = fo.df$var
+    
+    ofo.df = dplyr::as_data_frame(rbindlist(li[outer]))
+    if (NROW(ofo.df)>0) {
+      ofo.df$period = period
+      n = NROW(ofo.df)
+#       if (period == "main") {
+#         ofo.df$ti.call = replicate(n,quote(2:(T+1)),FALSE)
+#         ofo.df$len.call = replicate(n,quote(T),FALSE)
+#       } else if (period == "init") {
+#         ofo.df$ti.call = replicate(n,quote(2),FALSE)
+#         ofo.df$len.call = replicate(n,quote(1),FALSE)
+#       } else if (period == "laginit") {
+#         ofo.df$ti.call = quote(1)
+#         ofo.df$len.call = quote(1)
+#       }
+    } else {
+      ofo.df = NULL
+    }
+    list(fo.df=fo.df, ofo.df=ofo.df)
+    
+  }
+  
   # phase t
   li = lapply(names(em$vars), function(var) {
     fo = init.var.formula(em,fo=em$vars[[var]],var=var, phase="t", list.wrap=TRUE)
     fo
   })
-  fo.df = as_data_frame(rbindlist(li))
-  names(fo.df$eq_) = names(fo.df$expl_) = names(fo.df$impl_) = 
-  names(fo.df$dependsOn) = fo.df$var
-  em$fo.df = fo.df
-
+  res = li.to.fo.ofo.df(li, period="main")
+  em$fo.df = res$fo.df
+  ofo.df = res$ofo.df
   
   # For steady states
   lag.names = paste0("lag_",em$var.names)
@@ -703,10 +709,10 @@ init.vars.formulas = function(em) {
       fo = init.var.formula(em,fo=fo,var=var.name, phase="init", list.wrap=TRUE, steady.state = steady.state,lag.subst.li = lag.subst.li)
       fo
     })
-    fo.df = as_data_frame(rbindlist(li))
-    names(fo.df$eq_) = names(fo.df$expl_) = names(fo.df$impl_) = 
-    names(fo.df$dependsOn) = fo.df$var
-    em$ifo.df = fo.df
+    res = li.to.fo.ofo.df(li, period="init")
+    em$ifo.df = res$fo.df
+    ofo.df = rbind(ofo.df, res$ofo.df)
+
   }
     
   # phase laginit
@@ -734,12 +740,17 @@ init.vars.formulas = function(em) {
     fo = init.var.formula(em,fo=fo,var=var.name, phase="laginit", list.wrap=TRUE, steady.state = steady.state,lag.subst.li = lag.subst.li)
     fo
   })
-  fo.df = as_data_frame(rbindlist(li))
-  names(fo.df$eq_) = names(fo.df$expl_) = names(fo.df$impl_) = 
-  names(fo.df$dependsOn) = fo.df$var
-  em$lifo.df = fo.df
+  res = li.to.fo.ofo.df(li, period="laginit")
+  em$lifo.df = res$fo.df
+  ofo.df = rbind(ofo.df, res$ofo.df)
 
-  init.ofo.df(em)
+  if (NROW(ofo.df)>0) {
+    cols = c("start", "lower", "upper")
+    for (col in cols) ofo.df[[col]] = lapply(ofo.df[[col]], parse.as.call)
+  }
+  em$ofo.df = ofo.df
+  em$has.outer = NROW(em$ofo.df) > 0
+
   invisible(em)
 }
 
@@ -753,6 +764,12 @@ init.var.formula = function(em, fo, var=fo$name, phase=c("t","init","laginit")[1
   }
   
   type = get.var.formula.type(fo)
+  if (type == "outer") {
+    res = list(var=var,type=type,start=list(fo$start),lower=list(fo$lower),upper=list(fo$upper))
+    return(res)
+  }
+
+  
   expl_ = NULL
   if (!is.null(fo$formula)) {
     expl_ = parse.as.call(fo$formula)
@@ -791,7 +808,6 @@ init.var.formula = function(em, fo, var=fo$name, phase=c("t","init","laginit")[1
     eq_ = subst.var(eq_, var = curve$yvar, subs = yvar, subset=FALSE)
   } else if (type=="eq") {
     eq_ = parse.as.call(fo$eq)
-    restore.point("adnjnfjnfhdhfdfbdb")
   }
 
   if (steady.state) {
@@ -803,9 +819,9 @@ init.var.formula = function(em, fo, var=fo$name, phase=c("t","init","laginit")[1
   #impl_ = substitute(lhs-(rhs),list(lhs=get.lhs(eq_),rhs=get.rhs(eq_)))
 
   if (list.wrap) {
-    res = list(var=var,type=type,expl_=list(expl_),impl_=list(impl_),eq_=list(eq_),outer=as.logical(is.true(fo$outer)))
+    res = list(var=var,type=type,expl_=list(expl_),impl_=list(impl_),eq_=list(eq_),outer=as.logical(is.true(fo$program)))
   } else {
-    res = list(var=var,type=type,expl_=expl_,impl_=impl_,eq_=eq_,outer=as.logical(is.true(fo$outer)))
+    res = list(var=var,type=type,expl_=expl_,impl_=impl_,eq_=eq_,outer=as.logical(is.true(fo$program)))
   }
   
   dep.li = compute.var.dependsOn(em,var, impl_, list.wrap=list.wrap)
@@ -816,9 +832,13 @@ init.var.formula = function(em, fo, var=fo$name, phase=c("t","init","laginit")[1
 
 get.var.formula.type = function(fo) {
   restore.point("get.var.formula.type")
-  types = c("xcurve","ycurve","formula","xcut","ycut","eq")
+  types = c("xcurve","ycurve","formula","xcut","ycut","eq","outer")
   not.null = sapply(types, function(type) {!is.null(fo[[type]])})
-  types[not.null]
+  type = types[not.null]
+  if (length(type)==0) {
+    stop(paste0("Cannot deduce variable type for ", get.name(fo),"."))
+  }
+  type
 }
 
 compute.var.dependsOn = function(em,var, formula_ = em$impl_[[var]], list.wrap=FALSE) {
@@ -832,12 +852,21 @@ compute.var.dependsOn = function(em,var, formula_ = em$impl_[[var]], list.wrap=F
 }
 
 find.em.par.names = function(em) {
-  all = unique(c(unlist(em$ofo.df$dependsOn),
+  restore.point("find.em.par.names")
+  all = unique(c("t","T",
                  unlist(em$fo.df$dependsOn),
                  unlist(em$ifo.df$dependsOn),
-                 unlist(em$lifo.df$dependsOn)))
-  pars = setdiff(all,c(em$var.names,
-    paste0("lag_",em$var.names),paste0("lead_",em$var.names)))
+                 unlist(em$lifo.df$dependsOn),
+                 names(em$params)
+  ))
+  if (length(em$scenarios)>0) {
+    all = unique(c(all, names(em$scenarios[[1]]$params)))
+  }
+
+  
+  pars = setdiff(all,c(em$var.names,paste0("lag_",em$var.names)))
+  pars = unique(str.right.of(pars,"lag_"))
+  pars = unique(str.right.of(pars,"lead_"))
   pars
 }
 
@@ -930,13 +959,13 @@ cat.sim.fun = function(em) {
 }
 
 # not yet implemented
-make.model.jacobi = function(em) {
-  ex = do.call(expression, em$impl)
-  lapply(em$impl,function(call) {
-    deriv(call,vars)
-  })
-
-}
+# make.model.jacobi = function(em) {
+#   ex = do.call(expression, em$impl)
+#   lapply(em$impl,function(call) {
+#     deriv(call,vars)
+#   })
+# 
+# }
 
 check.model = function(em) {
   restore.point("check.model")
@@ -947,7 +976,7 @@ check.model = function(em) {
   syms = unique(c(syms, unlist(li)))
   syms = c(syms, paste0("lag_",syms),paste0("lead_",syms),"t")
   
-  check.formula = function(obj,field="formula",name=get.name(obj),section="") {
+  check.formula = function(obj,field="formula",name=get.name(obj),section="", allow=NULL) {
     if (length(field)>1) {
       code = paste0("obj", paste0("[['",field,"']]",collapse=""))
       val = eval(parse(text=code))
@@ -957,7 +986,7 @@ check.model = function(em) {
     
     if (length(val)==0) return(TRUE)
     vars = find.variables(parse.as.call(val))
-    unknown = setdiff(vars,syms)
+    unknown = setdiff(vars,c(syms,allow))
     if (length(unknown)>0) {
       str = paste0("\n\nReference to unknown symbol ", paste0(unknown,collapse=", "), " in ", section, " -> ", name, " -> ",field)
       cat(str)
@@ -973,8 +1002,60 @@ check.model = function(em) {
   lapply(em$extraVars, check.formula, section="extraVars")
   lapply(em$panes, check.formula, section="panes", field="xmarker")
   lapply(em$panes, check.formula, section="panes", field="ymarker")
-
+  
+  lapply(em$curves, function(cu) {
+    check.formula(cu, section="curves", field="eq", allow=cu$xy)
+  })
   invisible(TRUE)
   
 }
 
+bound.value = function(x, lower=NULL, upper=NULL) {
+  if (!is.null(lower)) {
+    x[x<lower] = lower
+  }
+  if (!is.null(upper)) {
+    x[x>upper] = upper
+  }
+  x
+}
+
+examples.substitute.index.var = function() {
+  call = quote(4+eps[1:z])
+  replace.pattern = quote(ti+(old.ind))
+
+  res = fo.substitute.index.vars(call,em=em)
+  res
+}
+
+
+fo.substitute.index.vars = function(call, em, var.names=em$var.names, par.names=em$par.names) { 
+  
+  restore.point("fo.substitute.index.vars")
+  
+  recursive.fun = function(call) {
+    if (length(call)<=1) return(call)
+    if (call[[1]]=="[") {
+      old.ind = call[[3]]
+      sym.name = as.character(call[[2]])
+      sym.name = str.right.of(sym.name,"lag_")
+      sym.name = str.right.of(sym.name,"lead_")
+      sym.name = str.right.of(sym.name,"lag_lead_")
+      
+      if (sym.name %in% par.names) {
+        ind = substitute(bound.value(ti+(old.ind),1,T+2),list(old.ind=old.ind))
+        call = substitute(par.mat[ind, sym.name], list(ind=ind, sym.name=sym.name))
+      } else {
+        ind = substitute(bound.value(ti+(old.ind),1,T+1),list(old.ind=old.ind))
+        call = substitute(var.mat[ind, sym.name], list(ind=ind, sym.name=sym.name))
+      }
+    } else {
+      for (i in seq_along(call)) {
+        call[[i]] = recursive.fun(call[[i]])
+      }
+    }
+    call
+  }    
+  
+  recursive.fun(call)
+}

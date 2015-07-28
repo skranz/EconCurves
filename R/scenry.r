@@ -1,13 +1,27 @@
-green.paradox = function() {
+examples.green.paradox = function() {
   setwd("D:/libraries/EconCurves/EconCurves")
   set.restore.point.options(display.restore.point = TRUE)
+  
+  add.restore.point.test(scenario.test = function(env,name,...) {
+    if (exists("em",env,inherits = FALSE)) {
+      if (is.null(env$em) & name != "init.story") {
+        stop("em is null")
+      }  
+    }
+  })
+
   
   init.ec()
   ec = get.ec()
   em = load.model("GreenParadox")
-  sim = simulate.model(em)
+  em = load.model("GreenParadox5")
+  init.model(em)
+  init.model.scen(em)
+  sim = simulate.model(em,init.scen = FALSE)
   sim$scenario = "baseline"
-    
+  eval(quote(all(R == alpha*intreaty*(pmin(q_tr,100-p))+(1-alpha*intreaty)*(100-p))), sim)
+  eval(quote(alpha*intreaty*(pmin(q_tr,100-p))+(1-alpha*intreaty)*(100-p)), sim)  
+
   es = load.story("GreenParadox_quiz")
   
   #options(warn=3)
@@ -15,6 +29,7 @@ green.paradox = function() {
   app = shinyScenryApp(es = es)
   
   runEventsApp(app,launch.browser = rstudio::viewer)
+  runEventsApp(app,launch.browser = TRUE)
   
   sim = init.scenry.part(es,2)
   rbind(sim[1,],sim[21,])
@@ -33,12 +48,13 @@ green.paradox = function() {
 
 
 init.scenry = function(es,em=es$em,...) {
-  init.scenry.part(es,1)
+  restore.point("init.scenry")
   if (length(es$rcode)>0) {
     ec = get.ec()
     for (file in es$rcode)
       source(paste0(ec$stories.path,"/",file))
   }
+  init.scenry.part(es,1)
   
 }
 
@@ -125,7 +141,7 @@ init.scenry.part = function(es, part.num=es$part.num) {
   
   # Simulate all scenarios
   es$sim.li = simulate.scenarios(es$em, scens, return.list=TRUE)
-  es$sim = em$sim = bind_rows(es$sim.li)  
+  es$sim = es$em$sim = bind_rows(es$sim.li)  
 
   es$part = part
   
@@ -148,14 +164,14 @@ simulate.scenarios = function(em, scens=NULL, scen.params=NULL, baseline=em$scen
     scens = lapply(1:NROW(grid), function(i) {
       customize.baseline(baseline, params=grid[i,])
     })
-    names(scens) = paste0("scen", seq_along(scen))
+    names(scens) = paste0("scen", seq_along(scens))
   }
   
   sim.li = lapply.fun(seq_along(scens), function(i) {
     restore.point("simulate.scenarios.inner")
     scen.name = names(scens)[i]
     scen = scens[[i]]
-    sim = simulate.model(em=em, scen=scen)
+    sim = simulate.model(em=em, scen=scen,init.scen = TRUE)
     sim = cbind(data.frame(scenario = scen.name), sim)
     sim
   })
@@ -233,12 +249,13 @@ scenry.ui = function(app=getApp(), scela) {
 
 scenry.run.btn.click = function(app=getApp(), es=app$es,...) {
   restore.point("scenry.run.btn.click")
-  res = try(scenry.set.params())
+  res = scenry.set.params()
+  restore.point("scenry.run.btn.click2")
   scenry.show.part(es=es,part.num=es$part.num, init.part=TRUE)
 }
 
 
-scenry.next.btn.click = function(app=getApp(), es=app$es,...) {
+scenry.forward.btn.click = scenry.next.btn.click = function(app=getApp(), es=app$es,...) {
   restore.point("scenry.next.btn.click")
 
   if (es$part.num == length(es$parts)) return()
@@ -392,19 +409,24 @@ scenry.part.params.ui = function(app= getApp(),es=app$es, part.num = es$part.num
   txt = sep.lines(yaml)
   fontSize = 12
   height = max((fontSize * 1.5) * length(txt),30)    
-  aceEditor("scenryParamsEdit",value=yaml,mode="yaml", showLineNumbers = FALSE,height=height)
+  aceEditor("scenryParamsEdit",value=yaml,mode="yaml", showLineNumbers = FALSE,height=height,debounce = 10)
 }
 
 scenry.set.params = function(app= getApp(),es=app$es) {
-  
+  restore.point("scenry.set.params")
   
   part.num = es$part.num
   part = es$parts[[part.num]]
-  if (is.null(part$params) & is.null(part$scens)) return(NULL)
+  if (is.null(part$params) & is.null(part$scens)) {
+    cat("\n\n\n EARLY RETURN...", "\n\n\n")
+    return(NULL)
+  }
   yaml = getInputValue("scenryParamsEdit")
+  cat("\n\n\n yaml:", yaml, "\n\n\n")
+  
   li = read.yaml(text = yaml)
 
-  restore.point("scenry.set.params")
+  restore.point("scenry.set.params2")
   
   if (!is.null(part$scens)) {
     for (sc in intersect(names(li), names(part$scens))) {
