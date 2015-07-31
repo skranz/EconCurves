@@ -38,7 +38,13 @@ simulate.model = function(em, scen.name = names(em$scenarios)[1], scen = em$scen
   par.mat = em$par.mat  
   T = em$T
 
-  
+  sim = var.par.to.sim(var.mat=var.mat, par.mat=par.mat)
+  sim = add.sim.extra.vars(em,sim)
+  em$sim = sim
+  invisible(sim)
+}
+
+var.par.to.sim = function(var.mat, par.mat) {
   par.df = par.mat[2:(T+1),,drop=FALSE]
   lag.par.df  = par.mat[1:(T),,drop=FALSE]
   lead.par.df = par.mat[3:(T+2),,drop=FALSE]
@@ -46,15 +52,13 @@ simulate.model = function(em, scen.name = names(em$scenarios)[1], scen = em$scen
   colnames(lag.par.df) = paste0("lag_", colnames(par.mat))
   colnames(lead.par.df) = paste0("lead_", colnames(par.mat))
 
-  var.mat = em$var.mat
+  var.mat = var.mat
   var.df = var.mat[2:(T+1),,drop=FALSE]
   lag.var.df = var.mat[1:(T),,drop=FALSE]
   colnames(lag.var.df) = paste0("lag_", colnames(var.mat))
   
   sim = as.data.frame(cbind(var.df,par.df,lag.var.df,lag.par.df,lead.par.df))
-  sim = add.sim.extra.vars(em,sim)
-  em$sim = sim
-  invisible(sim)
+  sim  
 }
 
 add.sim.extra.vars = function(em, sim) {
@@ -917,107 +921,6 @@ get.model.var.type = function(var) {
   types = c("xcurve","ycurve","formula","xcut","ycut")
   not.null = sapply(types, function(type) {!is.null(var[[type]])})
   types[not.null]
-}
-
-
-# faster version with fewer checks
-mynleqslv = function (x, fn, jac = NULL, ..., method = c("Broyden", "Newton")[1], 
-    global = c("dbldog", "pwldog", "cline", "qline", "gline", 
-        "hook", "none")[1], xscalm = c("fixed", "auto")[1], jacobian = FALSE) 
-{
-    #restore.point("mynleqslv")
-    fn1 <- function(par) fn(par, ...)
-    jac1 <- if (!is.null(jac)) 
-        function(par) jac(par, ...)
-    con <- list(ftol = 1e-08, xtol = 1e-08, btol = 0.001, stepmax = -1, 
-        delta = -2, sigma = 0.5, scalex = rep(1, length(x)), 
-        maxit = 150, trace = 0, chkjac = FALSE, cndtol = 1e-12, 
-        allowSingular = FALSE, dsub = -1L, dsuper = -1L)
-
-    on.exit(.C("deactivatenleq", PACKAGE = "nleqslv"))
-    out <- .Call("nleqslv", x, fn1, jac1, method, global, xscalm, 
-        jacobian, con, new.env(), PACKAGE = "nleqslv")
-    out
-}
-
-cat.sim.fun = function(em) {
-  if (!is.null(em$inner.sim.fun)) {
-    cat("\n",
-      '\n#restore.point("inner.sim.fun")',
-      '\ninner.sim.fun <-',
-      deparse1(em$inner.sim.fun,collapse = "\n"),
-      "\n\n"
-    )
-  }
-  cat("\n",
-    '\n#restore.point("sim.fun")',
-    '\nsim.fun <-',
-    deparse1(em$sim.fun,collapse = "\n"),
-    "\n\n"
-  )
-  
-}
-
-# not yet implemented
-# make.model.jacobi = function(em) {
-#   ex = do.call(expression, em$impl)
-#   lapply(em$impl,function(call) {
-#     deriv(call,vars)
-#   })
-# 
-# }
-
-check.model = function(em) {
-  restore.point("check.model")
-  
-  # all known symbols
-  syms = c(names(em$vars),names(em$params), names(em$extraVars))
-  li = lapply(em$scenarios, function(scen) names(scen$params))
-  syms = unique(c(syms, unlist(li)))
-  syms = c(syms, paste0("lag_",syms),paste0("lead_",syms),"t")
-  
-  check.formula = function(obj,field="formula",name=get.name(obj),section="", allow=NULL) {
-    if (length(field)>1) {
-      code = paste0("obj", paste0("[['",field,"']]",collapse=""))
-      val = eval(parse(text=code))
-    } else {
-      val = obj[[field]]
-    }
-    
-    if (length(val)==0) return(TRUE)
-    vars = find.variables(parse.as.call(val))
-    unknown = setdiff(vars,c(syms,allow))
-    if (length(unknown)>0) {
-      str = paste0("\n\nReference to unknown symbol ", paste0(unknown,collapse=", "), " in ", section, " -> ", name, " -> ",field)
-      cat(str)
-      return(FALSE)
-    }
-  }
-  
-  # check variables
-  lapply(em$vars, check.formula, section="vars")
-  lapply(em$vars, check.formula, section="vars", field=c("init","formula"))
-  lapply(em$vars, check.formula, section="vars", field=c("init","eq"))
-  lapply(em$vars, check.formula, section="vars", field=c("laginit","formula"))
-  lapply(em$extraVars, check.formula, section="extraVars")
-  lapply(em$panes, check.formula, section="panes", field="xmarker")
-  lapply(em$panes, check.formula, section="panes", field="ymarker")
-  
-  lapply(em$curves, function(cu) {
-    check.formula(cu, section="curves", field="eq", allow=cu$xy)
-  })
-  invisible(TRUE)
-  
-}
-
-bound.value = function(x, lower=NULL, upper=NULL) {
-  if (!is.null(lower)) {
-    x[x<lower] = lower
-  }
-  if (!is.null(upper)) {
-    x[x>upper] = upper
-  }
-  x
 }
 
 examples.substitute.index.var = function() {

@@ -188,3 +188,24 @@ transform.optim.fn = function(fn=NULL,ineq.fn=NULL, eq.fn=NULL) {
   return(fn)
 }
 
+
+
+# faster version with fewer checks
+mynleqslv = function (x, fn, jac = NULL, ..., method = c("Broyden", "Newton")[1], 
+    global = c("dbldog", "pwldog", "cline", "qline", "gline", 
+        "hook", "none")[1], xscalm = c("fixed", "auto")[1], jacobian = FALSE) 
+{
+    #restore.point("mynleqslv")
+    fn1 <- function(par) fn(par, ...)
+    jac1 <- if (!is.null(jac)) 
+        function(par) jac(par, ...)
+    con <- list(ftol = 1e-08, xtol = 1e-08, btol = 0.001, stepmax = -1, 
+        delta = -2, sigma = 0.5, scalex = rep(1, length(x)), 
+        maxit = 150, trace = 0, chkjac = FALSE, cndtol = 1e-12, 
+        allowSingular = FALSE, dsub = -1L, dsuper = -1L)
+
+    on.exit(.C("deactivatenleq", PACKAGE = "nleqslv"))
+    out <- .Call("nleqslv", x, fn1, jac1, method, global, xscalm, 
+        jacobian, con, new.env(), PACKAGE = "nleqslv")
+    out
+}

@@ -16,8 +16,9 @@ log(.x) == . <=> .x == exp(.)
 .y - .x == . <=> .x == -(.) + .y
 .x * .y == . <=> .x == (.) / (.y)
 .y * .x == . <=> .x == (.) / (.y)
-sqrt(.x) ==. <=> .x == sqr(.)
-#.x^.y == .  <=> .x == (.)^(1/(.y)) 
+sqrt(.x)==.  <=> .x == (.)^2
+.x^-1   == . <=> .x == (.)^-1 
+.x^.y   == . <=> .x == (.)^(1/(.y)) 
 '
     syso.env$isolate.rules = parse.equation.rules(rules.txt)
     

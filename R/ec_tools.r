@@ -26,3 +26,14 @@ subst.var = function(call, var, subs, subset=FALSE) {
   res
 }
 
+
+bound.value = function(x, lower=NULL, upper=NULL) {
+  if (!is.null(lower)) {
+    x[x<lower] = lower
+  }
+  if (!is.null(upper)) {
+    x[x>upper] = upper
+  }
+  x
+}
+

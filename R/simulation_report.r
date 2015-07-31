@@ -19,6 +19,11 @@ inner.sim.report = function(em, id=em$modelId, dir=getwd()) {
 
   copy.into.env(em)
 
+  nvar = length(em$var.names)
+  var.mat = matrix(NA_real_,nrow=(em$T+2),ncol=nvar)
+  colnames(var.mat) = var.names
+  em$var.mat = var.mat
+
 ')
 
   for (ti in 1:NROW(em$var.mat)) {
@@ -93,12 +98,16 @@ report.ti.cluster = function(clu,fo.df,em,rep) {
   }
   fn(x,ti,par.mat,var.mat)  
 
+  # Show panes
+  sim = report.make.sim()
+  plot.pane(em = em,pane = 1,sim=sim,t=ti-1)
+
   sol = mynleqslv(x=x,fn=fn,ti=ti,par.mat=par.mat, var.mat=var.mat)
   
   if (max(abs(sol$fvec))> 1e-07) {
-    warning(paste0("Could not solve ", paste0(endo, collapse=", "), " for ti = ", paste0(ti, collapse=", ")," max deviation = ",max(abs(sol$fvec)) ))
+    warning(paste0("Could not solve {{endo_str}} for ti = ", paste0(ti, collapse=", ")," max deviation = ",max(abs(sol$fvec)) ))
   }
-  x = sol$x; names(x) = endo
+  x = sol$x
   x
   # Assign to var.mat
   {{assign}}
@@ -135,6 +144,20 @@ assign.to.var.mat = function(ti=1, var.mat, env =parent.frame()) {
   }
   var.mat
 }
+
+report.make.sim = function(env =parent.frame()) {
+  em = env$em
+  restore.point("report.make.sim")
+  var.mat = env$var.mat
+  ti = env$ti
+  var.mat = assign.to.var.mat(ti,var.mat,env)
+  par.mat = env$par.mat
+  
+  sim = var.par.to.sim(var.mat=var.mat, par.mat=par.mat)
+  em$sim = sim
+  invisible(sim)
+}
+
 
 new.report.writer = function() {
   rep = as.environment(list(txt=NULL))

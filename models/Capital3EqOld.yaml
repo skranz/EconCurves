@@ -38,6 +38,8 @@ vars:
   K:
     descr: capital stock
     formula: lag_K * (1-delta) + lag_I
+    init: K0
+    laginit: K0
   I:
     descr: |
       Investments follow the rule of thumb that current
@@ -46,6 +48,8 @@ vars:
       that unit of capital. This formula simplifies
       as below.
     eq: MPK == (delta+0.01*r) / (1+mu)
+    init: delta*K
+    laginit: delta*K
   MPK:
     descr: Marginal product of capital
     formula: (kappa*y) / K
@@ -90,16 +94,24 @@ vars:
   P:
     descr: the new price level is a markup on nominal wages 
     formula: (1+mu)*W
+    init: 1
+    laginit: 1
   # adaptive expectations
   Epi: 
     descr: expected inflation, simply the past inflation rate
     formula: 'lag_pi'
+    init: pi0
+    laginit: pi0
   EP:
     descr: the expected price level
     formula: 'lag_P * (1+0.01*Epi)'
+    init: 1
+    laginit: 1
   pi:
     descr: the actual inflation rate
     formula: (P-lag_P)/lag_P
+    init: pi0
+    laginit: pi0
   r:
     descr: the real interest rate
     formula: i-Epi
@@ -113,6 +125,7 @@ scenarios:
       mu: 0.1
       delta: 0.1
       tau: 1
+      pi0: 2
       C0: 20
       G: 30
       MPC: 0.8
@@ -120,27 +133,11 @@ scenarios:
       w_max: 200
       kappa: 0.5
       lambda: 0.5
+      K0: 100
       L_max: 100
     axis:
       L_: [0,110]
       w_: [0,150]
-    init_mode: steady_state
-    init:
-      tax_rate: 0.2
-      i: 5
-      mu: 0.1
-      delta: 0.1
-      tau: 1
-      w_min: 0
-      w_max: 200
-      L_max: 100
-      kappa: 0.5
-      lambda: 0.5
-      pi: 2
-      MPC: 0.8      
-      G: Tax
-      lag_P: 1
-
     shocks:
 #      A_dec:
 #        descr: Demand decreases

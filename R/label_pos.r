@@ -4,7 +4,7 @@ get.endpoints = function(lines) {
   #line = lines[[2]]
   li = lapply(lines, function(line) {
     restore.point("uhsfanjadnfjn")
-    n = length(line$x)
+    n = min(length(line$x), length(line$y))
     if (n==0) return(NULL)
     if (n==1) {
       res = data_frame(x=line$x[1],y=line$y[1],line=line$name)
