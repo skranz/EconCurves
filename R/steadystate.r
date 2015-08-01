@@ -8,7 +8,7 @@ examples.steady.state = function() {
   
   init.model(em,solve.systems = !TRUE)
   init.model.scen(em = em)
-  clu.df = solve.steady.state(em)
+  res = solve.steady.state(em)
   
   sim = simulate.model(em)
   
@@ -57,70 +57,88 @@ solve.steady.state = function(em, scen=em$scen) {
   clu.df = cluster.equations(eqs, exo=exo)
   clu.df
 
-
-
+  
+  txt = cluster.df.nice.code(clu.df)
+  txt = c(
+    "# Init exogenous symbols",
+    paste0(number.init," = ", init[number.init],collapse="; " ),
+    txt
+  )
+  txt = paste0(txt, collapse="\n\n")
+  writeClipboard(txt)
+  list(code=code,clu.df=clu.df)
 }
 
-cluster.df.to.sim = function(clu.df) {
-  
-  # All equations will be translated to implicit conditions
-  impl_ = lapply(eqs, function(eq_) substitute(lhs-(rhs), list(lhs=eq_[[2]],rhs=eq_[[3]])))
+cluster.df.nice.code = function(df) {
 
-  endo = clu.df$sym
-  exo = setdiff(init.syms,solve.syms)
-  endo.subst = lapply(seq_along(endo), function(i) {
-    substitute(x[i],list(i=i))
+  clusters = unique(df$cluster)
+  clu = 1
+  li = lapply(clusters, function(clu) {
+    rows = which(df$cluster == clu)
+    vars = df$var[rows]
+    solved = df$solved[rows[1]]
+    if (solved & length(rows)>1)
+        stop("We have a solved cluster with more than 1 row")
+    
+    if (solved) {
+      row = rows
+      txt = paste0(
+        "\n# Compute ", vars, " from ", deparse1(df$org_[[row]]),
+        "\n",vars," = ", deparse1(df$expl_[[row]]),
+        "\n",vars
+      )    
+    } else {
+      txt = paste0(
+        "\n# Solve ", paste0(vars,collapse=", "), " from ",
+        paste0("\n#  ", sapply(df$org_[rows],deparse1),collapse="")
+      )
+      
+      
+      xsubst = lapply(seq_along(vars), function(i) {
+        substitute(x[i],list(i=i))
+      })
+      names(xsubst) = vars
+      # Create function
+      impl_ = lapply(df$eq_[rows], function(eq_) {
+        call = substitute(lhs-(rhs), list(lhs=eq_[[2]],rhs=eq_[[3]]))
+        call = substitute.call(call, xsubst)
+        call
+        
+      })
+      inner = as.call(c(list(as.symbol("c")),impl_))
+      fn = function(x) {}
+      body(fn) = substitute({inner}, list(inner=inner))
+      fn
+      
+      code = substitute({
+        x <- runif(length(endo)) 
+        fn <- fun  
+        sol = mynleqslv(x=x, fn=fn)     
+        if (max(abs(sol$fvec))> 1e-07) {
+          warning(paste0("Could not solve ", paste0(endo, collapse=", ")," in steady state: max deviation = ",max(abs(sol$fvec)) ))
+        }
+      }, list(fun=fn,endo=vars))
+      code.txt = paste0(sapply(code[-1], deparse1, collapse = "\n"), collapse="\n")
+      txt = c(txt,"", code.txt)
+      if (length(vars)>1) {
+        txt = c(txt,
+          "x = sol$x",
+          paste0(vars, "= x[", seq_along(x),"]", collapse="; "),
+          paste0("c(",paste0(vars,collapse=","),")")
+        )
+      } else {
+        txt = c(txt,
+          paste0(vars, "= sol$x"),
+          paste0(vars)
+        )
+      }
+    }
+    paste0(txt, collapse="\n")
   })
-  names(endo.subst) = endo
 
-  exo.list = lapply(init[exo], function(val) as.numeric(val))
-  
-  #substitute original impl_ formula with x, par.mat and var.mat
-  simpl_ = lapply(impl_, function(call) {
-    call = substitute.call(call, c(endo.subst,exo.list))
-    call
-  })
-  names(simpl_) = NULL
-#   if (length(solve.syms)>length(simpl_)) {
-#     zero.cond 0 
-#     
-#   }
-  inner = as.call(c(list(as.symbol("c")),simpl_))
- 
-  fn = function(x) {}
-  body(fn) = inner
-  fn
-  
-  # solve equations
-  x <- runif(length(endo)) 
-#  sol = mynleqslv(x=x, fn=fn)
-#  if (max(abs(sol$fvec))> 1e-07) {
-#    warning(paste0("Could not solve ", paste0(endo, collapse=", ")," in steady state: max deviation = ",max(abs(sol$fvec)) ))
-#  }
-#  x = sol$x
-
-  x <- runif(length(endo)) 
-  sum.fn = function(x) sum(fn(x)^2)
-  sum.fn(x)
-  sol = optims(par = x, fn = sum.fn)
-  sol$ok
-  sol
-  
-  
-  library(nloptr)
-  x <- runif(length(endo)) 
-  n = length(endo)
-  sol = stogo(x, sum.fn, lower = rep(-1000,n), upper=rep(1000,n), nl.info=TRUE)
-  
-  directL(sum.fn, lower, upper, randomized = FALSE, original = FALSE,
-        nl.info = FALSE, control = list(), ...)
-  
-  endo.list = as.list(x)
-  names(endo.list) = endo
-  
-
-  c(exo.list, endo.list)
-  
+  code = paste0(li, collapse="\n\n")
+  #cat(code)
+  code
 }
 
 cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE) {
@@ -192,22 +210,25 @@ cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE) {
     clu.df = symbolic.cluster.equations(eqs,endo=endo)
     clu.df$org.row = rows
     
-    frac.level = clu.df$level / length(unique(clu.df$level))
+    frac.level = 1 + (clu.df$level / length(unique(clu.df$level)))
     clu.df$cluster = clu + frac.level
     clu.df$level = df$level[rows[1]] + frac.level
     clu.df
   })
-  sol.df = rbindlist(li)
-  sol.df$cluster = rank(sol.df$cluster,ties.method = "min")
-  sol.df = sol.df[order(sol.df$cluster),]
+  df = rbindlist(li)
+  df$cluster = rank(df$cluster,ties.method = "min")
+  df = df[order(df$cluster),]
+
   
-  sol.df
+  df
 }
 
 
 
-symbolic.cluster.equations = function(eqs, exo=NULL, endo=NULL, eq.solve.fun=sym.solve.eq, level=0) {
+symbolic.cluster.equations = function(eqs, exo=NULL, endo=NULL, eq.solve.fun=sym.solve.eq, level=-1) {
   restore.point("symbolic.cluster.equations")
+  
+  if (length(eqs)==3) restore.point("nfjdmfgdkgrngzbgvf")
   if (is.null(endo)) {
     vars = unique(unlist(lapply(eqs, find.variables)))
     endo = setdiff(vars, exo)
@@ -253,7 +274,7 @@ symbolic.cluster.equations = function(eqs, exo=NULL, endo=NULL, eq.solve.fun=sym
     # try to solve remaining equations,
     # plugging in the solved value
     if (length(eqs)>1) {
-      restore.point("symbolic.cluster.equations.outer")
+      #restore.point("symbolic.cluster.equations.outer")
       reqs = eqs[-eq.ind]
       
       # substitute solution into remaining equations
@@ -261,7 +282,7 @@ symbolic.cluster.equations = function(eqs, exo=NULL, endo=NULL, eq.solve.fun=sym
       names(subst.li) = var
       reqs = lapply(reqs, substitute.call,  env=subst.li)
       
-      rdf = symbolic.cluster.equations(reqs, endo=setdiff(endo,var),eq.solve.fun = eq.solve.fun,level=level+1)
+      rdf = symbolic.cluster.equations(reqs, endo=setdiff(endo,var),eq.solve.fun = eq.solve.fun,level=level-1)
     } else {
       rdf = NULL
     }
@@ -431,6 +452,7 @@ create.eating.calls = function(env = parent.frame()) {
   })
   
 }
+
 
 # 
 # make.solve.fun = function(expl.li, eq.li) {

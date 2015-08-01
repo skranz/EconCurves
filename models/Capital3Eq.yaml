@@ -45,10 +45,13 @@ vars:
       will be equal to current marginal revenues from
       that unit of capital. This formula simplifies
       as below.
-    eq: MPK == (delta+0.01*r) / (1+mu)
+    eq: MPK == (delta+r) / (1+mu)
   MPK:
     descr: Marginal product of capital
     formula: (kappa*y) / K
+  MPL:
+    descr: Marginal product of labor
+    formula: (lambda*y) / L
     
 # Labor market if inflation expectiation were correct
   L_eq:
@@ -88,15 +91,15 @@ vars:
     ycurve: [WWS]
     x: L 
   P:
-    descr: the new price level is a markup on nominal wages 
-    formula: (1+mu)*W
+    descr: the new price level is a markup on nominal piece labor cost 
+    formula: (1+mu)* (W/MPL)
   # adaptive expectations
   Epi: 
     descr: expected inflation, simply the past inflation rate
-    formula: 'lag_pi'
+    formula: lag_pi
   EP:
     descr: the expected price level
-    formula: 'lag_P * (1+0.01*Epi)'
+    formula: lag_P * (1+Epi)
   pi:
     descr: the actual inflation rate
     formula: (P-lag_P)/lag_P
@@ -109,7 +112,7 @@ scenarios:
     params:
       T: 10
       tax_rate: 0.2
-      i: 5
+      i: 0.05
       mu: 0.1
       delta: 0.1
       tau: 1
@@ -127,19 +130,20 @@ scenarios:
     init_mode: steady_state
     init:
       tax_rate: 0.2
-      i: 5
+      i: 0.05
       mu: 0.1
       delta: 0.1
       tau: 1
       w_min: 0
-      w_max: 200
+      #w_max: 1
+      u: 0.05
       L_max: 100
       kappa: 0.5
       lambda: 0.5
-      pi: 2
+      pi: 0.02
       MPC: 0.8      
       G: Tax
-      lag_P: 1
+      lag_P: 100
 
     shocks:
 #      A_dec:
