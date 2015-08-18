@@ -59,37 +59,41 @@ select.base.algos = function(par,fn=NULL, ineq.fn=NULL, eq.fn=NULL, lower=NULL, 
       eq2fun = TRUE
   }
   
-  
   # Constraint optimization with equality or ineqality constraints
-  if (!is.null(fn) & !is.null(ineq.fn) | !is.null(eq.fn)) {
+  if (!is.null(fn) & (!is.null(ineq.fn) | !is.null(eq.fn))) {
     return(list(
       #constrOptimNL = nlist(base="alabama",method="constrOptim.nl",ineq2fun,eq2fun)
       #solnp = nlist(base="Rsolnp",method="solnp",ineq2fun,eq2fun)
       cobyla = nlist(base="cobyla",method="",ineq2fun,eq2fun)
     ))
   }
-  
-  
+
+  res.li = NULL
+  if (is.null(fn) & is.null(ineq.fn) & !is.null(eq.fn)) {
+    res.li = c(res.li, list(nleqslv = nlist(base="nleqslv",method="",ineq2fun,eq2fun)))
+  }
+
   if (length(par)==1) {
     if (is.null(lower) | is.null(upper)) {
-      return(list(UnboundedBrent = nlist(base="UnboundedBrent",ineq2fun,eq2fun)))
+      res.li = c(res.li,list(UnboundedBrent = nlist(base="UnboundedBrent",ineq2fun,eq2fun)))
     } else {
       return(list(
         Brent = nlist(base="optim",method="Brent",ineq2fun,eq2fun),
         L_BFGS_B = nlist(base="optim", method="L-BFGS-B",ineq2fun,eq2fun)
       ))
     }
+  } else  {
+    if (!is.null(lower) | !is.null(upper)) {
+      first = list(L_BFGS_B = nlist(base="optim", method="L-BFGS-B",ineq2fun,eq2fun))
+    } else {
+      first = list(BFGS = nlist(base="optim", method="BFGS",ineq2fun,eq2fun))
+    }
+    second = list(
+      NelderMead=nlist(base="optim",method="Nelder-Mead",ineq2fun,eq2fun)
+    )
+    res.li = c(res.li,first,second)
   }
-  
-  if (!is.null(lower) | !is.null(upper)) {
-    first = list(L_BFGS_B = nlist(base="optim", method="L-BFGS-B",ineq2fun,eq2fun))
-  } else {
-    first = list(BFGS = nlist(base="optim", method="BFGS",ineq2fun,eq2fun))
-  }
-  second = list(
-    NelderMead=nlist(base="optim",method="Nelder-Mead",ineq2fun,eq2fun)
-  )
-  c(first,second)
+  res.li
 }
 
 get.algo.fun = function(algo) {
@@ -121,6 +125,14 @@ get.algo.fun = function(algo) {
       res = optim(par=par, fn=fn, method=method, lower=lower, upper=upper,...)
       restore.point("optim.fun.inner")
       list(par=res$par, value=res$value, ok=res$convergence==0, counts=res$counts, message=res$message, org=res)
+    }
+  } else if (base=="nleqslv") {
+    fun = function(par, fn=NULL,ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, hessian, jacobi,gr=NULL,...) {
+      if (!is.null(fn) | !is.null(ineq.fn) | is.null(eq.fn))
+        stop("base nleqslv reqires the eq.fn argument only.")
+      res = mynleqslv(x=par, fn=eq.fn,...)
+      ok = max(abs(res$fvec))> 1e-07
+      list(par=res$x, value=res$fvec, ok=ok, counts=res$counts, message=res$message, org=res)
     }
   } else if (base=="UnboundedBrent") {
     fun = function(par, fn=NULL,ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, hessian, jacobi,...) {

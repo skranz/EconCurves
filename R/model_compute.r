@@ -962,3 +962,50 @@ fo.substitute.index.vars = function(call, em, var.names=em$var.names, par.names=
   
   recursive.fun(call)
 }
+
+examples.replace.symbolic.funs = function() {
+  funs = list(yS=quote(tau * K^(kappa) * L^(lambda)), sqr=quote(K_eq^2) )
+  call = quote(Diff(yS(L=3, K = sqr(K_eq=5)), kappa))
+  call = quote(Diff(yS(),tau))
+  
+  call = replace.variable.funs(call, funs)
+  call
+  compute.symbolic.ops(call)
+}
+
+compute.symbolic.ops = function(call, recursive = TRUE) {
+  restore.point("compute.symbolic.ops")
+  if (is.call(call)) {
+    name = as.character(call[[1]])
+    if (name=="Diff") {
+      call = eval(call)
+    }
+  }  
+  if (length(call)>1 & recursive) {
+    for (i in seq_along(call)[-1])
+      call[[i]] = compute.symbolic.ops(call=call[[i]], recursive=TRUE)
+  }
+  call
+  
+}
+
+replace.variable.funs = function(call, funs, recursive=TRUE) {
+  if (is.call(call)) {
+    name = as.character(call[[1]])
+    # A call to be replaced
+    if (name %in% names(funs)) {
+      args = lapply(seq_along(call)[-1], function(i) call[[i]])
+      vars = names(call)
+      call = funs[[name]]
+      if (length(vars)>0) {
+        names(args) = vars[-1]
+        call = substitute.call(call, args)
+      }
+    }
+  }  
+  if (length(call)>1 & recursive) {
+    for (i in seq_along(call)[-1])
+      call[[i]] = replace.variable.funs(call=call[[i]],funs=funs, recursive=TRUE)
+  }
+  call
+}

@@ -4,12 +4,13 @@ examples.steady.state = function() {
   init.ec()
   ec = get.ec()
   em = load.model("Capital3Eq")
+  em = load.model("Labor3Eq")
   check.model(em)
   
   init.model(em,solve.systems = !TRUE)
   init.model.scen(em = em)
   res = solve.steady.state(em)
-  
+  df = res$clu.df
   sim = simulate.model(em)
   
 
@@ -70,7 +71,8 @@ solve.steady.state = function(em, scen=em$scen) {
 }
 
 cluster.df.nice.code = function(df) {
-
+  restore.point("cluster.df.nice.code")
+  
   clusters = unique(df$cluster)
   clu = 1
   li = lapply(clusters, function(clu) {
@@ -113,22 +115,23 @@ cluster.df.nice.code = function(df) {
       code = substitute({
         x <- runif(length(endo)) 
         fn <- fun  
-        sol = mynleqslv(x=x, fn=fn)     
-        if (max(abs(sol$fvec))> 1e-07) {
-          warning(paste0("Could not solve ", paste0(endo, collapse=", ")," in steady state: max deviation = ",max(abs(sol$fvec)) ))
+        #sol = mynleqslv(x=x, fn=fn)     
+        sol = optims(par=x, eq.fn=fn)     
+        if (!sol$ok) {
+          warning(paste0("Could not solve ", paste0(endo, collapse=", ")," in steady state.\n", sol$message ))
         }
       }, list(fun=fn,endo=vars))
       code.txt = paste0(sapply(code[-1], deparse1, collapse = "\n"), collapse="\n")
       txt = c(txt,"", code.txt)
       if (length(vars)>1) {
         txt = c(txt,
-          "x = sol$x",
-          paste0(vars, "= x[", seq_along(x),"]", collapse="; "),
+          "x = sol$par",
+          paste0(vars, "= x[", seq_along(vars),"]", collapse="; "),
           paste0("c(",paste0(vars,collapse=","),")")
         )
       } else {
         txt = c(txt,
-          paste0(vars, "= sol$x"),
+          paste0(vars, "= sol$par"),
           paste0(vars)
         )
       }
@@ -141,7 +144,7 @@ cluster.df.nice.code = function(df) {
   code
 }
 
-cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE) {
+cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE, solve.symbolic=!TRUE) {
   restore.point("cluster.equations")
 
   # Find for each formula the contained endogenous variables
@@ -182,6 +185,19 @@ cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE) {
   rows = which(df$cluster==0)
   if (length(rows)>0) {
     remain.syms = setdiff(syms, df$sym)
+    
+    # deal with free symbols (more variables than equations)
+    # add dummy equations
+    num.free = length(remain.syms)-length(rows)
+    if (num.free>0) {
+      if (verbose)
+        cat("\nWe have", num.free, "more variables than equations.")
+      free.rows = (NROW(df)+1):(NROW(df)+num.free)
+      free.df = data_frame(eq.ind=free.rows, eq_=replicate(n=num.free, quote(0==0)), expl_ = NA, level=0, cluster = 0, cluster.size = 0, active=FALSE, vars=vector("list",num.free), vars.id="", num.vars=0,sym="")
+      df = rbind(df, free.df)
+      rows = c(rows, free.rows)
+    }
+    
     df$cluster[rows] = max(df$cluster)+1
     df$cluster.size[rows] = length(rows)
     df$sym[rows] = remain.syms    
@@ -208,7 +224,9 @@ cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE) {
     eqs = df$eq_[rows]
     endo = df$sym[rows]
     clu.df = symbolic.cluster.equations(eqs,endo=endo)
-    clu.df$org.row = rows
+    clu.df$org_ = eqs[clu.df$org.ind]
+    clu.df$org.row = rows[clu.df$org.ind]
+    
     
     frac.level = 1 + (clu.df$level / length(unique(clu.df$level)))
     clu.df$cluster = clu + frac.level
@@ -217,6 +235,7 @@ cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE) {
   })
   df = rbindlist(li)
   df$cluster = rank(df$cluster,ties.method = "min")
+  
   df = df[order(df$cluster),]
 
   
@@ -225,14 +244,19 @@ cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE) {
 
 
 
-symbolic.cluster.equations = function(eqs, exo=NULL, endo=NULL, eq.solve.fun=sym.solve.eq, level=-1) {
+symbolic.cluster.equations = function(eqs, exo=NULL, endo=NULL, eq.solve.fun=sym.solve.eq, level=-1, subst=NULL, skip.big=FALSE, simplify.fun = NULL) {
   restore.point("symbolic.cluster.equations")
   
-  if (length(eqs)==3) restore.point("nfjdmfgdkgrngzbgvf")
+  if (length(eqs)==2 & "K" %in% endo) restore.point("nfjdmfgdkgrngdgfgfhzbgvf")
+  vars = unique(unlist(lapply(eqs, find.variables)))
   if (is.null(endo)) {
-    vars = unique(unlist(lapply(eqs, find.variables)))
     endo = setdiff(vars, exo)
-  }  
+  } else {
+    free.var = setdiff(endo,vars)
+    if (length(free.var)>0) {
+      warning("The variable(s) ", paste0(free.var)," cannot be determined. Please specify an initial value for them.")
+    }
+  } 
 
   if (length(endo) != length(eqs)) {
     stop("number of endo variables and number of equations is not identical")
@@ -240,56 +264,66 @@ symbolic.cluster.equations = function(eqs, exo=NULL, endo=NULL, eq.solve.fun=sym
   
   # check if one equation is already in form of an explicit solution
   solved = FALSE
-  for (eq.ind in seq_along(eqs)) {
-    var = is.expl.eq(eqs[[eq.ind]],endo)
-    if (!is.null(var)) {
-      new.eq = eqs[[eq.ind]]
-      solved = TRUE
-      break
-    }
-  }
-  # try to solve an equation for an endogenous variable
-  # using the symbolic equation solver
-  if (!solved) {
-    sym.li = lapply(eqs, function(eq) find.variables(eq))
+  if (! (skip.big & length(eqs)>1)) {
     for (eq.ind in seq_along(eqs)) {
-      eq = eqs[[eq.ind]]
-      vars = intersect(sym.li[[eq.ind]],endo)
-      for (var in vars) {
-        res = eq.solve.fun(eq,var)
-        if (res$solved) {
-          solved = TRUE
-          new.eq = res$eq
-          break
-        }        
+      var = is.expl.eq(eqs[[eq.ind]],endo)
+      if (!is.null(var)) {
+        new.eq = eqs[[eq.ind]]
+        solved = TRUE
+        break
       }
-      if (solved) break
     }
-  }
-  
+    # try to solve an equation for an endogenous variable
+    # using the symbolic equation solver
+    if (!solved) {
+      sym.li = lapply(eqs, function(eq) find.variables(eq))
+      for (eq.ind in seq_along(eqs)) {
+        eq = eqs[[eq.ind]]
+        vars = intersect(sym.li[[eq.ind]],endo)
+        for (var in vars) {
+          res = eq.solve.fun(eq,var)
+          if (res$solved) {
+            solved = TRUE
+            new.eq = res$eq
+            break
+          }        
+        }
+        if (solved) break
+      }
+    }
+  }  
   # could solve an equation
   if (solved) {
     expl_ = new.eq[[3]]
+    
+    # Try to simplify the explicit solution
+    if (!is.null(simplify.fun))
+      expl_ = simplify.fun(expl_)
     
     # try to solve remaining equations,
     # plugging in the solved value
     if (length(eqs)>1) {
       #restore.point("symbolic.cluster.equations.outer")
       reqs = eqs[-eq.ind]
+      child.inds = seq_along(eqs)[-eq.ind]
       
+
       # substitute solution into remaining equations
       subst.li = list(substitute((expl_),list(expl_=expl_)))
       names(subst.li) = var
       reqs = lapply(reqs, substitute.call,  env=subst.li)
       
-      rdf = symbolic.cluster.equations(reqs, endo=setdiff(endo,var),eq.solve.fun = eq.solve.fun,level=level-1)
+      rdf = symbolic.cluster.equations(reqs, endo=setdiff(endo,var),eq.solve.fun = eq.solve.fun,level=level-1, subst=c(subst, var))
+      rdf$org.ind = child.inds[rdf$org.ind]
     } else {
       rdf = NULL
     }
-    eq.df = data_frame(var=var,expl_=list(expl_), eq_ = list(new.eq), org_ = eqs[eq.ind], cluster.size = 1, solved=TRUE, level=level)
+    restore.point("nhfnfngigtirmgjnng")
+    
+    eq.df = data_frame(var=var,expl_=list(expl_), eq_ = list(new.eq), cluster.size = 1, solved=TRUE, level=level, org.ind=eq.ind, subst=list(subst))
     df = rbind(rdf, eq.df)
   } else {
-    df = data_frame(var=endo,expl_=vector("list",length(endo)), eq_ = eqs, org_= eqs, cluster.size = length(endo), solved=FALSE, level=level)
+    df = data_frame(var=endo,expl_=vector("list",length(endo)), eq_ = eqs, cluster.size = length(endo), solved=FALSE, level=level, org.ind = seq_along(eqs), subst=replicate(length(endo),subst,simplify = FALSE) )
   }
   df
 }
@@ -323,6 +357,10 @@ create.eating.calls = function(env = parent.frame()) {
       if (length(rows)==0) break
       cols = max.col(mat[rows,,drop=FALSE])
       cur.syms = syms[cols]
+      if (any(duplicated(cur.syms))) {
+        dupl.syms = unique(cur.syms[duplicated(cur.syms)])
+        warning(paste0("The variables "), paste0(dupl.syms, collapse=", ")," are determined by more than one equation!")
+      }
       
       df$active[rows] = FALSE
       df$cluster[rows] = max(df$cluster)+seq_along(rows)
@@ -597,3 +635,18 @@ large.solve.steady.state = function(em, scen=em$scen) {
   
 }
 
+
+mysolve = function(x, fn) {
+
+  sol = optims(x,eq.fn = fn)
+  if (!sol$solved) {
+    sol$solved = FALSE  
+    warning(paste0("Could not solve ", paste0(c("w_max", "C"), collapse = ", "), " in steady state: max deviation = ", max(abs(sol$fvec))))
+  } else {
+    sol$solved = TRUE
+  }
+
+  if (!sol$solved) {
+    
+  }
+}

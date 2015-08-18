@@ -4,16 +4,17 @@ info:
   descr: |
     A three equation model with endogenous capital formation
 
+functions:
+
 curves:
   wPS:
-    descr: The price-setting real wage equation
-    eq: w_ == (1/1+mu)* lambda*tau* K^kappa * L_^(lambda-1)
+    descr: The intermediate run price-setting real wage equation
+    eq: w_ == wPS(L=L_)
     xy: [L_,w_]
     color: blue 
   wWS:
-    descr: The real wage-setting curve
+    descr: The intermediate run real wage-setting curve
     eq: w_ == w_min + (L_ / L_max)*(w_max-w_min)
-#    eq: w_ == ws1 * L_
     color: red
     xy: [L_,w_]
   WWS:
@@ -21,7 +22,10 @@ curves:
     eq: w_ == EP*(w_min + (L_ / L_max)*(w_max-w_min))
     xy: [L_,w_]
     color: orange 
-  
+  MPL_curve:
+    eq: MPL_ == (lambda* y(L=L_) ) / L_
+
+
 
 panes:
   labour_market:
@@ -34,24 +38,31 @@ panes:
 #laginitMode: steady_state
 
 vars:
+  yS: 
+    descr: supplied output
+    formula: tau * K^(kappa) * L^(lambda)
+  yD:
+    descr: demanded output
+    formula: tau * K^(kappa) * L^(lambda)
+  y:
+    descr: resulting output 
+    formula: yS
 # Determination of capital and investments
-  K:
-    descr: capital stock
-    formula: lag_K * (1-delta) + lag_I
-  I:
-    descr: |
-      Investments follow the rule of thumb that current
-      marginal cost of renting one extra unit of capital
-      will be equal to current marginal revenues from
-      that unit of capital. This formula simplifies
-      as below.
-    eq: MPK == (delta+r) / (1+mu)
   MPK:
     descr: Marginal product of capital
-    formula: (kappa*y) / K
+    formula: (kappa*y) / K # Diff(yS(),K)
+    
   MPL:
     descr: Marginal product of labor
-    formula: (lambda*y) / L
+    formula: (lambda*y) / L 
+# 
+  wPS:
+    descr: The intermediate run price-setting real wage equation
+    formula:  (1/1+mu)* lambda*tau* K^kappa * L^(lambda-1)
+  wWS:
+    descr: The intermediate run real wage-setting curve
+    formula: w_min + (L / L_max)*(w_max-w_min)  
+
     
 # Labor market if inflation expectiation were correct
   L_eq:
@@ -81,15 +92,21 @@ vars:
     formula: C0+ MPC*(y - Tax)
   S:
     descr: savings
-    formula: y-C
+    formula: y-C-Tax
   Tax:
     descr: the paid taxes
     formula: tax_rate*y
+#  I:
+#    descr: investment levels
+#    formula: I0-aI*r
 # nominal wages, prices and inflation
   W:
     descr: nominal wages
     ycurve: [WWS]
-    x: L 
+    x: L
+  w:
+    descr: actual real wages
+    formula: W / P
   P:
     descr: the new price level is a markup on nominal piece labor cost 
     formula: (1+mu)* (W/MPL)
@@ -133,18 +150,20 @@ scenarios:
       i: 0.05
       mu: 0.1
       delta: 0.1
-      tau: 1
+      #tau: 1
       w_min: 0
+      K: 100
       #w_max: 1
-      #L: L_eq
-      u: 0.05
+      L: L_eq
+      u: 0.01
       L_max: 100
       kappa: 0.5
-      lambda: 0.5
+      #lambda: 0.5
       pi: 0.02
-      MPC: 0.7      
+      MPC: 0.6      
       G: Tax
       lag_P: 100
+      C0: 10
 
     shocks:
 #      A_dec:

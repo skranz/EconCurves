@@ -1,5 +1,25 @@
+examples.Diff = function() {
+  Diff(2*x^2*y^2,x,y)
+  MPL = Diff(tau * K^(kappa) * L^(lambda), L)
+  MPL
+}
 
+Diff = function(expr, ...) {
+  expr = substitute(expr)
+  vars = dots(...)
+  vars = sapply(vars,as.character)
+  restore.point("Diff")
 
+  for (var in vars)
+    expr = D(expr, var)
+  
+  expr
+}
+
+dots = function (...) 
+{
+    eval(substitute(alist(...)))
+}
 
 syso.env = new.env()
 
@@ -143,6 +163,13 @@ sym.solve.eq= function(eq, var) {
   if (!sol$solved) return(sol)
   eq = sol$eq
   
+  # Cannot yet solve polynomials in which
+  # the variable appears more than one time
+  # on the lhs
+  if (count.variables(eq)[var]>1) {
+    sol$solved=FALSE
+    return(sol)
+  }
   #eq = apply.term.rules(eq,rules = get.syso()$simplify, repeated=TRUE,nested = TRUE)
   symbol = as.name(var)
   if (!identical(eq[[2]],symbol)) {    

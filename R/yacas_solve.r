@@ -10,6 +10,30 @@ examples.yacas.solve.eq = function() {
   vars = c("x,","y")
   sympy.solve.eqs(eqs, vars=c("x","y"))
 
+  
+  yacas.simplify("2*x+x == x")
+  class(yacas.simplify("2*x+x"))
+  
+  term = "x+x+x"
+}
+
+maxima.simplify = function(term) {
+  restore.point("maxima.simplify")
+  library(RMaxima)
+  if (is.call(term))
+    term = deparse1(term)
+  res = mx.simplify(str = term,simplify.code = "ratsimp()")
+  res.str = res$li[[1]]
+  parse.as.call(res.str)
+}
+
+yacas.simplify = function(term) {
+  restore.point("yacas.simplify")
+  library(Ryacas)
+  if (!is.character(term))
+    term = deparse1(term)
+  code = paste0("Simplify(",term,")")
+  Ryacas::yacas(code)[[1]][[1]]
 }
 
 yacas.solve.eq = function(eq,var) {

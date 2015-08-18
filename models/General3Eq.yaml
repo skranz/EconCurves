@@ -1,0 +1,182 @@
+modelId: Capital3Eq
+
+info:
+  descr: |
+    A three equation model with endogenous capital formation
+
+curves:
+  wPS:
+    descr: The intermediate run price-setting real wage equation
+    eq: w_ == wPS(L=L_)
+    xy: [L_,w_]
+    color: blue 
+  wWS:
+    descr: The intermediate run real wage-setting curve
+    eq: w_ == wWS(L=L_)
+    color: red
+    xy: [L_,w_]
+  MPL:
+    eq: w_ == MPL(L=L_)
+    xy: [L_,w_]
+    color: green 
+
+
+panes:
+  labour_market:
+    pos: [1,1]
+    xy: [L_,w_]
+    curves: [wPS,wWS,MPL]
+    xmarkers: [L,L_eq,L_max]
+    ymarkers: [w,w_eq]
+  price_level:
+    pos: [1,2]
+    xy: [P_,W_]
+    curves: 
+      W_P: 
+        eq: W_ = P_ * w
+        color: green
+      Wdem_P:
+        eq: W_ = Wdem
+        color: brown
+    xmarkers: [P, EP]
+    ymarkers: [W]
+  
+#laginitMode: steady_state
+
+vars:
+  yS: 
+    descr: production function / total supply
+    formula: tau * K^(kappa) * L^(lambda)
+  y_max:
+    descr: maximum demanded total output
+    formula: yS(L=L_max)
+  yD:
+    descr: aggregate demand function, capped at maximum supply 
+    formula: min(I + G + C, y_max)
+  y:
+    descr: resulting output 
+    formula: yS
+
+# Determination of capital and investments
+  MPK:
+    descr: Marginal product of capital
+    formula: Deriv(yS(),K)
+  MPL:
+    descr: Marginal product of labor
+    formula: Deriv(yS(), L) 
+  wPS:
+    descr: |
+      The intermediate run price-setting real wage equation.
+      Firms will add a markup mu on the wages.
+      Hence, workers only get a fraction (1/1+mu) of their MPL.
+    formula:  (1/1+mu)*MPL
+  wWS:
+    descr: |
+      The intermediate run real wage-setting curve.
+      Offered efficiency wages increase with the total labor demand. 
+    formula: w_min + (L / L_max)*(w_max-w_min)  
+# Labor market if inflation expectiation were correct
+  L_eq:
+    descr: the equilibrium labor supply if inflation expectations are correct
+    xcut: [wPS, wWS]
+  w_eq:
+    descr: the real wage if inflation expectations are correct
+    ycut: [wPS, wWS]
+# Total demand, production and labor
+  L:
+    descr: equilibrium labor supply, will be determined by the goods market equilibrium condition
+    eq: yD == yS    
+  u:
+    descr: unemployment rate
+    formula: (L_max-L)/L_max
+  C:
+    descr: consumption
+    formula: C0+ MPC*(y - Tax)
+  S:
+    descr: savings
+    formula: y-C-Tax
+  Tax:
+    descr: the paid taxes
+    formula: tax_rate*y
+#  I:
+#    descr: investment levels
+#    formula: I0-aI*r
+# nominal wages, prices and inflation
+
+# Labor market in which inflation expectations may be incorrect
+  w:
+    descr: the actual real wages are determined by the price setting curve
+    ycurve: wPS
+    x: L
+  Wdem:
+    descr: demanded nominal wages by workers
+    formula: (lag_P*(1+Epi)) * wWS
+  W:
+    descr: the actual nominal wages
+    formula: w*P
+  P:
+    descr: the new price level equalizes demanded and actual nominal wages 
+    eq: W == Wdem
+  pi:
+    descr: the actual inflation rate
+    formula: (P-lag_P)/lag_P    
+  # adaptive inflation expectations
+  Epi: 
+    descr: expected inflation, simply the past inflation rate
+    formula: lag_pi
+  EP:
+    descr: the expected price level
+    formula: lag_P * (1+Epi)
+  # real interest rate is based on expected inflation
+  r:
+    descr: the real interest rate
+    formula: i-Epi
+
+scenarios:
+  base:
+    params:
+      T: 10
+      tax_rate: 0.2
+      i: 0.05
+      mu: 0.1
+      delta: 0.1
+      tau: 1
+      C0: 20
+      G: 30
+      MPC: 0.8
+      w_min: 0
+      w_max: 200
+      kappa: 0.5
+      lambda: 0.5
+      L_max: 100
+    axis:
+      L_: [0,110]
+      w_: [0,150]
+    init_mode: steady_state
+    init:
+      tax_rate: 0.2
+      i: 0.05
+      mu: 0.1
+      delta: 0.1
+      #tau: 1
+      w_min: 0
+      K: 100
+      #w_max: 1
+      L: L_eq
+      u: 0.01
+      L_max: 100
+      kappa: 0.5
+      #lambda: 0.5
+      pi: 0.02
+      MPC: 0.6      
+      G: Tax
+      lag_P: 100
+      C0: 10
+
+    shocks:
+#      A_dec:
+#        descr: Demand decreases
+#        effects:
+#          C0: 'C0*0.5'
+#        start: 5
+#        duration: 100
