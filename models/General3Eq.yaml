@@ -160,13 +160,13 @@ scenarios:
       delta: 0.1
       #tau: 1
       w_min: 0
-      K: 100
       #w_max: 1
+      K: 100
       L: L_eq
       u: 0.01
       L_max: 100
       kappa: 0.5
-      #lambda: 0.5
+      lambda: 0.5
       pi: 0.02
       MPC: 0.6      
       G: Tax

@@ -1,18 +1,33 @@
 examples.Diff = function() {
-  Diff(2*x^2*y^2,x,y)
-  MPL = Diff(tau * K^(kappa) * L^(lambda), L)
+  Deriv(ifelse(x>5,x^2,2*x),x)
+  Deriv(2*x^2*y^2,x,y, use.Deriv.pkg)
+  MPL = Deriv(tau * K^(kappa) * L^(lambda), L)
+  
+  myfun <- function(x, y=TRUE) NULL # do something usefull
+  dmyfun <- function(x, y=TRUE) NULL # myfun derivative by x.
+  drule[["myfun"]] <- alist(x=dmyfun(x, y), y=NULL) # y is just a logical
+  Deriv(myfun(z^2, FALSE), "z")
+  # 2 * (z * dmyfun(z^2, FALSE))
+  Deriv::Simplify(quote(x*x^2))
+  Deriv::Deriv(expression(tau * K^(kappa) * L^(lambda)),"L")
   MPL
+  library(Deriv)
+  Deriv:::Simplify_
 }
 
-Diff = function(expr, ...) {
+Deriv = function(expr, ..., use.Deriv.pkg = require(Deriv)) {
   expr = substitute(expr)
   vars = dots(...)
   vars = sapply(vars,as.character)
   restore.point("Diff")
 
-  for (var in vars)
-    expr = D(expr, var)
-  
+  if (use.Deriv.pkg) {
+    for (var in vars)
+      expr = Deriv::Deriv(as.expression(expr), var)[[1]]
+  } else {
+    for (var in vars)
+      expr = D(expr, var)
+  }
   expr
 }
 

@@ -1,4 +1,4 @@
-optims = function(par, fn=NULL, ineq.fn=NULL, eq.fn=NULL, target=NULL, lower=NULL, upper=NULL, gr=NULL, algos = selector(par=par,fn=fn,gr=gr, ineq.fn=ineq.fn,eq.fn=eq.fn,lower=lower,upper=upper),   selector = select.base.algos, tol = 1e-8, constr.tol = 1e-12, try.all.algos = TRUE, store.summary=try.all.algos,...) {
+optims = function(par, fn=NULL, ineq.fn=NULL, eq.fn=NULL, target=NULL, lower=NULL, upper=NULL, gr=NULL, algos = selector(par=par,fn=fn,gr=gr, ineq.fn=ineq.fn,eq.fn=eq.fn,lower=lower,upper=upper),   selector = select.base.algos, tol = 1e-8, constr.tol = 1e-12, try.all.algos = !TRUE, store.summary=try.all.algos,...) {
   args = list(...)
 
   restore.point("optims")
@@ -22,8 +22,12 @@ optims = function(par, fn=NULL, ineq.fn=NULL, eq.fn=NULL, target=NULL, lower=NUL
     res$runtime = Sys.time()-start.time 
     res$algo = algo
     if (!is.null(act.target)) {
-      if (!is.true(abs(res$value-act.target)<=tol))
-        res$ok = FALSE
+      ok = is.true(abs(res$value-act.target)<=tol)
+      if (res$ok & !ok) {
+        warning(paste0("optim.fun returned ok, but tolerance > ", tol))
+      } else {
+        res$ok = ok
+      }
     }
     
     if (!try.all.algos & res$ok) return(res)
@@ -44,7 +48,7 @@ optims = function(par, fn=NULL, ineq.fn=NULL, eq.fn=NULL, target=NULL, lower=NUL
   }
   
   best.i=which.min(values)
-  res.li[[i]]
+  res.li[[best.i]]
 }
 
 select.base.algos = function(par,fn=NULL, ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, jacobi=NULL, hessian=NULL, ...) {
@@ -131,7 +135,7 @@ get.algo.fun = function(algo) {
       if (!is.null(fn) | !is.null(ineq.fn) | is.null(eq.fn))
         stop("base nleqslv reqires the eq.fn argument only.")
       res = mynleqslv(x=par, fn=eq.fn,...)
-      ok = max(abs(res$fvec))> 1e-07
+      ok = max(abs(res$fvec))< 1e-07
       list(par=res$x, value=res$fvec, ok=ok, counts=res$counts, message=res$message, org=res)
     }
   } else if (base=="UnboundedBrent") {
@@ -205,7 +209,7 @@ transform.optim.fn = function(fn=NULL,ineq.fn=NULL, eq.fn=NULL) {
 # faster version with fewer checks
 mynleqslv = function (x, fn, jac = NULL, ..., method = c("Broyden", "Newton")[1], 
     global = c("dbldog", "pwldog", "cline", "qline", "gline", 
-        "hook", "none")[1], xscalm = c("fixed", "auto")[1], jacobian = FALSE) 
+        "hook", "none")[1], xscalm = c("fixed", "auto")[1], jacobian = FALSE, allow.singular=TRUE) 
 {
     #restore.point("mynleqslv")
     fn1 <- function(par) fn(par, ...)
@@ -214,7 +218,7 @@ mynleqslv = function (x, fn, jac = NULL, ..., method = c("Broyden", "Newton")[1]
     con <- list(ftol = 1e-08, xtol = 1e-08, btol = 0.001, stepmax = -1, 
         delta = -2, sigma = 0.5, scalex = rep(1, length(x)), 
         maxit = 150, trace = 0, chkjac = FALSE, cndtol = 1e-12, 
-        allowSingular = FALSE, dsub = -1L, dsuper = -1L)
+        allowSingular =  allow.singular, dsub = -1L, dsuper = -1L)
 
     on.exit(.C("deactivatenleq", PACKAGE = "nleqslv"))
     out <- .Call("nleqslv", x, fn1, jac1, method, global, xscalm, 
