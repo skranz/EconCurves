@@ -1,3 +1,18 @@
+
+replace.whiskers = function(str, env=parent.frame()) {
+  restore.point("replace.whiskers")
+  
+  pos = str.blocks.pos(str,"{{","}}")
+  if (NROW(pos$outer)==0) return(str)
+  s = substring(str, pos$inner[,1],pos$inner[,2])
+  vals = lapply(s, function(su) {
+    eval(parse(text=su),env)
+  })
+  res = str.replace.at.pos(str, pos$outer, unlist(vals))
+  res
+}
+
+
 deparse1 = function (call, collapse = "") 
 {
     paste0(deparse(call, width = 500), collapse = collapse)

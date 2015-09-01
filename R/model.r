@@ -9,7 +9,8 @@ examples.model = function() {
   em = load.model("AdaptivePricesRandom")
   em = load.model("GreenParadox")
   em = load.model("HongStein")
-  
+  em = load.model("General3Eq")
+    
   init.model(em)
   init.model.scen(em)
   sim = simulate.model(em)
@@ -68,7 +69,7 @@ make.shocks.table = function(shocks) {
   as_data_frame(dt)  
 }
 
-init.model = function(em,find.explicit=TRUE, solve.systems=TRUE,skip.if.initialized=TRUE,...) {
+init.model = function(em, skip.if.initialized=TRUE,...) {
   restore.point("init.model")
   if (skip.if.initialized & is.true(em$initialized))
     return(invisible())
@@ -77,10 +78,7 @@ init.model = function(em,find.explicit=TRUE, solve.systems=TRUE,skip.if.initiali
   #em$curves[[1]]$name
   init.model.panes(em)
   init.model.vars(em)
-  #init.model.randomVars(em)
-  if (find.explicit)
-    solve.model.explicit(em,solve.systems=solve.systems)
-  create.sim.fun(em)
+  
   em$initialized = TRUE
   invisible(em)
 }
@@ -132,17 +130,11 @@ init.model.params = function(em) {
   
 }
 
-init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scenarios[[scen.name]]) {
+init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scenarios[[scen.name]], skip.cluster.init=FALSE) {
   restore.point("init.model.scen")
   
-  scen$params$T = as.numeric(scen$params$T)
-  em$T = scen$params$T
-  
-  scen$init.par = lapply(scen$params, function(param) {
-    attributes(param)=NULL
-    if (is.character(param)) param = parse.as.call(param)
-    param
-  }) 
+  scen$T = as.numeric(scen$T)
+  em$T = scen$T
   
   # init axis ranges
   em$panes = lapply(em$panes, function(pane) {
@@ -155,64 +147,11 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
   em$shocks = scen$shocks
   init.model.shocks(em)
   
-
+  if (!skip.cluster.init) {
+    make.init.cluster.df(em=em)
+    create.sim.fun(em)
+  }
 }
-
-
-
-examples.find.model.par = function() {
-  setwd("D:/libraries/EconCurves/EconCurves")
-  init.ec()
-
-  em = load.model("IS_LM_PC")
-  init.model(em)
-  init.model.scen(em)
-  es = load.story("IS_LM_PC_G_kurzfristig")
-
-  find.model.par(em, find.par="M", extra.lhs='y_ - y_eq', scen=es$scenario)
-  
-}
-
-find.model.par = function(em, find.par=NULL, extra.lhs=NULL, scen=NULL) {
-  restore.point("find.model.par")
-  
-  if (!is.null(scen))
-    init.model.scen(em,scen=scen)
-  
-  var.names = names(em$vars)
-  par = em$init.par
-  par.names = setdiff(names(par), find.par)
-  par = par[par.names]
-  find.par.ind =  seq_along(find.par) + length(var.names)
-  impl_init_ = em$impl_init_
-  cond.str = sapply(impl_init_,deparse1)
-  cond.str = c(cond.str, extra.lhs)
-  
-  code = paste0("function(x) {\n",
-#    'restore.point("fn")\n',
-    sc("  ",names(par),"=",par, collapse="\n"),"\n\n",
-    sc("  ",var.names,"=x[",seq_along(var.names),"]",
-           collapse="\n"),"\n",
-    sc("  ",find.par,"=x[",find.par.ind,"]",
-           collapse="\n"),"\n",
-    
-    "  c(", paste0(cond.str, collapse=","),")\n",
-    "}"
-  )
-  #cat(code)
-  fn = eval(parse(text=code))
-  fn
-  # random start values on the unit interval
-  x = runif(length(var.names)+length(find.par))
-  res = nleqslv(x,fn)$x
-
-  par.val = res[find.par.ind]  
-    
-  names(par.val) = find.par
-  cat("\n\n",paste0(find.par,": ", par.val,collapse="\n"),"\n\n")
-  par.val
-}
-
 
 init.model.curves = function(em) {
   restore.point("init.model.curves")

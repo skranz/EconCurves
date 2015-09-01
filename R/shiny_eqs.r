@@ -133,15 +133,41 @@ exo.ui = function(exo) {
   )
 }
 
-cluster.ui = function(cluster,clu.df) {
-  df = clu.df[clu.df$cluster==cluster,]
+cluster.ui = function(cluster,clu.df,exo=NULL) {
   
-  solved = all(df$solved)
+  df = clu.df
+  rows = which(df$cluster==cluster)
+  #df = clu.df[clu.df$cluster==cluster,]
+  endo = df$var[rows]  
+  solved = all(df$solved[rows])
   
-  endo = df$var
+  if (length(rows)>1) {
+    title = h5(paste0("  Cluster ", cluster, " (",length(rows),")"))
+  } else {
+    title = NULL
+  }
+  
+  str = paste0("    ",rows,". ",df$var[rows],"=",signif(df$val[rows],3), " : ", sapply(df$eq_[rows],colored.deparse, vars=endo))
+  if (TRUE | any(!is.finite(df$val[rows]))) {
+    brows = 1:(min(rows)-1)
+    vals = c(exo,df$val[brows] )
+    subst = lapply(vals, signif, digits=4)
+    names(subst) = c(names(exo),df$var[brows])
+    num.eqs = lapply(df$eq_[rows], substitute.call, env=subst)
+    num.eqs = sapply(num.eqs,colored.deparse, vars=endo)
+    str = paste0(str, "  <=>  ", num.eqs)
+  }
+  return(list(
+    title,
+    HTML(paste0(str,"<br>")),
+    hr()      
+  ))
+
+  
+
   str.eqs = sapply(df$eq_, colored.deparse, vars=endo)
   list(
-    h4(paste0(cluster,ifelse(solved,"","*"), ": ", paste0(df$var, collapse=", "))),
+    h4(paste0(cluster,ifelse(solved,"","*"), ": ", paste0(df$var," = ",sapply(df$val,signif, digits=4), collapse=", "))),
     HTML(paste0(str.eqs,"<br>")),
     hr()      
   )

@@ -23,7 +23,7 @@ eqs.solution.report = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE, funs=NU
   
   txt = NULL
   w = function(...) txt <<- c(txt,...)
-    write.cluster.df = function(df) {
+  write.cluster.df = function(df) {
     levels = unique(df$level)
     for (lev in levels) {
       clusters = unique(df$cluster[df$level==lev])
@@ -68,6 +68,18 @@ eqs.solution.report = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE, funs=NU
 
             from front: equations with single cluster variables
             from back:  cluster variables contained in a single equation\n")
+  
+  test.df = df; 
+  cluster = test.df$cluster[which.max(test.df$cluster.size)]
+  test.df = eat.from.cluster(df=test.df,cluster=cluster, repeated=FALSE,eating.funs = list(eat.single.front))
+  any(duplicated(test.df$var))
+  
+  cluster = test.df$cluster[which.max(test.df$cluster.size)]
+  test.df = eat.from.cluster(df=test.df,cluster=cluster, repeated=FALSE,eating.funs = list(eat.single.back))
+  any(duplicated(test.df$var))
+
+  
+    
   df = eat.from.cluster(df=df, cluster=1)
   df$val = eval.cluster.df(clu.df = df, exo=exo)
 
@@ -115,10 +127,10 @@ eval.cluster.df = function(clu.df, exo = list()) {
   for (cluster in clusters) {
     fun = make.cluster.solve.fun(cluster=cluster, clu.df=clu.df)
     sol = try(fun(vals=c(exo,vals)))
+    if (is(sol,"try-error")) break
     if (!is.list(sol)) {
       vals[[names(sol)]] = sol
     } else {
-      if (is(sol,"try-error")) break
       if (!sol$ok) break
       cat("\nsolved cluster ", cluster)
       vals[names(sol$par)] = sol$par
@@ -214,15 +226,18 @@ make.cluster.solve.fun = function(cluster=clu.df$cluster[[1]], clu.df) {
 }
 
 
-cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE, solve.symbolic=TRUE, skip.eat=FALSE, solve.level = 100, skip.big=FALSE, funs=NULL) {
+cluster.equations = function(eqs, var.li=NULL, endo=NULL, exo=NULL, verbose=TRUE, solve.symbolic=TRUE, skip.eat=FALSE, solve.level = 100, skip.big=FALSE, funs=NULL, cluster.df=NULL) {
   restore.point("cluster.equations")
+
 
   eqs = compute.equation.funs(eqs,funs)
   # Find for each formula the contained endogenous variables
   if (is.null(var.li)) {
     var.li = lapply(eqs, function(form) {
       vars = find.variables(form)
-      setdiff(vars, exo)
+      vars = setdiff(vars, exo)
+      if (!is.null(endo)) vars = intersect(vars, endo)
+      vars
     }) 
   }
   syms = unique(unlist(var.li))
@@ -248,10 +263,11 @@ cluster.equations = function(eqs, var.li=NULL, exo=NULL, verbose=TRUE, solve.sym
     paste0(sort(vars), collapse="|")
   })
     
-  df = data_frame(var=syms,expl_ = vector("list",nr),eq_ = eqs,org_=eqs, solved=FALSE, level=0,cluster=1,cluster.size=length(eqs), active=TRUE, vars=var.li, vars.id = vars.id, num.vars=sapply(var.li, length),eq.ind = 1:nr,org.ind=eq.ind, org.row=eq.ind, val=NA_real_)
-
+  df = data_frame(var=syms,expl_ = vector("list",nr),eq_ = eqs,org_=eqs, solved=FALSE, level=1,cluster=1,cluster.size=length(eqs), vars=var.li, vars.id = vars.id, num.vars=sapply(var.li, length),org.ind=seq_along(eqs), val=NA_real_)
+  
+  
   if (!skip.eat) {
-    df = eat.from.cluster(df, cluster=0)
+    df = eat.from.cluster(df, cluster=1)
   }
   if (solve.symbolic)  {
     df = solve.symbolic.cluster.df(df, skip.big=skip.big)
@@ -292,7 +308,7 @@ solve.symbolic.cluster.df = function(df, skip.big=FALSE, skip.small=FALSE, eq.so
   df
 }
 
-eat.from.cluster = function(df, cluster=df$cluster[1], eating.funs = list(eat.single.front,eat.single.back,eat.double.front), mat=NULL) {
+eat.from.cluster = function(df, cluster=df$cluster[1], eating.funs = list(eat.single.front,eat.single.back,eat.double.front), mat=NULL, repeated=TRUE) {
   restore.point("eat.from.cluster")
   
   num.funs = length(eating.funs)
@@ -302,9 +318,13 @@ eat.from.cluster = function(df, cluster=df$cluster[1], eating.funs = list(eat.si
     fun = eating.funs[[fun.ind]]
     while (TRUE) {
       res = fun(df=df,cluster=cluster, mat=mat)
-      if (res$changed==0) break
+      if (res$changed==0) {
+        if (!repeated) last.fun = fun.ind
+        break
+      }
       df = res$df; mat = res$remaining.mat; cluster = res$remaining.cluster
       last.fun = fun.ind
+      if (!repeated) break
     }
     fun.ind = ((fun.ind +1 -1) %% num.funs)+1
     if (fun.ind ==last.fun) break
@@ -348,7 +368,6 @@ old.eat.from.cluster.df = function(df, cluster=df$cluster[1], var.li = df$vars, 
     df$cluster.size[rows] = length(rows)
     df$var[rows] = remain.syms    
     df$level[rows] = max(df$level)+1
-#    df$active[rows] = FALSE
   }  
 
   # reindex negative clusters and levels 
@@ -383,6 +402,7 @@ symbolic.cluster.subst.eqs = function(df, cluster, rename.clusters=TRUE) {
   if (length(res$eqs)>0) {
     df$var[erows] = res$vars
     df$cluster.size[erows] = length(erows)
+    df$eq_[erows] = res$eqs
   }
   
   df$var[srows] = res$subst.vars
@@ -495,12 +515,25 @@ symbolic.subst.eqs = function(eqs,vars, subst.eqs=NULL, subst.vars=NULL, eq.inds
 suggest.subst.eq.and.var = function(eqs,vars,eq.solve.fun=sym.solve.eq) {
   restore.point("suggest.subst.eq.and.var")
   
-  suggest.subst.eq.and.var
   lhs = lapply(eqs, function(eq) eq[[2]])
   rhs = lapply(eqs, function(eq) eq[[3]])
   lhs.single = sapply(lhs, is.name)
   rhs.single = sapply(rhs, is.name)
 
+  lhs.var = sapply(seq_along(lhs), function(ind) {
+    if (!lhs.single[ind]) return("")
+    as.character(lhs[[ind]])
+  })
+  rhs.var = sapply(seq_along(rhs), function(ind) {
+    if (!rhs.single[ind]) return("")
+    as.character(rhs[[ind]])
+  })
+  
+  lhs.single = lhs.single & lhs.var %in% vars
+  rhs.single = rhs.single & rhs.var %in% vars
+  
+
+  
   identity = which(lhs.single & rhs.single)
   
   # If we have identities, propose them
@@ -519,7 +552,7 @@ suggest.subst.eq.and.var = function(eqs,vars,eq.solve.fun=sym.solve.eq) {
   # check for explicit solutions
   var = sapply(c(lhs[lhs.single], rhs[rhs.single]), as.character)
   expl = c(rhs[lhs.single], lhs[rhs.single])
-  is.expl = sapply(seq_along(expl), function(i) ! (var[i] %in% intersect(vars,find.variables(expl[[i]]))))
+  is.expl = sapply(seq_along(expl), function(i) ! (var[i] %in% intersect(vars,find.variables(expl[[i]]) )))
   if (any(is.expl)) {
     var = var[is.expl]
     expl = expl[is.expl]
@@ -662,7 +695,7 @@ make.eating.matrix = function(df, var.li=df$vars, syms=df$var) {
   mat = matrix(0,nr,nc)
   colnames(mat) = df$var
   for (i in seq_along(var.li)) {
-    mat[i,var.li[[i]]] = 1
+    mat[i,intersect(var.li[[i]], syms)] = 1
   }
   mat
 }
@@ -689,7 +722,17 @@ eat.single.front = function(df, cluster, mat=NULL, repeated=FALSE) {
   esyms = syms[cols]
   if (any(duplicated(esyms))) {
     dupl.syms = unique(esyms[duplicated(esyms)])
-    warning(paste0("The variables "), paste0(esyms, collapse=", ")," are determined by more than one equation!")
+    
+    txt = paste0("The variables ", paste0(dupl.syms, collapse=", ")," are determined by more than one equation:")
+    
+    for (sym in dupl.syms) {
+      inds = which(esyms==sym)
+      arows = crows[rows[inds]]
+      aeqs = df$eq_[arows] 
+      txt = c(txt, paste0("  ",sym,":"), paste0("    - ",sapply(aeqs, deparse1),collapse="\n"))
+    }
+    txt = paste0(txt, collapse="\n")
+    warning(txt)
   }
   
   erows = crows[rows]
@@ -736,8 +779,7 @@ eat.double.front = function(df, cluster, mat=NULL) {
   
   crows = which(df$cluster==cluster)
   if (is.null(mat)) {
-    mat = make.eating.matrix(df)
-    mat = mat[crows,crows]
+    mat = make.eating.matrix(df[crows,])
   }
   syms = colnames(mat)
 
@@ -760,9 +802,9 @@ eat.double.front = function(df, cluster, mat=NULL) {
   esyms = NULL
   for (row in first) {
     counter = counter+1
-    srows = crows[rows[vars.id==vars.id[row]]]
+    srows = crows[rows[vars.id[rows]==vars.id[row]]]
     cur.syms = syms[which(mat[row,]==1)]
-    syms = c(esyms, cur.syms)
+    esyms = c(esyms, cur.syms)
     df$cluster[srows] = cluster+ counter / (length(rows)+1)
     df$var[srows] = cur.syms
   }
@@ -805,8 +847,7 @@ eat.single.back = function(df, cluster, mat=NULL, repeated=FALSE) {
   
   crows = which(df$cluster==cluster)
   if (is.null(mat)) {
-    mat = make.eating.matrix(df)
-    mat = mat[crows,crows]
+    mat = make.eating.matrix(df[crows,])
   }
   syms = colnames(mat)
 
@@ -822,6 +863,27 @@ eat.single.back = function(df, cluster, mat=NULL, repeated=FALSE) {
   }
   # Identify the equations that have the single columns
   rows = which(rowSums(mat[,cols, drop=FALSE]) >= 1)
+  
+  
+  # Error two or more variables are uniquely defined by the same equation:
+  # we cannot solve that equation
+  if (length(rows)<length(cols)) {
+    cols.rows = sapply(cols, function(col) which(mat[,col]==1))
+    dup.rows = unique(cols.rows[duplicated(cols.rows) | duplicated(cols.rows,fromLast = TRUE)])
+    
+    txt = "Equation error found in eat.single back."
+    for (dup.row in dup.rows) {
+      dup.vars = names(cols.rows)[cols.rows==dup.row]
+      dup.eq = crows[dup.row]
+      txt = c(txt, paste0("  - The variables ", paste0(dup.vars,collapse=", "), " are only defined in the single equation ", dup.eq, ":\n    ",deparse1(df$eq_[[dup.eq]])))
+      if (!identical(df$eq_[[dup.eq]],df$org_[[dup.eq]])) {
+        txt = c(txt, paste0("  Original form was:\n    ",deparse1(df$org_[[dup.eq]]) ))
+      }
+    }
+    warning(paste0(txt,collapse="\n"))
+    return(list(changed=0, df=df, remaining.cluster=cluster, extracted.clusters=NULL, remaining.mat=mat))
+    
+  }
   
   ne = length(rows)
   erows = crows[rows]
@@ -872,7 +934,7 @@ eat.single.back = function(df, cluster, mat=NULL, repeated=FALSE) {
 
 # Just a helper function to make the code size
 # in equation.system.cluster look smaller. This makes debugging of it easier
-create.eating.calls = function(env = parent.frame()) {
+old.create.eating.calls = function(env = parent.frame()) {
   calls = list(
     
     # search for equations that have a single variable
@@ -1210,5 +1272,83 @@ check.df
 
   #cat(code)
   code
+}
+
+# Create fairly fast code that computes a cluster.df
+adapt.make.inner.compute.code = function(df,  exo=NULL, subst.li=NULL) {
+  restore.point("make.inner.compute.code")
+  
+  clusters = sort(unique(df$cluster))
+  clu = 2
+  li =lapply(clusters, function(clu) {
+    rows = which(df$cluster == clu)
+    if (all(df$solved[rows]) & (!all.implicit)) {
+      code.li = lapply(rows, function(row) {
+        code = substitute(lhs<-rhs, 
+             list(lhs=as.symbol(df$var[[row]]),rhs=df$expl_[[row]]))
+        if (!is.null(subst.li))
+          code = substitute.call(code, subst.li)
+        code
+      })
+      return(code.li)
+    } else {
+      endo = df$var[rows]
+
+      xsubst = lapply(seq_along(endo), function(i) {
+        substitute(x[i],list(i=i))
+      })
+      names(xsubst) = endo
+
+      # substitute original impl_ formula with x, par.mat and var.mat
+      impl_ = lapply(df$impl_[rows], function(call) {
+        call = substitute.call(call, xsubst)
+        call = substitute.call(call, subst.li)
+        call
+      })      
+      inner = as.call(c(list(as.symbol("c")),impl_))
+  
+      assign = lapply(seq_along(endo), function(i) {
+        substitute(var.mat[ti,var] <- res[[i]],list(i=i,var=endo[[i]]))
+      }) 
+      assign = as.call(c(list(as.symbol("{")),assign))
+      
+      if (lag.as.start) {
+        #restore.point("ndjnfjdngjg")
+        rhs = lapply(seq_along(endo), function(i) {
+          substitute(var.mat[ti-1,var],list(var=endo[[i]]))
+        }) 
+        rhs = as.call(c(list(as.symbol("c")),rhs))
+
+        start = substitute(start.x <- rhs, list(rhs=rhs)) 
+      } else {
+        start = substitute(start.x <- runif(num.endo), list(num.endo=length(endo))) 
+      }
+      code = substitute({
+          start
+          sol = mynleqslv(x=start.x,ti=ti,par.mat=par.mat, var.mat=var.mat,
+            fn = function(x,ti,par.mat, var.mat) {
+            inner
+          })
+          if (max(abs(sol$fvec))> 1e-07) {
+            warning(paste0("Could not solve ", paste0(endo, collapse=", "), " for ti = ", paste0(ti, collapse=", ")," max deviation = ",max(abs(sol$fvec)) ))
+          }
+          res = sol$x
+          assign
+        },
+        list(inner=inner, start=start,assign=assign,endo=endo)
+      )
+      list(code)  
+    }
+    
+  })
+  li = do.call(c, li)
+
+  inner = as.call(c(list(as.symbol("{")),li))
+  inner  
+}
+
+extract.cluster.df.dummies = function(df) {
+  rows = str.starts.with(df$var,"DUMMY___")
+  return(list(df=df[!rows,,drop=FALSE], test.eqs = df$org_[rows]))
 }
 

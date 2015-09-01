@@ -38,7 +38,7 @@ init.dynry = function(es, em=es$em) {
   if (is.null(es$scenario))
     es$scenario = em$scenarios[[es$scenarioId]]
   
-  es$T = as.numeric(es$scenario$params$T)
+  es$T = as.numeric(es$scenario$T)
 
   init.model.scen(em,scen = es$scenario)
   simulate.model(em,scen = es$scenario,init.scen = FALSE)

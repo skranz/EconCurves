@@ -44,13 +44,13 @@ panes:
 vars:
   yS: 
     descr: production function / total supply
-    formula: tau * K^(kappa) * L^(lambda)
+    formula: tau * K^(kappa) * (L_factor*L)^(lambda)
   y_max:
     descr: maximum demanded total output
     formula: yS(L=L_max)
   yD:
     descr: aggregate demand function, capped at maximum supply 
-    formula: min(I + G + C, y_max)
+    formula: I + G + C
   y:
     descr: resulting output 
     formula: yS
@@ -89,16 +89,19 @@ vars:
     formula: (L_max-L)/L_max
   C:
     descr: consumption
-    formula: C0+ MPC*(y - Tax)
+    formula: GT + C0 + MPC*(y - Tax)
   S:
-    descr: savings
+    descr: private savings
     formula: y-C-Tax
   Tax:
     descr: the paid taxes
     formula: tax_rate*y
+  deficit:
+    descr: government deficit
+    formula: G+GI+GT - Tax
   I:
     descr: investment levels
-    formula: I0-aI*r
+    formula: I0-aI*r + GI
 # nominal wages, prices and inflation
 
 # Labor market in which inflation expectations may be incorrect
@@ -132,32 +135,44 @@ vars:
 
 scenarios:
   base:
-    T: 10
+    T: 30
     axis:
       L_: [0,110]
       w_: [0,150]
     init_mode: steady_state
     init:
-      tax_rate: 0.2
+      #tax_rate: 0.2
       i: 0.05
       mu: 0.1
-      delta: 0.1
-      tau: 1
-      w_min: 0.3
+      #tau: 1
+      w_min: 5
+      w: 20
       #w_max: 1
-      y_max: 100
+      #y_max: 100
+      y: 3000
+      C0: 0.4*y - GT
+      #MPC: 0.6      
+      #C: 0.5*y
+      # Staatliche Konsumausgaben
+      G: 0.17*y 
+      # Staatliche Investitionsausgaben
+      GI: 0.025*y
+      # Staatliche Transfers (Renten, Sozialsysteme)
+      GT: 0.3 * y
+      # Gesamte Investitionen
+      I: 0.2*y
+      K: 13000
+      delta: I / K
+      Tax: G+GI+GT
       aI: 100
       #I0: 20
       L: L_eq
-      u: 0.1
+      u: 0.05
       L_max: 100
       kappa: 0.5
       lambda: 0.5
       pi: 0.02
-      MPC: 0.6      
-      G: Tax
-      lag_P: 100
-      C0: 10
+      lag_P: 1
 
     shocks:
       A_dec:
