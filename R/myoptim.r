@@ -21,10 +21,13 @@ optims = function(par, fn=NULL, ineq.fn=NULL, eq.fn=NULL, target=NULL, lower=NUL
     res = optim.fun(par=par,fn=fn,ineq.fn=ineq.fn,eq.fn=eq.fn,lower=lower,upper=upper,gr=gr,...)
     res$runtime = Sys.time()-start.time 
     res$algo = algo
+
     if (!is.null(act.target)) {
-      ok = is.true(abs(res$value-act.target)<=tol)
+      ok = is.true(abs(res$value-act.target)<=1e-6)
       if (res$ok & !ok) {
-        warning(paste0("optim.fun returned ok, but tolerance > ", tol))
+        restore.point("dhkjhgkdfzrhfheriuzf7rzeugkjfkuvhuifh")
+        warning(paste0("optim.fun returned ok, but tolerance ", abs(res$value-act.target), " > ", 1e-6))
+        res$ok = FALSE
       } else {
         res$ok = ok
       }
@@ -122,28 +125,41 @@ get.algo.fun = function(algo) {
     }
   } else if (base=="optim") {
     if (is.null(method)) method = "Nelder-Mead"
-    fun = function(par, fn=NULL,ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, hessian, jacobi,...) {
+    fun = function(par, fn=NULL,ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, hessian, jacobi,..., zero.tol = 1e-7) {
       if (is.null(lower)) lower =-Inf
       if (is.null(upper)) upper = Inf
+      zero.target = is.null(fn) & (!is.null(ineq.fn) | !is.null(eq.fn))
+
       fn = transform.optim.fn(fn, ineq.fn,eq.fn)
       res = optim(par=par, fn=fn, method=method, lower=lower, upper=upper,...)
       restore.point("optim.fun.inner")
-      list(par=res$par, value=res$value, ok=res$convergence==0, counts=res$counts, message=res$message, org=res)
+      
+      ok = res$convergence==0
+      if (zero.target) ok = res$value <= zero.tol
+
+      
+      list(par=res$par, value=res$value, ok=ok, counts=res$counts, message=res$message, org=res)
     }
   } else if (base=="nleqslv") {
-    fun = function(par, fn=NULL,ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, hessian, jacobi,gr=NULL,...) {
+    fun = function(par, fn=NULL,ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, hessian, jacobi,gr=NULL,..., zero.tol = 1e-08) {
       if (!is.null(fn) | !is.null(ineq.fn) | is.null(eq.fn))
         stop("base nleqslv reqires the eq.fn argument only.")
       res = mynleqslv(x=par, fn=eq.fn,...)
-      ok = max(abs(res$fvec))< 1e-07
-      list(par=res$x, value=res$fvec, ok=ok, counts=res$counts, message=res$message, org=res)
+      ok = res$termcd <= 2 | max(abs(res$fvec))< zero.tol
+      list(par=res$x, value=max(abs(res$fvec)), ok=ok, counts=res$counts, message=res$message, org=res)
     }
   } else if (base=="UnboundedBrent") {
-    fun = function(par, fn=NULL,ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, hessian, jacobi,...) {
+    fun = function(par, fn=NULL,ineq.fn=NULL, eq.fn=NULL, lower=NULL, upper=NULL, hessian, jacobi,..., zero.tol=1e-7) {
+      #restore.point("dkjhfguhfuihger7zt34ht487rt")
+      zero.target = is.null(fn) & (!is.null(ineq.fn) | !is.null(eq.fn))
       fn = transform.optim.fn(fn, ineq.fn,eq.fn)
       res = unbounded.brent(par=par, fn=fn, ...)
-      restore.point("optim.fun.inner")
-      list(par=res$par, value=res$value, ok=res$convergence==0, counts=res$counts, message=res$message, org=res)
+      #restore.point("optim.fun.inner")
+      
+      ok = res$convergence==0
+      if (zero.target) ok = abs(res$value) <= zero.tol
+      
+      list(par=res$par, value=res$value, ok=ok, counts=res$counts, message=res$message, org=res)
     }
   } else {
     stop("unknown base ", base)
@@ -174,7 +190,7 @@ unbounded.brent = function(par, fn, lower=-Inf, upper=Inf, bound.tolerance=0.01,
   }
   if (!ok) {
     res$convergence = 100
-    res$message = "No convergence to any tried bound"
+    res$message = "No convergence under any tried bound."
   }
   res
 }

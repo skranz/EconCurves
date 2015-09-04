@@ -1,4 +1,6 @@
 
+
+
 load.story = function(storyId, file=paste0(storyId,".yaml"), dir=get.ec()$stories.path, text=NULL, ec = get.ec()) {
   restore.point("load.story")
 

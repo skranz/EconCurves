@@ -50,7 +50,7 @@ vars:
     formula: yS(L=L_max)
   yD:
     descr: aggregate demand function, capped at maximum supply 
-    formula: I + G + C
+    formula: I + G + C + X
   y:
     descr: resulting output 
     formula: yS
@@ -92,7 +92,7 @@ vars:
     formula: GT + C0 + MPC*(y - Tax)
   S:
     descr: private savings
-    formula: y-C-Tax
+    formula: y-C-Tax+GT
   Tax:
     descr: the paid taxes
     formula: tax_rate*y
@@ -152,7 +152,8 @@ scenarios:
       y: 3000
       C0: 0.4*y - GT
       #MPC: 0.6      
-      #C: 0.5*y
+      # Private Konsumausgaben
+      C: 0.5*y
       # Staatliche Konsumausgaben
       G: 0.17*y 
       # Staatliche Investitionsausgaben
@@ -170,7 +171,7 @@ scenarios:
       u: 0.05
       L_max: 100
       kappa: 0.5
-      lambda: 0.5
+      #lambda: 0.5
       pi: 0.02
       lag_P: 1
 

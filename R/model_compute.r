@@ -21,6 +21,7 @@ examples.model.dependencies = function() {
   init.ec()
   ec = get.ec()
   em = load.model("Ger3Eq")
+  em = load.model("SimpleLabor3Eq")
   check.model(em)
   options(warn=1)
   init.model(em)
@@ -58,13 +59,15 @@ simulate.model = function(em, scen.name = names(em$scenarios)[1], scen = em$scen
   par.mat = res$par.mat  
   T = em$T
 
-  sim = var.par.to.sim(var.mat=var.mat, par.mat=par.mat)
+  sim = var.par.to.sim(T=T,var.mat=var.mat, par.mat=par.mat)
   sim = add.sim.extra.vars(em,sim)
   em$sim = sim
   invisible(sim)
 }
 
-var.par.to.sim = function(var.mat, par.mat) {
+var.par.to.sim = function(T,var.mat, par.mat) {
+  restore.point("var.par.to.sim")
+  
   par.df = par.mat[2:(T+1),,drop=FALSE]
   lag.par.df  = par.mat[1:(T),,drop=FALSE]
   lead.par.df = par.mat[3:(T+2),,drop=FALSE]
@@ -396,9 +399,10 @@ init.model.vars = function(em, skip.cluster.equations=FALSE) {
   rows = which(em$cdf$type=="formula")
   em$var.funs = em$cdf$expl_[rows]
   
+  em$org.cdf = em$cdf
   # solve equations
   #if (!skip.cluster.equations) {
-    em$cdf = cluster.equations(em$cdf$eq_, endo=em$cdf$var, funs = em$var.funs)
+    em$cdf = cluster.equations(em$org.cdf$eq_, endo=em$cdf$var, funs = em$var.funs)
   #}
   
   invisible(em)
@@ -673,11 +677,11 @@ make.init.cluster.df = function(em, scen=em$scen, steady.state = is.true(scen$in
   restore.point("make.init.cluster.df")
   
   
-  make.init.eqs.and.exo(em=em,scen=scen, steadty.state=steady.state)
+  make.init.eqs.and.exo(em=em,scen=scen, steady.state=steady.state)
   
   #eqs.solution.report(em$init.eqs, exo=em$init.exo, as.numeric), funs=em$var.funs)
   
-  res.df = cluster.equations(em$init.eqs, exo=names(em$init.exo), funs=em$var.funs, skip.big=skip.big)
+  res.df = cluster.equations(em$init.eqs, exo=names(em$init.exo), funs=em$var.funs)
   res = extract.cluster.df.dummies(res.df)
   em$icdf = res$df 
   em$init.test.eqs = res$test.eqs

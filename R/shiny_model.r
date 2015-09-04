@@ -1,12 +1,24 @@
 examples.shiny.model = function() {
   set.restore.point.options(display.restore.point = TRUE)
   
+  
   # Model builder
   ec = init.ec()
-  em = load.model("Ger3Eq")
-  #df = testwise.init.model(em)$df
+  em = load.model("SimpleLabor3Eq")
   
-  mb = init.mb("Ger3Eq")
+  options(warn = 1)
+  res = testwise.init.model(em)
+  df = res$df
+  vals = em$init.vals
+  
+  res1 = testwise.sim.model(em, vals)
+  df1 = res1$df
+  vals1 = res1$vals
+  
+  sim = simulate.model(em)
+  
+  ec = init.ec()
+  mb = init.mb("SimpleLabor3Eq")
   app = eventsApp()
   app$mb = mb
   
@@ -107,8 +119,8 @@ click.model.init.run = function(app=getApp(), mb=app$mb,...) {
   
   df.html = HTML(hwrite(df[,c("step","finite.vals","na.vals","num.warn","num.err","changed.vals")]))
   
-  has.err = df$err.warn.txt != ""
-  all.err = sc("<h5>",df$step[has.err],"</h5>\n ",df$err.warn.txt[has.err], collapse="\n<hr>")
+  has.err = df$err.warn.txt != "" | df$vals.txt != ""
+  all.err = sc("<h5>",df$step[has.err],"</h5>\n ",df$err.warn.txt[has.err], "\n", df$vals.txt[has.err], collapse="\n<hr>")
   
   clu.df = res$li[[length(res$li)]]$clu.df
   val.df = clu.df[,c("var","val")]
@@ -150,11 +162,13 @@ model.yaml.ui = function(app=getApp(), mb=app$mb ,...) {
         changeToInitKey = list(win="Ctrl-I",mac="CMD-I")
       )
     ),
-    actionButton("modelSaveBtn","Save and Update")
+    actionButton("modelSaveBtn","Save and Update"),
+    actionButton("modelInitBtn","Init")
   )
   aceHotkeyHandler("modelYamlSaveKey", click.model.save.update)
   aceHotkeyHandler("changeToInitKey", click.model.init.run)
   buttonHandler("modelSaveBtn", click.model.save.update)
+  buttonHandler("modelInitBtn", click.model.init.run)
   ui
 }
 
@@ -216,8 +230,8 @@ testwise.init.model = function(em) {
   step = "cluster.equations"
   log(clu.df <- cluster.equations(em$init.eqs, exo=names(em$init.exo), funs=em$var.funs, skip.big=TRUE,solve.symbolic = FALSE,skip.eat = TRUE))
 
-  step = "vals.cluster.equations"
-  log(clu.df$val <- eval.cluster.df(clu.df, exo=em$init.exo))
+  #step = "vals.cluster.equations"
+  #log(clu.df$val <- eval.cluster.df(clu.df, exo=em$init.exo))
 
   step = "eat.calls"
   log(clu.df <- eat.from.cluster(clu.df, cluster=1))
@@ -292,8 +306,134 @@ testwise.init.model = function(em) {
     li.df$changed.vals[rows[i]] = changed.var
   }
   
-  list(df=li.df, li=log.li)
+  vals = clu.df$val
+  names(vals) = clu.df$var
+  exo.vals=unlist(em$init.exo)
+  
+  em$init.vals = c(vals, exo.vals)
+  list(df=li.df, li=log.li,vals=vals, exo.vals=exo.vals)
 }
+
+# Simulate t=2
+testwise.sim.model = function(em, init.vals = em$init.vals) {
+  restore.point("testwise.sim.model")
+  
+  log.li = list()
+  
+  # Note: Does not yet work for variable indices
+  cols = names(init.vals)
+  lag.inds  = str.starts.with(cols, "lag_")
+  lead.inds =  str.starts.with(cols, "lead_")
+  is.var = cols %in% em$var.names  
+  exo.names = cols
+  exo.names[lead.inds] = str.right.of(cols[lead.inds],"lead_")
+  exo.names[is.var] = paste0("lag_", exo.names[is.var])
+  
+  exo.vals = init.vals[!lag.inds]
+  names(exo.vals) = exo.names[!lag.inds] 
+
+  
+  log = function(expr) {
+    env = parent.frame()
+    quoted = substitute(expr)
+    res = withErrWarn(quoted=quoted, env=env)
+    res$step = step
+    res$call = quoted
+    res$clu.df = get("clu.df",env)
+    log.li[[step]] <<- res[-1]
+    invisible(res$value)
+  }
+  
+  clu.df <- NULL
+
+  step = "cluster.equations"
+  log(clu.df <- cluster.equations(em$org.cdf$eq_, endo=em$org.cdf$var, funs = em$var.funs, skip.big=TRUE,solve.symbolic = FALSE,skip.eat = TRUE))
+
+  #step = "vals.cluster.equations"
+  #log(clu.df$val <- eval.cluster.df(clu.df, exo=exo.vals))
+
+  step = "eat.calls"
+  log(clu.df <- eat.from.cluster(clu.df, cluster=1))
+  
+  step = "vals.eat.calls"
+  log(clu.df$val <- eval.cluster.df(clu.df, exo=exo.vals))
+  
+  step = "solve.single.symbolic"
+  log(clu.df <- solve.symbolic.cluster.df(clu.df,skip.big = TRUE))
+
+  step = "vals.solve.single.symbolic"
+  log(clu.df$val <- eval.cluster.df(clu.df, exo=exo.vals))
+  
+  step = "solve.system.symbolic"
+  log(clu.df <- solve.symbolic.cluster.df(clu.df,skip.big = FALSE))
+
+  step = "vals.solve.system.symbolic"
+  log(clu.df$val <- eval.cluster.df(clu.df, exo=exo.vals))
+
+
+  # combine logs to a data.frame  
+  li = lapply(seq_along(log.li), function(ind) {
+    el = log.li[[ind]]
+    txt = sc(seq_along(el$warnings), ". warning: ", sapply(el$warnings, as.character),collapse="\n\n")
+    txt = c(sc(seq_along(el$errors), ". error: ", sapply(el$errors, as.character),collapse="\n\n"),txt)
+    if (length(txt)==0) txt = ""
+
+    list(ind = ind,step=el$step, ok=el$ok, num.warn=length(el$warnings), num.err = length(el$errors), err.warn.txt = txt, has.clu.df=!is.null(el$clu.df))
+  })
+  li.df = rbindlist(li)
+  
+  #tdf = log.li[["vals.eat.calls"]]$clu.df
+  
+  # Adapt for value computation
+  li.df$compute.vals = FALSE
+  li.df$na.vals = li.df$finite.vals = NA_integer_
+  li.df$vals.txt = ""
+  li.df$changed.vals = ""
+  
+  vals.rows = which(str.starts.with(li.df$step,"vals"))
+  if (length(vals.rows)>0) {
+    for (row in vals.rows) {
+      clu.df = log.li[[row]]$clu.df
+      li.df$compute.vals[row-1] = FALSE
+      li.df$na.vals[row-1] = sum(is.na(clu.df$val))
+      li.df$finite.vals[row-1] = sum(is.finite(clu.df$val))
+      li.df$vals.txt[row-1] = li.df$err.warn.txt[row]
+      log.li[[row-1]]$clu.df = clu.df
+    }
+    li.df = li.df[-vals.rows,]
+    log.li = log.li[-vals.rows]
+  }
+  
+  # log changes in values between steps
+  rows = which(li.df$has.clu.df)
+  for (i in seq_along(rows)[-1]) {
+    pclu.df = log.li[[rows[i-1]]]$clu.df
+    clu.df = log.li[[rows[i]]]$clu.df
+    
+    pvals = pclu.df$val
+    names(pvals) = pclu.df$var
+
+    vals = clu.df$val
+    names(vals) = clu.df$var
+    vals = vals[names(pvals)]
+    
+    changed = abs(vals-pvals) > 1e-7
+    changed[is.na(pvals)] = FALSE
+    changed[is.na(changed)] = TRUE
+    
+    changed.var = paste0(names(changed)[changed],collapse=",")
+    li.df$changed.vals[rows[i]] = changed.var
+  }
+  
+  list(df=li.df, li=log.li)
+  
+  vals = clu.df$val
+  names(vals) = clu.df$var
+  
+  list(df=li.df, li=log.li,vals=vals, exo.vals=exo.vals)
+
+}
+
 
 click.model.save.update = function(app=getApp(), mb=app$mb,...) {
 

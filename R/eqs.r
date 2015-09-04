@@ -169,10 +169,14 @@ numerical.solve.eqs.fun = function(eqs, vars) {
   })
   names(impl_) = NULL
   inner = as.call(c(list(as.symbol("c")),impl_))
+  
   fn = function(x,vals) {}
   body(fn) = substitute({inner}, list(inner=inner))
   fn
-    
+  
+  #code = deparse1(body(fn))
+  #code = sep.lines(code,",")
+  #code
 
   var.assign.li = lapply(seq_along(vars), function(i) {
     substitute(var <- x[i], list(var=as.name(vars[i]),i=i))
@@ -186,6 +190,7 @@ numerical.solve.eqs.fun = function(eqs, vars) {
     sol = optims(par=x, eq.fn=fn, vals=vals)     
     if (!sol$ok) {
       warning(paste0("Could not solve ", paste0(endo, collapse=", "),":\n", sol$message ))
+      sol$par[] = NA_real_
     }
     names(sol$par) = endo
     sol
