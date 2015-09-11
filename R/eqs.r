@@ -1117,16 +1117,24 @@ compute.symbolic.ops = function(call, recursive = TRUE) {
       call[[i]] = compute.symbolic.ops(call=call[[i]], recursive=TRUE)
   }
   call
-  
 }
 
 replace.variable.funs = function(call, funs, recursive=TRUE) {
+  restore.point("replace.variable.funs")
   if (is.call(call)) {
     name = as.character(call[[1]])
     # A call to be replaced
     if (name %in% names(funs)) {
+      restore.point("replace.variable.funs.inner")
       args = lapply(seq_along(call)[-1], function(i) call[[i]])
       vars = names(call)
+      if (is.null(vars) & length(args)>0) {
+        stop(paste0("Error when calling the user defined function ", deparse1(call),":\n You must name all arguments!"))
+      } else {
+        if (any(vars[-1]=="") & length(args)>0) {
+          stop(paste0("Error when calling the user defined function ", deparse1(call),":\n You must name all arguments!"))
+        }
+      }
       call = funs[[name]]
       if (length(vars)>0) {
         names(args) = vars[-1]

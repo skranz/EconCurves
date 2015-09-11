@@ -12,7 +12,8 @@ parse.formula = function(formula) {
 
 curve = function(formula, xvar, yvar, level=NULL, pal=NULL, par = NULL, color=NULL) {
   restore.point("curve")
-  f = specialize.curve.formula(formula, xvar,yvar, level)
+  formula_ = parse.as.call(formula)
+  f = specialize.curve.formula(formula_, xvar,yvar, level)
   cu = c(f,nlist(xvar,yvar,level=level, pal=pal, par=NULL, color=color))
   class(cu) = c("Curve","list")
   cu

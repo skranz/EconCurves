@@ -111,8 +111,13 @@ compute.curve.line = function(curve, xrange,yrange, val, level=1,lty=1,lwd=2,t=0
   x=xy$x[rows]
   y=xy$y[rows]
   
-  lab = paste0(cu$name,t)
-  list(base=cu$name,name=lab,pane=pane.name,t=t,type="curve",lab=lab,axis="",x=x,y=y,color=color, lty=lty,lwd=lwd)    
+  name = paste0(cu$name,t)
+  if (is.null(curve$label)) {
+    lab = name
+  } else {
+    lab = replace.whiskers(curve$label , list(t=t))
+  }
+  list(base=cu$name,name=name,pane=pane.name,t=t,type="curve",lab=lab,axis="",x=x,y=y,color=color, lty=lty,lwd=lwd)    
 }
 
 

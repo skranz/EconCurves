@@ -7,6 +7,8 @@ model:
             type: modelInfo
         curves:
         panes:
+        funs:
+            type: modelFuns
         params:
             type: modelParams
         vars:
@@ -55,6 +57,19 @@ curves:
 
 panes:
     fieldType: panel
+
+
+modelFuns:
+    fieldType: modelFun
+
+modelFun:
+    fields:
+        descr:
+        formula:
+        args:
+        eqs:
+    defaultField: formula
+
 
 modelParams:
     fieldType: modelParam

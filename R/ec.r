@@ -18,7 +18,8 @@ check.econ.curves = function() {
 init.ec = function(path=getwd(),
     models.path = paste0(path,"/models"),
     stories.path = paste0(path,"/stories"),
-    types.path = paste0(path,"/yamltypes")
+    types.path = paste0(path,"/yamltypes"),
+    allow.edit=TRUE
 ) {
   restore.point("init.ee")
   options(stringsAsFactors = FALSE)
@@ -28,6 +29,7 @@ init.ec = function(path=getwd(),
   ec$stories.path = stories.path
   yaml.objects.settings(default.types.path=types.path)
   ec$types = load.types()
+  ec$allow.edit = allow.edit
   ec
 }
 

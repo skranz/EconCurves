@@ -1,0 +1,140 @@
+storyId: SimpleLabor3EqStory
+
+modelId: SimpleLabor3Eq
+
+title: Illustrating the 3 equation model
+
+descr: >
+
+scenarioId: base
+
+
+timelineVars: [y,Epi,pi,P,w]
+
+lang: en
+
+
+periods:
+  1:
+    steps:
+      1a:
+        title: Versprochene Reallöhne
+        tell: |
+          Betrachten wir zunächst die sog. reale 
+          Lohnverhandlungskurve wWS (engl. wage-setting curve).
+          Sie beschreibt den durchschnittlichen realen Stundenlohn,
+          den Firmen ihren Mitarbeitern versprechen, als Funktion
+          der gesamten Nachfrage y.
+          
+          Der Reallohn gibt an, wie viele normierte Warenkörbe (Baskets)
+          ein Arbeitnehmer für den Lohn einer Stunde Arbeit kaufen kann.
+          Die Umrechnung von Baskets in Euro hängt vom Preisniveau ab. Wenn z. B.
+          ein normierter Warenkorb 10 Euro kostet, entspräche ein Reallohn 
+          von 2 Baskets, einen Nominallohn von 20 Eurp.
+          
+          Bemerkung: Wir reden von "versprochenen" Reallöhnen, da
+          sich diese am Ende
+          von den tatsächlichen Reallöhnen unterscheiden können,
+          wenn die
+          Inflationsrate und das resultierende Preisniveau falsch eingeschätzt
+          werden. Wir werden dies weiter unten im Detail behandeln.
+          
+      1b:
+        tell: |
+          Ist die Nachfrage y hoch, werden viele Arbeitskräfte
+          benötigt. Firmen bieten höhere Löhne, um Arbeitskräfte
+          anzulocken und um zu verhindern, dass Beschäftigte übermäßig
+          stark zu anderen Firmen abwandern.
+          
+          Im Beispiel wird bei einer realen Nachfrage von {{yH}} Mrd.
+          Baskets ein Reallohn von {{wH}} Baskets pro Stunde versprochen.
+        show: [wWS]
+#        params: {yH: 3400, wH: wWS(yH)}
+#        curvemarker:
+#          - {curve: wWS, x: yH, color: blue}
+      1c:
+        append: all
+        tell: |
+          Ist die reale Nachfrage y geringer, werden weniger Arbeitskräfte
+          benötigt. Die Arbeitslosigkeit ist höher, und es ist leichter
+          Arbeitskräfte zu finden und weniger wahrscheinlich, dass
+          Arbeitnehmer zu anderen Firmen abwandern. Firmen bieten
+          deshalb geringere Stundenlöhne an.
+
+          Im Beispiel wird bei einer realen Nachfrage von {{yL}} Mrd.
+          Baskets ein Reallohn von {{wL}} Baskets pro Stunde versprochen.
+#        params: {yL: 2700, wH: wWS(yL)}
+#        curvemarker:
+#          - {curve: wWS, x: yL, color: red}
+      2a:
+        title: Erwartetes Preisniveau und Nominallöhne
+        tell: |
+          Gehen wir von einer realen Nachfrage von y={{y}} Mrd. Baskets aus.
+          Der in den Lohnverhandlungen versprochene Reallohn beträgt {{wWS}}
+          Baskets pro Stunde.
+          
+          Wir wollen nun den Nominallohn W in Euro pro Stunde finden, den 
+          die Firmen tatsächlich den Arbeitnehmern zahlen.
+        show: [y, wWS]    
+      2b:
+        title: Erwartetes Preisniveau und Nominallöhne
+        tell: |
+          Der Nominallohn in Periode t ist gegeben durch
+          ```
+            Nominallohn = Preisniveau * Reallohn
+            
+            W(t)        = P(t)        * w(t)
+          ```
+          Das Preisniveau P(t) misst, wieviele Euro man für einen typischen
+          Warenkorb in Periode t ausgeben muss.
+          
+          Wir gehen allerdings davon aus, dass bei den Lohnverhandlungen
+          für diese Periode t=1, das Preisniveau noch nicht bekannt ist.
+          
+          Die Nominallöhne werden auf Basis des erwarteten Preisniveau
+          EP(t) festgelegt:
+          ```
+            erw. Preisniveau = Preisniveau Vorperiode * (1 + erw. Inflationsrate)
+            EP(t)            = P(t-1)                 * (1 + Epi(t))
+          ```
+          
+          Wir gehen zunächst von einfachen **adaptiven Inflationserwartungen**
+          aus: die erwartete Inflationsrate in Periode t ist einfach
+          die Inflationsrate der Vorperiode:
+          ```
+            Erw. Inflationsrate = Inflationsrate der Vorperiode    
+            Epi(t)              = pi(t-1)
+          ```
+      2c:
+        title: 'Beispiel: Preisniveau und Nominallöhne'
+        tell: |
+          Wir füllen das jetzt mit konkreten Zahlen.
+          In der Vorperiode betrugen das Preisniveau und Inflationsrate: 
+
+              P{{t-1}} = {{lag_P}} Euros / Basket
+              pi{{t-1}} = {{lag_pi}}.
+          
+          Somit beträgt das erwartete Preisniveau in dieser Periode:
+          
+              EP{{t}} = {{lag_P}}*({{1+lag_pi}})={{EP}}. 
+          
+          Der durchschnittliche Nominallohn bildet sich wie folgt:
+          
+              Nominallohn = versprochener Reallohn * erw. Preisniveau
+          
+              W{{t}} = {{w_prom}} * {{EP}} = {{W}} Euro / Stunde. 
+      3a:
+        title: Preissetzung der Firmen
+        tell: |
+          Das tatsächliche Preisniveau wird von der Preissetzung der
+          Firmen bestimmt. Einfachheitshalber gehen wir im Moment
+          davon aus, dass es keine Importe gibt, die das Preisniveau
+          bestimmen. In der Realität spielen Importpreise, z. B. von 
+          Erdöl, natürlich eine sehr wichtige Rolle für die Inflationsrate
+          und das Preisniveau.
+          
+          Wir gehen davon aus, dass Firmen einen Aufschlag von `mu`
+          auf ihre variablen Kosten verlangen. Einfachheitshalber,
+          gehen wir davon aus, dass die variablen Kosten durch 
+          die Lohnstückkosten gegeben sind, d.h. andere Kostenfaktoren
+          wie Rohstoffe oder Energie werden ignoriert.

@@ -4,43 +4,64 @@ info:
   descr: |
     Labor market and inflation in the three equation model
 curves:
-  WWS:
-    descr: The nominal wage curve for given inflation expectations
-    eq: W_ == WWS(y=y_)
-    xy: [y_,W_]
-    color: blue 
   wPS:
-    descr: The intermediate run price-setting reay wage equation
+    descr: The intermediate run price-setting real wage equation
     eq: w_ == wPS(y=y_)
     xy: [y_,w_]
     color: blue 
   wWS:
-    descr: The intermediate run reay wage-setting curve
+    descr: The intermediate-run real wage-setting curve
     eq: w_ == wWS(y=y_)
     color: red
     xy: [y_,w_]
-  MPy:
-    eq: w_ == MPy(y=y_)
-    xy: [y_,w_]
+  PC:
+    eq: pi_ = Epi + (wWS(y=y_) / wPS(y=y_,MPL=MPL(y=y_))) - 1
+    xy: [y_,pi_]
+    color: red
+  WWS:
+    descr: The nominal wage curve for given inflation expectations
+    eq: W_ == EP * wWS(y=y_)
+    xy: [y_,W_]
+    color: blue 
+  P_y:
+    label: 'P{{t}}(y)'
+    descr: The price that firms set
+    eq: W_ == (1+mu)*EP*wWS(y=y_)
+    xy: [y_,W_]
     color: green 
-
 
 panes:
   nominal_wages:
     pos: [1,1]
     xy: [y_,W_]
-    curves: [WWS]
-    xmarkers: [yD]
-    ymarkers: [W,W_eq]
+    curves: [WWS, P_y]
+    xmarkers: [y, y_eq]
+    ymarkers: [W,W_eq,P]
+  PC_pane:
+    pos: [2,1]
+    xy: [y_,pi_]
+    curves: [PC]
+    xmarkers: [y,y_eq]
+    ymarkers: [pi,Epi]
 
   labour_market:
     pos: [1,1]
     xy: [y_,w_]
-    curves: [wPS,wWS,MPL]
+    curves: [wPS,wWS]
     xmarkers: [y,y_eq]
     ymarkers: [w,w_eq]
 
+
+funs:
+  piPC:
+    args: y_
+    eqs:
+      - wWS_ = wWS(y=y_)
+      - wPS_ = wPS(y=y_)
+      - piPC = Epi + (wWS_ / wPS_) - 1
+
 vars:
+  piPC: Epi + wWS / wPS - 1
   MPL:
     descr: Marginal product of labor
     formula: lambda 
@@ -57,7 +78,7 @@ vars:
     formula: w_min + w_slope*y
   WWS:
     descr: The nominal wage agreed on in the wage negotiations
-    formula: EP * wWS(y)
+    formula: EP * wWS
 # Labor market if inflation expectiation were correct
   y_eq:
     descr: the equilibrium output under which inflation expectations are correct
@@ -66,12 +87,15 @@ vars:
     descr: the real wage if inflation expectations are correct
     ycut: [wPS, wWS]
 # Labor market in which inflation expectations may be incorrect
+  w_prom:
+    descr: the offered real wage
+    formula: wWS
   w:
     descr: the actual real wages are determined by the price setting curve
     formula: W / P
   W:
     descr: the actual nominal wages
-    formula: EP * wWS(y)
+    formula: EP * wWS(y=y)
   MC:
     descr: |
       marginal cost of production for firms, given by
@@ -98,9 +122,10 @@ scenarios:
   base:
     T: 30
     axis:
-      y_: [2000,4000]
-      w_: [0,10]
-      W_: [0,100]
+      y_: [2500,3500]
+      w_: [1.5,2.5]
+      W_: [10,30]
+      pi_: [-0.05,0.1]
     init_mode: steady_state
     init:
       #mu: 0.1

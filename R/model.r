@@ -74,6 +74,7 @@ init.model = function(em, skip.if.initialized=TRUE,...) {
   if (skip.if.initialized & is.true(em$initialized))
     return(invisible())
   init.model.params(em)
+  init.model.funs(em)
   init.model.curves(em)
   #em$curves[[1]]$name
   init.model.panes(em)
@@ -153,20 +154,37 @@ init.model.scen = function(em,scen.name = names(em$scenarios)[1], scen = em$scen
   }
 }
 
+init.model.funs = function(em) {
+  init.model.var.funs(em)
+}
+
+init.model.var.funs = function(em) {
+  li = lapply(em$vars, function(obj) {
+    if (is.null(obj$formula)) return(NULL)
+    parse.as.call(obj$formula)
+  })
+  is.fun = !sapply(li, is.null)
+  em$var.funs = li[is.fun]
+}
+
 init.model.curves = function(em) {
   restore.point("init.model.curves")
-  curve = em$curves[[1]]
+  #curve = em$curves[[2]]
   em$curves = lapply(em$curves, function(curve) {
     restore.point("kdfgnjdgkj")
     if (is.null(curve$name))
       curve$name = get.name(curve)
     curve$eq_ = parse.as.call(text=curve$eq)
+    
+    # Replace derivatives and variable functions
+    curve$eq_ = compute.equation.funs(list(curve$eq_),em$var.funs)[[1]]
+    
     curve$impl_ = substitute(lhs-(rhs),list(lhs=get.lhs(curve$eq_),rhs=get.rhs(curve$eq_)))
     
     curve$xvar = curve$xy[1]
     curve$yvar = curve$xy[2]
     
-    res = specialize.curve.formula(curve$eq, xvar=curve$xvar,yvar=curve$yvar)
+    res = specialize.curve.formula(curve$eq_, xvar=curve$xvar,yvar=curve$yvar)
     
     c(curve, res)
   })

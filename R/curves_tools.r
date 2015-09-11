@@ -120,12 +120,14 @@ compute.curve.points = function(cu, xrange, yrange, par,xlen = 101,ylen=xlen, ..
     xseq = seq(xrange[1],xrange[2], length=xlen)
     par[[cu$xvar]] = xseq
     yseq = eval(cu$yformula_, par)
+    if (length(yseq)==1) yseq <- rep(yseq,xlen)
     return(list(x=xseq,y=yseq))    
   }
   if (!is.null(cu$xformula_)) {
     yseq = seq(yrange[1],yrange[2], length=ylen)
     par[[cu$yvar]] = yseq
     xseq = eval(cu$xformula_, par)
+    if (length(xseq)==1) xseq <- rep(xseq,ylen)
     return(list(x=xseq,y=yseq))
   }
   
@@ -168,9 +170,9 @@ is.horizontal = function(cu) {
 }
 
 
-specialize.curve.formula = function(formula, xvar, yvar, level=NULL) {
+specialize.curve.formula = function(eq, xvar, yvar, level=NULL) {
   restore.point("specizalize.curve.formula")
-  formula_ = parse.formula(formula)
+  formula_ = eq
   lhs_ = get.lhs(formula_)
   lhs = deparse1(lhs_)
   rhs_ = get.rhs(formula_)

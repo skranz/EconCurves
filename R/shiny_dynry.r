@@ -6,8 +6,8 @@ examples.shiny.dynry = function() {
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
-  es = load.story("ThreeEq_G_langfristig")
-  es = load.story("IS_LM_PC_G_kurzfristig")
+  #es = load.story("ThreeEq_G_langfristig")
+  es = load.story("SimpleLabor3EqStory")
   init.story(es)
   es$t = 1
   app = shinyStoryApp(es)
@@ -28,6 +28,7 @@ shinyStoryApp = function(es,...) {
   
   app = eventsApp()
   app$es = es
+  app$allow.edit = get.ec()$allow.edit
   ui = story.ui()
   ui = fluidPage(title = es$storyId,ui)
 
@@ -46,13 +47,20 @@ shinyStoryApp = function(es,...) {
 
 dynry.ui = function(app=getApp(), es=app$es) {
   restore.point("story.ui")
+  if (app$allow.edit) {
+    editBtn = actionButton("stEditBtn","Edit")
+    refreshBtn = actionButton("stRefreshBtn","Refresh")
+  } else {
+    editBtn = refreshBtn = NULL
+  }
   ui = fluidRow(
     column(4,
      fluidRow(
-        actionButton("stNextBtn","Next"),
+        actionButton("stPrevBtn","<"),
+        actionButton("stNextBtn",">"),
         actionButton("stForwardBtn",">>"),
-        actionButton("stPrevBtn","Prev"),
-        actionButton("stExitBtn","Exit")
+        actionButton("stExitBtn","Exit"),
+        editBtn, refreshBtn
       ),
       uiOutput("tellUI"),
       uiOutput("answerUI")
@@ -65,13 +73,22 @@ dynry.ui = function(app=getApp(), es=app$es) {
   ) 
   #setPlot("testPlot",{plot(runif(100),runif(100))})
   #setUI(id = "panesUI",story.panes.ui())
-  buttonHandler("stNextBtn", story.next.btn.click)
-  buttonHandler("stForwardBtn", story.forward.btn.click)
-  buttonHandler("stPrevBtn", story.prev.btn.click)
-  buttonHandler("stExitBtn", exit.to.main)
+  buttonHandler("stNextBtn", story.next.btn.click,if.handler.exists = "skip")
+  buttonHandler("stForwardBtn", story.forward.btn.click,if.handler.exists = "skip")
+  buttonHandler("stPrevBtn", story.prev.btn.click,if.handler.exists = "skip")
+  buttonHandler("stExitBtn", exit.to.main,if.handler.exists = "skip")
+  buttonHandler("stEditBtn", edit.dynry.click,if.handler.exists = "skip")
+  buttonHandler("stRefreshBtn", refresh.dynry.click,if.handler.exists = "skip")
   
 
   ui
+}
+
+
+edit.dynry.click = function(app=getApp(), es=app$es,...) {
+  restore.point("edit.dynry.click")
+  cat("Edit Story...")
+  
 }
 
 story.wait.for.answer = function(app=getApp(), es=app$es) {
@@ -122,6 +139,23 @@ shiny.pane.click = function(app=getApp(), es=app$es,pane.name,id, session, value
   }
   #cat("Click!")
 }
+
+
+refresh.dynry.click = function(app=getApp(), es=app$es,...) {
+  cat("Refresh story...")
+  t = es$t; step.num = es$step.num
+  id = es$storyId
+  restore.point("refresh.dynry.click")
+
+  # reload and init story  
+  es = load.story(id)
+  app$es = es
+  init.story(es)
+  
+  shiny.tell.step.task(t = t,step.num = step.num)
+  
+}
+
 
 story.next.btn.click = function(app=getApp(), es=app$es,...) {
   restore.point("stNextBtnClicked")

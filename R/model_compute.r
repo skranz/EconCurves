@@ -395,10 +395,6 @@ init.model.vars = function(em, skip.cluster.equations=FALSE) {
   
   em$par.names = setdiff(em$sym.names, em$var.names)
 
-  # add var.funs
-  rows = which(em$cdf$type=="formula")
-  em$var.funs = em$cdf$expl_[rows]
-  
   em$org.cdf = em$cdf
   # solve equations
   #if (!skip.cluster.equations) {

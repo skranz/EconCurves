@@ -7,10 +7,11 @@ examples.dynry = function() {
   ec = get.ec()
   #es = load.story("ThreeEq_G_langfristig")
   #es = load.story("IS_LM_PC_G_kurzfristig")
-  es = load.story("Ger3EqStory")
+  es = load.story("SimpleLabor3EqStory")
   init.story(es)
   par(mfrow=c(1,2),oma=c(0,0,0,0))
   tell.story.on.console(ask=TRUE,es = es,t.start = 1,step.start = 1, mfrow=c(1,2))
+  
   
   tell.story.on.console(ask=TRUE,es = es,t.start = 2,step.start = 8, mfrow=c(1,2))
 
@@ -194,8 +195,8 @@ compile.story.txt = function(txt, out="text",val =as.list(em$sim[t,,drop=FALSE])
     return(v)
   }) 
   
-  txt = whisker.render(txt, data=val)
-  
+  txt = replace.whiskers(txt, val)
+
   if (out=="text") {
     txt = gsub("$","",txt, fixed=TRUE)
   } else if (out=="html") {
