@@ -2,14 +2,14 @@
 examples.shiny.dynry = function() {
 
 
-  set.restore.point.options(display.restore.point = TRUE)
+  set.restore.point.options(display.restore.point = !TRUE)
   setwd("D:/libraries/EconCurves/EconCurves")
   init.ec()
   ec = get.ec()
   #es = load.story("ThreeEq_G_langfristig")
   es = load.story("SimpleLabor3EqStory")
   init.story(es)
-  es$t = 1
+  es$t = 2
   app = shinyStoryApp(es)
   runEventsApp(app,launch.browser = rstudio::viewer)
 

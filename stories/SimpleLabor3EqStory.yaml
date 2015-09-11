@@ -6,7 +6,33 @@ title: Illustrating the 3 equation model
 
 descr: >
 
-scenarioId: base
+scenario:
+  T: 30
+  axis:
+    y_: [2500,3500]
+    w_: [1.5,2.5]
+    W_: [10,30]
+    pi_: [-0.05,0.1]
+  init_mode: steady_state
+  init:
+    #mu: 0.1
+    w_min: 1
+    w_slope: 1 / 4000
+    lambda: 2
+    y: 3000
+    pi: 0.02
+    lag_pi: pi
+    lag_P: 10 / 1.02
+  shocks:
+    y_up:
+      descr: Demand increases
+      effects:
+        y: 'y*1.1'
+      start: 2
+      duration: 2
+
+
+
 
 
 timelineVars: [y,Epi,pi,P,w]
@@ -16,6 +42,7 @@ lang: en
 
 periods:
   1:
+  2:
     steps:
       1a:
         title: Versprochene Reallöhne
@@ -30,14 +57,15 @@ periods:
           ein Arbeitnehmer für den Lohn einer Stunde Arbeit kaufen kann.
           Die Umrechnung von Baskets in Euro hängt vom Preisniveau ab. Wenn z. B.
           ein normierter Warenkorb 10 Euro kostet, entspräche ein Reallohn 
-          von 2 Baskets, einen Nominallohn von 20 Eurp.
+          von 2 Baskets, einen Nominallohn von 20 Euro.
           
           Bemerkung: Wir reden von "versprochenen" Reallöhnen, da
           sich diese am Ende
           von den tatsächlichen Reallöhnen unterscheiden können,
           wenn die
           Inflationsrate und das resultierende Preisniveau falsch eingeschätzt
-          werden. Wir werden dies weiter unten im Detail behandeln.
+          werden. Wir werden dies noch im Detail behandeln.
+        show: [wWS]
           
       1b:
         tell: |
@@ -46,9 +74,10 @@ periods:
           anzulocken und um zu verhindern, dass Beschäftigte übermäßig
           stark zu anderen Firmen abwandern.
           
-          Im Beispiel wird bei einer realen Nachfrage von {{yH}} Mrd.
-          Baskets ein Reallohn von {{wH}} Baskets pro Stunde versprochen.
-        show: [wWS]
+          Im Beispiel, haben wir in Periode 2 eine reale Nachfrage von {{y}} Mrd.
+          Baskets und in den Lohnverhandlungen wird ein Reallohn
+          von {{w}} Baskets pro Stunde versprochen.
+        show: [wWS, y, w]
 #        params: {yH: 3400, wH: wWS(yH)}
 #        curvemarker:
 #          - {curve: wWS, x: yH, color: blue}
@@ -61,11 +90,14 @@ periods:
           Arbeitnehmer zu anderen Firmen abwandern. Firmen bieten
           deshalb geringere Stundenlöhne an.
 
-          Im Beispiel wird bei einer realen Nachfrage von {{yL}} Mrd.
-          Baskets ein Reallohn von {{wL}} Baskets pro Stunde versprochen.
+          Im Beispiel haben wir in der Vorperiode t=1,
+          eine geringer reale Nachfrage von {{lag_y}} Mrd.
+          Baskets. Es wurde ein Reallohn von {{lag_w}} Baskets 
+          pro Stunde versprochen.
 #        params: {yL: 2700, wH: wWS(yL)}
 #        curvemarker:
 #          - {curve: wWS, x: yL, color: red}
+        show: [wWS, lag_w, lag_y, w,y]
       2a:
         title: Erwartetes Preisniveau und Nominallöhne
         tell: |
@@ -116,7 +148,7 @@ periods:
           
           Somit beträgt das erwartete Preisniveau in dieser Periode:
           
-              EP{{t}} = {{lag_P}}*({{1+lag_pi}})={{EP}}. 
+              EP{{t}} = {{lag_P}}*({{1+lag_pi}}) = {{EP}} Euros / Basket. 
           
           Der durchschnittliche Nominallohn bildet sich wie folgt:
           
@@ -133,8 +165,52 @@ periods:
           Erdöl, natürlich eine sehr wichtige Rolle für die Inflationsrate
           und das Preisniveau.
           
-          Wir gehen davon aus, dass Firmen einen Aufschlag von `mu`
-          auf ihre variablen Kosten verlangen. Einfachheitshalber,
+          Wir gehen davon aus, dass Firmen eine gegebene relative 
+          Marge $\mu$ (mu)
+          auf ihre variablen Kosten aufschlagen.
+          
+              Preis = (1+Marge) * var. Kosten
+              
+              P     = (1+mu) * VC
+          
+          Einfachheitshalber,
           gehen wir davon aus, dass die variablen Kosten durch 
-          die Lohnstückkosten gegeben sind, d.h. andere Kostenfaktoren
-          wie Rohstoffe oder Energie werden ignoriert.
+          die Lohnstückkosten gegeben sind, d.h. wir ignorieren 
+          andere Kostenfaktoren wie Rohstoffe oder Energie.
+          
+              var. Kosten = Lohnstückkosten 
+                          = Nominallohn / Arbeitsproduktivität
+              
+              VC          = W / lambda
+              
+          Wobei die Arbeitsproduktivität $\lambda$ (lambda)
+          misst, wieviele Baskets ein Arbeitnehmer pro Stunde produziert.
+          
+          Die von der Firma gesetzten Preise erfüllen also:
+          
+              Preis = (1+Marge)* Nominallohn / Arbeitsproduktivität
+              
+              P     = (1+mu) * W / lambda
+              
+      3b:
+        tell: |
+          Betrachten wir wieder konkrete Zahlen.
+          Die Marge und Arbeitsproduktivität seien gegeben durch
+          
+              Marge = mu = {{mu}}
+              
+              Arbeitsproduktivität = lambda = {{lambda}} Baskets pro Stunde
+          
+          In Periode t=1 hatten wir einen Nominallohn von W{{t}}={{W}}. 
+          Somit ergeben sich
+          für die Firmen variable Kosten in Höhe von
+          
+              VC{{t}} = W{{t}} / lambda = {{W}} / {{lambda}} 
+                  = {{VC}} Euros / Basket
+          
+          und die Firmen setzen Preise in Höhe von
+          
+              P{{t}} = (1+mu)*VC{{t}} = {{1+mu}}*{{VC}} 
+                 = {{P}} Euros / Basket
+          
+              

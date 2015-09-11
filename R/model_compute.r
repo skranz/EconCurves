@@ -735,11 +735,11 @@ make.inner.sim.fun = function(em) {
         shock.pars = names(shock$effects)
         for (par in shock.pars) {
           formula_ = parse.as.call(shock$effects[[par]])
-          val = eval(formula_, par.df[shock.t+1,])
-          par.df[[par]][shock.t+1] = val
+          val = eval(formula_, par.df[shock.t,])
+          par.df[[par]][shock.t] = val
         }
       }
-      par.mat = rbind(c(t=1,T=T,par.mat[1,]),as.matrix(par.df))
+      par.mat = rbind(c(t=0,T=T,par.mat[1,]),as.matrix(par.df))
 
       for (ti in 3:(T+1)) 
         clu.inner

@@ -96,6 +96,8 @@ vars:
   W:
     descr: the actual nominal wages
     formula: EP * wWS(y=y)
+  VC:
+    formula: MC
   MC:
     descr: |
       marginal cost of production for firms, given by
