@@ -25,7 +25,7 @@ compile.story.txt = function(txt, out="text",val =as.list(em$sim[t,,drop=FALSE])
     return(v)
   }) 
   
-  txt = replace.whiskers(txt, val)
+  txt = replace.whiskers(paste0(txt, collapse="\n"), val)
 
   if (out=="text") {
     txt = gsub("$","",txt, fixed=TRUE)

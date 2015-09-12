@@ -4,7 +4,9 @@ examples.shiny.model = function() {
   
   # Model builder
   ec = init.ec()
-  em = load.model("SimpleLabor3Eq")
+  em = load.model("ThreeEq")
+  
+  init.model(em)
   
   options(warn = 1)
   res = testwise.init.model(em)
@@ -18,7 +20,7 @@ examples.shiny.model = function() {
   sim = simulate.model(em)
   
   ec = init.ec()
-  mb = init.mb("SimpleLabor3Eq")
+  mb = init.mb("ThreeEq")
   app = eventsApp()
   app$mb = mb
   

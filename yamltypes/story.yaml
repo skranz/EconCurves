@@ -1,5 +1,14 @@
 story:
     fields:
+        storyId:
+            type: character
+        init:
+            type: storyInit
+    fieldType: storyPart
+    allowOtherFields: true
+
+storyInit:
+    fields:
         author:
         license:
         modelId: 
@@ -13,15 +22,8 @@ story:
         lang:
         timelineVars:
         default:
-        periods:
-            type: storyPeriods
-        parts:
-            type: scenryParts
-          
-scenryParts:
-    fieldType: scenryPart
 
-scenryPart:
+storyPart:
     fields:
         tell:
         scens:
@@ -30,33 +32,17 @@ scenryPart:
         statements:
         quiz:
         background:
-
-storyPeriods:
-    fieldType: storyPeriod
-
-storyPeriod:
-    fields:
-        t:
-        steps:
-            type: storySteps  
-
-storySteps:
-    fieldType: storyStep
-
-storyStep:
-    fields:
-        tell:
         show:
         lagshow:
         hide:
         laghide:
         ask:
         task:
-            type: stepTask
+            type: storyTask
         success:
     allowOtherFields: true
 
-stepTask:
+storyTask:
     fields:
         pane:
             type: character

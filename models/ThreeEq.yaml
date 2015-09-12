@@ -36,26 +36,20 @@ panes:
     xmarkers: [y_eq,y,y_mr]
     ymarkers: [pi,Epi,piT,next_Epi,pi_mr]
 
-laginitMode: steady_state
-
 vars:
   y: 
     xcurve: IS
     y: 'lag_r'
-    laginit: y_eq
   # adaptive expectations
   Epi: 'lag_pi'
   next_Epi: 'pi'
   pi:
     ycurve: PC
     x: y
-    laginit: piT
   pi_mr:
     ycut: [next_PC,MR]
-    laginit: piT
   y_mr:
     xcut: [next_PC,MR]
-    laginit: y_eq
   rcut:
     ycurve: IS
     x: y_mr
@@ -94,14 +88,19 @@ params:
 
 scenarios:
   base:
-    params:
-      T: 20
+    init_mode: steady_state  
+    T: 10
+    init:
       A: 15
       a: 2
       piT: 0
       alpha: 1
       beta: 1
       y_eq: 10
+      y: y_eq
+      pi: piT
+      pi_mr: piT
+      y_mr: y_eq
     axis:
       y_: [0,20]
       r_: [0,10]
@@ -111,5 +110,5 @@ scenarios:
         descr: Government spending decreases
         effects:
           A: 'A*0.85'
-        start: 2
+        start: 8
         duration: 100

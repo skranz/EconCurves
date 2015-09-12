@@ -15,9 +15,6 @@ examples.dynry = function() {
   sim = em$sim
   dyplot.timelines(em$sim,cols = c(em$var.names,"A"),em = em)
 
-
-  tell.step.task.on.console(es,t=2,step=1)
-  
 }
 
 
@@ -122,11 +119,11 @@ dynry.forward = function(es, t = es$t, step.num = es$step.num, update.es=TRUE) {
 
 
 init.dynry.parts = function(es) {
-  restore.point("init.dynry.periods")
+  restore.point("init.dynry.parts")
   #period = es$periods[[2]]
   
   
-  prev.part = list(t=0, shown=NULL, section="")
+  prev.part = list(t=0, shown=NULL)
 
   step.num = 0
   
@@ -134,26 +131,40 @@ init.dynry.parts = function(es) {
   
   part.names = names(es$parts)
   
-  parts = list(length(es$parts))
-  
-  for (i in seq_along(es$parts)) {
-    part = es$parts[[i]]
-    name = part.names(part)
+  parts = vector("list",length(es$parts))
+
+  i = 1
+  hvals = list(t=1,section=NULL)
+
+  while(TRUE) {
+    if (i>length(es$parts)) break
+    name = part.names[i]
     
     if (str.starts.with(name,"Period ")) {
-      prev.part$t = as.numeric(str.right.of(name, "Period "))
+      i = i+1
+      hvals$t = as.numeric(str.right.of(name, "Period "))
       next
     }
 
     if (str.starts.with(name,"Section ")) {
-      prev.part$section = as.numeric(str.right.of(name, "Section "))
+      i = i +1
+      hvals$section = str.right.of(name, "Section ")
       next
     }
-    part.ind = part.ind+1
-        
-    if (is.null(part[["t"]])) part$t = max(prev.part$t,1)
-    if (part$t == "next") part$t = prev.part$t + 1
     
+    part = es$parts[[i]]
+    part.ind = part.ind+1
+
+    for (var in names(hvals)) {
+      if (is.null(part[[var]])) {
+        if (!is.null(hvals[[var]])) {
+          part[[var]] = hvals[[var]]
+        } else {
+          part[[var]] = prev.part[[var]]
+        }
+      }
+    }
+    hvals = lapply(hvals, function(val) NULL)
     same.t = part$t == prev.part$t
     if (same.t) {
       step.num = step.num +1
@@ -193,7 +204,10 @@ init.dynry.parts = function(es) {
     if (!is.null(part$task))
         part$task$type = get.story.part.task.type(part)
       
-    parts[name] = part
+    parts[[part.ind]] = part
+    names(parts)[part.ind] = name
+    prev.part = part
+    i = i+1
   }
   
   es$parts = parts[1:part.ind]
@@ -201,7 +215,7 @@ init.dynry.parts = function(es) {
   t.vec = sapply(es$parts, function(part) part$t)  
   
   start.t = unique(t.vec)  
-  end.t = c(start.t[-1], Inf)
+  end.t = c(start.t[-1]-1, Inf)
   parts = lapply(start.t, function(t) which(t.vec==t))
   num.parts = sapply(parts, function(ps) length(ps))
   
