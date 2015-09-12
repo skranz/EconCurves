@@ -1,0 +1,326 @@
+storyId: ThreeEq_G_langfristig
+
+
+modelId: ThreeEq
+
+title: 'Übung: Das 3-Gleichungsmodell bei einem langfristigen Nachfrageschock'
+
+descr: |
+  Dies ist eine Übungsaufgabe. Sie können interaktiv
+  Fragen zur dynamischen Entwicklung im Rahmen eines 3-Gleichungsmodells
+  beantworten.  
+  
+  
+  Überblick des Modells:
+  
+  
+  Das 3-Gleichungsmodell wird im neuen Lehrbuch
+  "Macroeconomics: Institutions, Instability, and the Financial System"
+  von  Wendy Carlin and David Soskice (2014) schön dargestellt.
+  
+  
+  Wir haben ein IS Kurve, die sich durch eine permanente 
+  Staatsausgabenerhöhung verschiebt.
+  
+  
+  Wir haben eine Phillipskurve,
+  die beschreibt, wie sich die Gesamtwirtschaftliche Nachfrage (BIP)
+  auf die Inflationsrate auswirkt. Es gibt ein gleichgewichtiges BIP,
+  bei der die Inflationsrate konstant bleibt. Eine höhere Nachfrage führt
+  zu Lohndruck, den Firmen durch höhere Preisen weitergeben. Die Inflationsrate
+  erhöht sich Inflation. Ein BIP unter dem Gleichgewichtsniveau senkt die
+  Löhne aufgrund der hohen Arbeitslosigkeit. Dies wird von Firmen
+  durch niedrigere Preise weitergegeben und senkt die Inflationsrate.
+  
+  Die Phillipskurve verschiebt sich, wenn sich Inflationserwartungen
+  ändern. Wir betrachten einfache adaptive Erwartungen, die erwartete
+  Inflationsrate ist einfach die Inflationsrate der Vorperiode.
+  
+  
+  Die Zentralbank steuert die Leitzinsen um die Wirtschaft stabil zu halten.
+  Anders als im IS-LM Modell, wirken Zinsen aber erst eine Periode verspätet auf 
+  die (Investions-)Nachfrage. Dies erschwert stabilisierende Geldpolitik.
+  Diese Komplikation ist aber durchaus realistisch.
+  
+  
+  Die Geldpolitik wird durch eine Geldregelkurve (MR) beschrieben.
+  Sie reflektiert
+  die Präferenzen der Zentralbank gegenüber Abweichung vom Inflationsziel
+  und vom gleichgewichtigen BIP.
+  
+
+
+scenario:
+  params:
+    T: 10
+    A: 15
+    a: 2
+    piT: 0
+    alpha: 1
+    beta: 1
+    y_eq: 10
+  axis:
+    y_: [0,20]
+    r_: [0,10]
+    pi_: [-5,10]
+  shocks:
+    G_inc:
+      effects:
+        A: 'A*1.3'
+      start: 2
+      duration: 100
+
+timelineVars: [y,r,pi]
+
+fixed: [MR,y_eq,piT]
+
+lang: de
+
+periods:
+  1:
+    steps:
+      init:
+        tell: >
+          Unsere geschlossene Volkswirtschaft startet im Gleichgewicht.
+          Die Inflationsrate pi1 ist auf ihrem Zielniveau von {{piT}}%
+          und die gesamtwirtschaftliche Nachfrage y1 liegt genau auf dem
+          Gleichgewichtsniveau von y_eq={{y_eq}},
+          bei dem die Inflationsrate konstant bleibt.
+        show: [IS,MR,PC,r, piT,y,pi]
+  2:
+#    shocks: G_inc
+    steps:
+      step_IS:
+        lagshow: [IS,y,MR,PC,piT,r]
+        tell: >
+          In Periode 2 entscheidet sich die Regierung,
+          unerwarteterweise, die Staatsausgaben langfristig auf ein
+          höheres Niveau anzuheben.
+          (Wir ignorieren im Moment, wie die Regierung diese
+          Ausgaben finanziert.)
+        ask: > 
+          In welche Richtung verschiebt sich die IS Kurve?
+          (Clicken Sie in die Abbildung)
+        task:
+          pane: [IS_]
+          shift: [lag_IS,IS] 
+        success: >
+          Genau, die IS Kurve verschiebt sich durch die
+          Staatsausgabenerhöhung nach rechts.
+          Bei gegebenen Zinssatz wird mehr nachgefragt.
+      step_y:
+        ask: >
+          Bestimmen Sie in der Abbildung den neuen Wert y_2 des BIP
+          in Periode 2.
+          (Clicken Sie in die Abbildung)
+        task:
+          pane: [IS_]
+          find: y 
+        success: >
+          Richtig, das neue BIP, y2={{y}}, befindet sich auf dem Schnittpunkt
+          zwischen dem vorherigem Zinssatz, r1={{r}}, und der neuen IS
+          Kurve.
+      step_PC_MR:
+        laghide: [MR,PC,piT]
+        tell: >
+          Betrachten wir nun das y-pi Panel. Da die Staatsausgabenerhöhung unerwartet war,
+          hat sich an der erwarteten Inflation Epi2 noch nichts geändert.
+          
+          
+          Epi2=pi1=Epi1=piT={{Epi}}%. 
+          
+          
+          Da die erwartete Inflation gleich bleibt, veschiebt sich auch die
+          Phillipskurve (PC) erstmal nicht.
+          Die Reaktionskurve der Zentralbank (MR) bleibt stets konstant.
+        show: [PC,MR, Epi, lag_pi]
+      step_pi:
+        tell: >
+          Die erhöhte Nachfrage führt zu geringerer Arbeitslosigkeit. Dies
+          steigert die Verhandlungsmacht von Arbeitnehmern.
+          Als Konsequenz haben wir Lohnsteigerungen über der erwarteten
+          Inflationsrate von Epi2={{Epi}}%.
+          
+          Die Firmen reagieren auf die steigenden
+          Lohnkosten durch Preissteigerungen, die dann auch über dem Niveau 
+          der erwarteten Inflationsrate von {{Epi}}% liegen.
+        ask: >
+          Bestimmen Sie die resultierende Inflationsrate in Periode 2.
+        task:
+          pane: [PC_MR]
+          find: pi
+        success: >
+          Richtig. Sie finden die neue Inflationsrate von pi{{t}}={{pi}}%
+          als vertikalen Wert
+          der Phillipskurve (PC{{t}}) an der Stelle des neuen BIP,
+          y{{t}}={{y}}.
+          
+          Aufgrund der unerwarteten Staatsausgabenerhöhung
+          liegt also die tatsächliche Inflationsrate
+          über der erwarteten Inflationsrate von Epi{{t}}={{Epi}}%.
+      step_intro_cb:
+        tell: >
+          Die Zentralbank versucht die Ökonomie mit ihrer
+          Zinspolitik zu stabilisieren und eine Inflationsspirale
+          zu verhindern.
+          Hierfür sucht sie einen geeigneten Zinssatz r{{t}}. 
+          Bis Investitionen tatsächlich umgesetzt
+          werden und der Konsum-Multiplikator wirkt, vergeht allerdings
+          etwas Zeit.
+          Daher haben wir angenommen, dass der Zinssatz erst
+          mit einer Periode Verzögerung
+          auf die gesamtwirtschaftliche Nachfrage wirkt.
+          
+          Um die gewünschte Balance zwischen BIP und Inflation zu
+          finden, muss die Zentralbank daher die zukünftigen
+          Inflationserwartungen der Arbeitnehmer und Firmen 
+          und die daraus resultierende Phillips-Kurve 
+          vorhersagen.
+      step_next_Epi:
+        tell: >
+          Machen wir zunächst die Vorhersage für die
+          Inflationserwartungen in der nächsten Periode.
+        ask: >
+          Wie hoch ist die erwartete Inflation Epi in der nächsten
+          Periode?
+        task:
+          pane: [PC_MR]
+          find: [next_Epi]
+        success: >
+          Richtig. Wir haben angenommen, dass die erwartete Inflation
+          einfach die Inflation der vorherigen Periode ist.
+          (Adaptive Erwartungen).
+          Das heißt, die Inflationserwartung Epi3 in Periode 3 ist
+          die aktuelle Inflationsrate pi2={{pi}}% und liegt somit
+          über der aktuellen Inflationserwartung von
+          Epi2={{Epi}}%.
+      step_next_PC:
+        tell: >
+          
+        ask: >
+          In welche Richtung wird sich die Phillipskurve in
+          Periode 3 verschieben?
+        task:
+          pane: [PC_MR]
+          shift: [PC, next_PC]
+        success: >
+          Richtig, durch höheren Inflationserwartungen verschiebt
+          sich die Phillipskurve nach oben. Bei gleichen BIP hätten
+          wir in Periode 3 eine höhere Inflation als in Periode 2,
+          weil Arbeitnehmer in den Lohnverhandlungen von einer 
+          höheren Inflation ausgehen und dann auch die
+          Firmen wiederrum die Preise entsprechend nach oben
+          anpassen.          
+      step_y_mr:
+        show: [next_PC]
+        tell:
+        ask: >
+          Bestimmen Sie nun den Punkt der von der 
+          Zentralbank für Periode 3 angestrebten
+          Inflationsrate und BIP.
+        task:
+          pane: [PC_MR]
+          findPoint: [y_mr,pi_mr]
+        success: >
+          Richtig. Die von der Zentralbank angestrebte 
+          Inflationsrate pi_mr = {{pi_mr}} und BIP 
+          y_mr = {{y_mr}} für die nächste
+          Periode befinden sich auf dem Schnittpunkt
+          der vorhergesagten Phillipkurve (PC3) und
+          der Geldregelkurve (MR).
+          
+          Je flacher die MR Kurve, desto höheres
+          Gewicht legt die Zentralbank auf das
+          Inflationsziel von piT={{piT}}%. Sie ist dafür auch bereit
+          das BIP stark unter das langfristige Gleichgewicht
+          von y_eq={{y_eq}} zu drücken.
+          
+          Bei einer steilen MR Kurve legt die Zentralbank
+          höhere Gewicht darauf, das BIP nicht allzustark
+          unter das langfristige Gleichgewicht zu drücken
+          und nimmt dafür eine höhere
+          Inflationsrate in Kauf. Solange die MR Kurve
+          aber nicht senkrecht ist, wird die Zentralbank
+          immer bereit sein, zur Inflationsbekämpfung
+          das BIP durch Zinserhöhungen 
+          unter das langfristige Gleichgewicht 
+          zu fallen zu lassen.
+
+      step_r_mr:
+        show: [y_mr,pi_mr]
+        tell:
+        ask: >
+          Bestimmen Sie nun den realen Zinssatz r2 den die
+          Zentralbank wählt, um in der nächsten
+          Periode das angestrebte Paar aus Inflationsrate
+          und BIP zu implementieren.
+        task:
+          pane: [IS_]
+          find: [r]
+        success: >
+          Richtig. Wir finden den realen Zinssatz von r2={{r}}%, den die
+          Zentralbank anstrebt, am Schnittpunkt des angestrebten
+          BIP y_mr2={{y_mr}} mit der IS2-Kurve.
+  3:
+    steps:
+      step_start_IS:
+        lagshow: [r,y]
+        show: [IS,y]
+        tell: >
+          In Periode 3 führt der höhere Zinssatz
+          zu einer Reduktion des BIP 
+          von y2={{lag_y}} auf y3={{y}}.
+          Wir haben eine deutliche Konjunkturdelle.
+          
+          
+          Die Staatsausgaben wurden per Annahme dauerhaft erhöht.
+          Das heißt der Rückgang der Gesamtnachfrage basiert
+          vor allem auf einem Rückgang privater Investitionen
+          durch den höheren Zinsatz den die Zentralbank zur
+          Inflationsbekämpfung gewählt hat.
+          Durch den Multiplikatoreffekt gab es aber auch einen Rückgang
+          des privaten Konsums.
+          
+          
+          Ähnlich wie in einem Modell mit fester Geldmenge,
+          haben wir auch bei unserem Modell mit einer Zentralbank
+          die aktiv Zinsen setzt, ein "Crowding Out".
+          Höhere Staatsausgaben in Zeiten normaler Nachfrage und Beschäftigung
+          haben zu einem Zinssanstieg und Reduktion privater Investitionen
+          und Konsum geführt.
+          
+      step_start_PC:
+        lagshow: 
+        show: [PC,MR,next_PC,r,piT,pi]
+        tell: >
+          Die hohen Zinsen haben es geschafft die Inflationserwartungen
+          im Vergleich zur Vorperiode etwas zu reduzieren.
+          Die Zentralbank kann entsprechend die Zinsen etwas senken,
+          und erzielt eine leichte Erholung des BIP bei trotzdem
+          weiter sinkender Inflationsrate.
+          
+          In dieser und den darauffolgenden Perioden
+          steuert die Zentralbank
+          die Inflationsrate und und das BIP
+          langsam entlang der MR Kurve 
+          zurück in das angestrebte Gleichgewicht 
+          von pi={{piT}}% und y={{y_eq}}.
+          
+
+  4:
+    steps:
+      step_all:
+        tell: >
+          In dieser und den darauffolgenden Perioden
+          steuert die Zentralbank
+          die Inflationsrate und und das BIP
+          langsam entlang der MR Kurve 
+          zurück in das angestrebte Gleichgewicht 
+          von pi={{piT}}% und y={{y_eq}}.
+        
+  
+          Die aktuelle Inflation sinkt von {{lag_pi}}% auf
+          {{pi}}% und das BIP steigt von {{lag_y}} auf {{y}}.
+  
+        lagshow: [IS,y,r]
+        show: [IS,PC,MR,next_PC,y,r,piT,pi]

@@ -10,10 +10,6 @@ examples.dynry = function() {
   es = load.story("SimpleLabor3EqStory")
   init.story(es)
   par(mfrow=c(1,2),oma=c(0,0,0,0))
-  tell.story.on.console(ask=TRUE,es = es,t.start = 1,step.start = 1, mfrow=c(1,2))
-  
-  
-  tell.story.on.console(ask=TRUE,es = es,t.start = 2,step.start = 8, mfrow=c(1,2))
 
   em = es$em
   sim = em$sim
@@ -33,7 +29,7 @@ init.dynry = function(es, em=es$em) {
   es$tol = 0.07
   
 
-  init.story.periods(es)
+  init.dynry.parts(es)
   
   
   init.model(em)
@@ -47,105 +43,200 @@ init.dynry = function(es, em=es$em) {
   
 }
 
-step.task.symbols = function(step) {
-  restore.point("step.task.symbols")
-  tasks = setdiff(names(step$task),c("pane","type") )
-  symbols = unique(unlist(lapply(step$task[tasks], function(ta) ta$symbol)))
-  symbols
+dynry.tparts = function(es,t=es$t) {
+  row = which(es$tparts.df$start.t <= t & t <= es$tparts.df$end.t)
+  es$tparts.df[row,]
 }
 
-init.story.periods = function(es) {
-  restore.point("init.story.periods")
-  #period = es$periods[[2]]
-  es$periods = lapply(seq_along(es$periods), function(period.num) {
-    period = es$periods[[period.num]]
-    symbols = NULL
-    i = 1
-    for (i in seq_along(period$steps)) {
-      step = period$steps[[i]]
-      symbols = unique(c(symbols, step$show, sc("lag_",step$lagshow)))
-      
-      symbols = setdiff(symbols, c(step$hide,sc("lag_",step$laghide) ))
-      step$start.symbols = symbols
-      symbols = unique(c(symbols, step.task.symbols(step)))
-      step$end.symbols = symbols
-      
-      #restore.point("jdvndjnvduvhz")
-      #str = step$tell
-      try(Encoding(step$tell) <- "UTF-8", silent=TRUE)
-      try(Encoding(step$ask) <- "UTF-8", silent=TRUE)
-      try(Encoding(step$success) <- "UTF-8", silent=TRUE)
-      
-      if (!is.null(step$task))
-        step$task$type = get.story.step.task.type(step)
-      
-      period$steps[[i]] = step
-    }
-    period$symbols = symbols
-    period$period.num = period.num
-    period
-  })
+dynry.next = function(es, t=es$t, step.num=es$step.num, update.es=TRUE) {
+  restore.point("dynry.next")
   
-  tperiod.df = data.frame(period=seq_along(es$periods), t.start=seq_along(es$periods), t.end = Inf)
-  t = 1
-  for (per in seq_along(es$periods)[-1]) {
-    period = es$periods[[per]]
-    if (is.null(period$t)) {
+  tparts = dynry.tparts(es,t)    
+
+  if (step.num < tparts$num.parts) {
+    step.num = step.num+1
+  } else {
+    if (t<es$T) {
       t = t+1
+      step.num = 1
     } else {
-      t = period$t
+      return(list(t=t, step.num=1, end=TRUE))
     }
-    tperiod.df$t.end[per-1] = t-1
-    tperiod.df$t.start[per] = t
   }
-  es$tperiod.df = tperiod.df
   
+  if (update.es) {
+    es$t = t
+    es$step.num = step.num
+  }
+  return(list(t=t, step.num=step.num, end=FALSE))
+}
+
+
+dynry.prev = function(es, t=es$t, step.num=es$step.num, update.es=TRUE) {
+  restore.point("dynry.prev")  
+
+  start = FALSE
+  if (step.num > 1) {
+    step.num = step.num-1
+  } else {
+    if (t>1) {
+      t = t-1
+      tparts = dynry.tparts(es,t)    
+      step.num = tparts$num.parts
+    } else {
+      t = 1
+      step.num = 1
+      start = TRUE
+    }
+  }
+  
+  if (update.es) {
+    es$t = t
+    es$step.num = step.num
+    es$wait.for.answer = FALSE
+  }
+  
+  return(list(t=t, step.num=step.num, start=start))
+}
+
+
+dynry.forward = function(es, t = es$t, step.num = es$step.num, update.es=TRUE) {
+  restore.point("dynry.forward")
+  
+  tparts = dynry.tparts(es,t)  
+  if (tparts$row == NROW(es$tparts.df)) {
+    t = es$T
+    step.num = tparts$num.parts
+  } else {
+    row = tparts$row+1
+    t = es$tparts.df$start.t[[row]]
+    step.num = 1
+  }
+  if (update.es) {
+    es$t = t
+    es$step.num = step.num
+  }
+  
+  return(list(t=t, step.num = step.num))
+}
+
+
+init.dynry.parts = function(es) {
+  restore.point("init.dynry.periods")
+  #period = es$periods[[2]]
+  
+  
+  prev.part = list(t=0, shown=NULL, section="")
+
+  step.num = 0
+  
+  part.ind = 0
+  
+  part.names = names(es$parts)
+  
+  parts = list(length(es$parts))
+  
+  for (i in seq_along(es$parts)) {
+    part = es$parts[[i]]
+    name = part.names(part)
+    
+    if (str.starts.with(name,"Period ")) {
+      prev.part$t = as.numeric(str.right.of(name, "Period "))
+      next
+    }
+
+    if (str.starts.with(name,"Section ")) {
+      prev.part$section = as.numeric(str.right.of(name, "Section "))
+      next
+    }
+    part.ind = part.ind+1
+        
+    if (is.null(part[["t"]])) part$t = max(prev.part$t,1)
+    if (part$t == "next") part$t = prev.part$t + 1
+    
+    same.t = part$t == prev.part$t
+    if (same.t) {
+      step.num = step.num +1
+    } else {
+      step.num = 1
+    }
+
+    # If is part of the same period,
+    # by default copy shown curves
+    if (is.null(part$append)) {
+      if (same.t)
+        part$append = c("show")
+    } else if (part$append[1]=="all") {
+      part$append = c("show","tell")
+    }
+    part$shown = part$show    
+
+    if ("show" %in% part$append)
+      part$shown = unique(c(part$show, prev.part$shown))
+    
+        
+    part$shown = setdiff(part$shown, part$hide)
+    part$start.symbols = part$shown
+    
+    part$shown = unique(c(part$shown, story.part.task.symbols(part)))
+    part$end.symbols = part$shown
+    
+    if ("tell" %in% part$append) {
+      if (!is.null(prev.part$tell))
+        part$tell = paste0(prev.part$tell, "\n", part$tell)
+    }
+      
+    try(Encoding(part$tell) <- "UTF-8", silent=TRUE)
+    try(Encoding(part$ask) <- "UTF-8", silent=TRUE)
+    try(Encoding(part$success) <- "UTF-8", silent=TRUE)
+      
+    if (!is.null(part$task))
+        part$task$type = get.story.part.task.type(part)
+      
+    parts[name] = part
+  }
+  
+  es$parts = parts[1:part.ind]
+  
+  t.vec = sapply(es$parts, function(part) part$t)  
+  
+  start.t = unique(t.vec)  
+  end.t = c(start.t[-1], Inf)
+  parts = lapply(start.t, function(t) which(t.vec==t))
+  num.parts = sapply(parts, function(ps) length(ps))
+  
+  es$tparts.df = data_frame(row=seq_along(start.t),start.t = start.t, end.t = end.t, parts = parts, num.parts=num.parts)
+
   es
 }
 
-get.story.step.task.type = function(step) {
-  restore.point("get.story.step.task.type")
-  types = c("find","shift","select","findPoint")
-  not.null = which(sapply(types, function(type) {
-    !is.null(step$task[[type]])
-  }))
-  if (length(not.null)==0) return("unknown")
-  
-  types[not.null]
+get.dynry.part.ind = function(es, t=es$t, step.num = es$step.num) {
+  row = which(es$tparts.df$start.t <= t & t <= es$tparts.df$end.t)
+  es$tparts.df$part[[row]][step.num]
 }
 
-get.story.period = function(es,t=es$t) {
-  if (is.null(es$tperiod.df))
-    return(es$periods[[t]])
-  
-  per = which(es$tperiod.df$t.start<=t & es$tperiod.df$t.end>=t)
-  es$periods[[per[1]]]
+
+get.dynry.part = function(es, t=es$t, step.num = es$step.num) {
+  restore.point("get.dynry.part")
+  row = which(es$tparts.df$start.t <= t & t <= es$tparts.df$end.t)
+  part.ind = es$tparts.df$parts[[row]][step.num]
+  es$parts[[part.ind]]
 }
 
-get.period.t = function(es, period.num=period$period.num,period ) {
-  if (period.num > length(es$periods))
-    return(es$T)
-  
-  es$tperiod.df$t.start[period.num] 
-}
 
-get.story.step.symbols = function(es,t, step.num, solved=TRUE, previous.steps=TRUE) {
-  st = get.story.period(es,t)$steps[[step.num]]
+get.dynry.step.symbols = function(es,t, step.num, solved=TRUE, previous.steps=TRUE) {
+  part = get.dynry.part(es,t, step.num)
   
-  if (!solved & previous.steps) {
-    symbols = st$start.symbols
-  } else if (solved & previous.steps) {
-    symbols = st$end.symbols
-  } else if (!solved & !previous.steps) {
-    symbols = st$show
-  } else if (solved & !previous.steps) {
-    symbols = c(st$show, names(st$task))
+  if (!solved) {
+    symbols = part$start.symbols
+  } else if (solved) {
+    symbols = part$end.symbols
   }
   symbols
 }
 
-story.step.dyplot = function(es, t, step, solved=FALSE, previous.steps=TRUE, pane.names = names(es$em$panes), vars = names(es$em$vars)) {
-  restore.point("story.step.dyplot")
+dynry.step.dyplot = function(es, t, step, solved=FALSE, previous.steps=TRUE, pane.names = names(es$em$panes), vars = names(es$em$vars)) {
+  restore.point("dynry.step.dyplot")
   
   em = es$em
   sim = em$sim
@@ -156,7 +247,7 @@ story.step.dyplot = function(es, t, step, solved=FALSE, previous.steps=TRUE, pan
   if (t<NROW(sim)) {
     sim[(t+1):NROW(sim),vars]=NA 
   }
-  symbols = get.story.step.symbols(es=es,t=t,step.num=step, solved=solved, previous.steps=previous.steps)
+  symbols = get.dynry.step.symbols(es=es,t=t,step.num=step, solved=solved, previous.steps=previous.steps)
 
   t.vars = intersect(symbols, vars)
   hidden.vars = setdiff(vars, t.vars)
@@ -169,46 +260,17 @@ story.step.dyplot = function(es, t, step, solved=FALSE, previous.steps=TRUE, pan
 
 }
 
-get.story.step.lines = function(es, t, step, solved=FALSE, previous.steps=TRUE, pane.names = names(es$em$panes)) {
-  restore.point("get.story.step.lines")
-  st = get.story.period(es,t)$steps[[step]]
+get.dynry.step.lines = function(es, t, step.num, solved=FALSE, previous.steps=TRUE, pane.names = names(es$em$panes)) {
+  restore.point("get.dynry.step.lines")
+  part = get.dynry.part(es,t, step.num)
   
-  if (!solved & previous.steps) {
-    symbols = st$start.symbols
-  } else if (solved & previous.steps) {
-    symbols = st$end.symbols
-  } else if (!solved & !previous.steps) {
-    symbols = st$show
-  } else if (solved & !previous.steps) {
-    symbols = c(st$show, names(st$task))
+  if (!solved) {
+    symbols = part$start.symbols
+  } else if (solved) {
+    symbols = part$end.symbols
   }
   compute.symbol.lines(t = t,em = es$em,symbols = symbols, pane.names=pane.names)
 }
-
-compile.story.txt = function(txt, out="text",val =as.list(em$sim[t,,drop=FALSE]),  em=NULL,t=1, digits=4) {
-  restore.point("compile.story.txt")
-  
-  if (length(txt)==0) return("")
-  
-  val = lapply(val, function(v) {
-    if (is.numeric(v)) return(signif(v,digits))
-    return(v)
-  }) 
-  
-  txt = replace.whiskers(txt, val)
-
-  if (out=="text") {
-    txt = gsub("$","",txt, fixed=TRUE)
-  } else if (out=="html") {
-    restore.point("compile.story.txt.2")
-    txt = markdownToHTML(text=txt,encoding = "UTF-8", fragment.only=TRUE)
-    #Encoding(txt) <- "UTF-8"
-    txt
-  }
-  txt
-  
-}
-
 
 has.click.found = function(click.val, ref.val, axis="xy", tol=0.05, tol.units=c("perc","inches")[1],pane=NULL) {
   restore.point("has.click.found")
@@ -280,9 +342,8 @@ check.click.answer = function(es,xy,pane.name,t=es$t, step.num=es$step.num,task=
   restore.point("check.click.answer")
   em = es$em
   if (is.null(task)) {
-    period = get.story.period(es,t)
-    step = period$steps[[step.num]]
-    task = step$task
+    part = get.dynry.part(es,t, step.num)
+    task = part$task
   }  
   if (task$type == "shift") {
     ret = check.shift.answer(es=es,xy=xy,em=em,t=t,task=task, pane.name=pane.name)

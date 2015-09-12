@@ -23,26 +23,36 @@ find.label.pos = function(lines, yrange,yshift=diff(yrange)*0.05, do.shuffle=FAL
   ep.df = get.endpoints(lines)
   ep.df$remain = TRUE
 
-  if (do.shuffle) {
-    shuffle = sample.int(length(linas))
-  } else {
-    shuffle = seq_along(linas)
-  }
-  i = 1
-  # greedy search: find end points that are closest
-  for (i in shuffle) {
-    cuna =linas[i]
-    rows = which(ep.df$line == cuna)
-    ep.df$remain[rows] = FALSE
-    dist = sapply(rows,ep.df=ep.df, function(row, ep.df) {
-      x = ep.df$x[row]; y = ep.df$y[row]
-      dist = min( (ep.df$x[ep.df$remain]-x)^2 + (ep.df$y[ep.df$remain]-y)^2)
-      dist
-    })
-    sel.row = rows[which.max(dist)]
-    ep.df$remain[sel.row] = TRUE
-  }
   
+  # For a single line pick the last point
+  if (length(linas)==1) {
+    ep.df$remain = FALSE
+    ep.df$remain[NROW(ep.df)] = TRUE
+  
+  # For multiple lines try to find endpoint that is farthest away
+  # from other endpoints
+  } else {
+    if (do.shuffle) {
+      shuffle = sample.int(length(linas))
+    } else {
+      shuffle = seq_along(linas)
+    }
+    i = 1
+
+    # greedy search: find end points that are closest
+    for (i in shuffle) {
+      cuna =linas[i]
+      rows = which(ep.df$line == cuna)
+      ep.df$remain[rows] = FALSE
+      dist = sapply(rows,ep.df=ep.df, function(row, ep.df) {
+        x = ep.df$x[row]; y = ep.df$y[row]
+        dist = min( (ep.df$x[ep.df$remain]-x)^2 + (ep.df$y[ep.df$remain]-y)^2)
+        dist
+      })
+      sel.row = rows[which.max(dist)]
+      ep.df$remain[sel.row] = TRUE
+    }
+  }  
   label.pos = ep.df[ep.df$remain, 1:3]
   dupl = which(duplicated(label.pos[,c("x","y")]))
   sign = -((-1)^(seq_along(dupl)))

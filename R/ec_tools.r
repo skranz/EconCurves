@@ -15,6 +15,32 @@ replace.whiskers = function(str, env=parent.frame()) {
 }
 
 
+compile.story.txt = function(txt, out="text",val =as.list(em$sim[t,,drop=FALSE]),  em=NULL,t=1, digits=4) {
+  restore.point("compile.story.txt")
+  
+  if (length(txt)==0) return("")
+  
+  val = lapply(val, function(v) {
+    if (is.numeric(v)) return(signif(v,digits))
+    return(v)
+  }) 
+  
+  txt = replace.whiskers(txt, val)
+
+  if (out=="text") {
+    txt = gsub("$","",txt, fixed=TRUE)
+  } else if (out=="html") {
+    restore.point("compile.story.txt.2")
+    txt = markdownToHTML(text=txt,encoding = "UTF-8", fragment.only=TRUE)
+    #Encoding(txt) <- "UTF-8"
+    txt
+  }
+  txt
+  
+}
+
+
+
 deparse1 = function (call, collapse = "") 
 {
     paste0(deparse(call, width = 500), collapse = collapse)
