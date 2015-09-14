@@ -2,12 +2,12 @@ story:
     fields:
         storyId:
             type: character
-        init:
-            type: storyInit
+        settings:
+            type: storySettings
     fieldType: storyPart
     allowOtherFields: true
 
-storyInit:
+storySettings:
     fields:
         author:
         license:

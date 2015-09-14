@@ -180,13 +180,13 @@ init.dynry.parts = function(es) {
     } else if (part$append[1]=="all") {
       part$append = c("show","tell")
     }
-    part$shown = part$show    
+    part$shown = c(part$show, sc("lag_", part$lagshow))    
 
     if ("show" %in% part$append)
       part$shown = unique(c(part$show, prev.part$shown))
     
         
-    part$shown = setdiff(part$shown, part$hide)
+    part$shown = setdiff(part$shown,c(part$hid, sc("lag_", part$laghide)))
     part$start.symbols = part$shown
     
     part$shown = unique(c(part$shown, story.part.task.symbols(part)))

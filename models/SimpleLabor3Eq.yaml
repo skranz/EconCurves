@@ -32,7 +32,6 @@ curves:
 
 panes:
   labour_market:
-    pos: [1,1]
     xy: [y_,w_]
     curves: [wPS,wWS]
     xmarkers: [y,y_eq]

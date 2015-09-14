@@ -1,6 +1,6 @@
 storyId: ThreeEq_G_langfristig
 
-init:
+settings:
   modelId: ThreeEq
   
   title: 'Übung: Das 3-Gleichungsmodell bei einem langfristigen Nachfrageschock'
@@ -71,7 +71,7 @@ init:
         descr: Government spending increases
         effects:
           A: 'A*1.3'
-        start: 3
+        start: 2
         duration: 100  
   timelineVars: [y,r,pi]
   fixed: [MR,y_eq,piT]
@@ -109,6 +109,7 @@ step_IS:
     Genau, die IS Kurve verschiebt sich durch die
     Staatsausgabenerhöhung nach rechts.
     Bei gegebenen Zinssatz wird mehr nachgefragt.
+    
 step_y:
   ask: >
     Bestimmen Sie in der Abbildung den neuen Wert y_2 des BIP

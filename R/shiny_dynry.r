@@ -5,9 +5,9 @@ examples.shiny.dynry = function() {
   init.ec()
   ec = get.ec()
   es = load.story("ThreeEq_G_langfristig")
-  #es = load.story("NewStory")
+  es = load.story("SimpleLabor3EqStory.yaml")
   init.story(es)
-  es$t = 2
+  es$t = 1
   app = shinyStoryApp(es)
   runEventsApp(app,launch.browser = rstudio::viewer)
 
