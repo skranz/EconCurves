@@ -11,4 +11,5 @@ License:
     Modells and Stories: CC BY-NC-SA (Creative Commons, Non-Commercial, Copyleft)
 Depends: dplyr,restorepoint,codeUtils, sktools, stringtools, grid,
          YamlObjects, nleqslv,whisker, markdown, shinyEvents, shiny,
-         dygraphs, shinyBS, shinyAce, RColorBrewer, dplyrExtras, hwriter
+         dygraphs, shinyBS, shinyAce, RColorBrewer, dplyrExtras, hwriter,
+         symbeqs
