@@ -7,11 +7,11 @@ load.story = function(storyId, file=paste0(storyId,".yaml"), dir=get.ec()$storie
   tt = load.struct(name="story",file = paste0(dir,"/",file),typeName = "story",text=text)
   
   obj = tt.object(tt,1)
-  parts = setdiff(names(obj),c("storyId","init"))
+  parts = setdiff(names(obj),c("storyId","settings"))
   
   es = as.environment(c(
     list(storyId = as.character(obj$storyId)), 
-    obj$init,
+    obj$settings,
     list(parts = obj[parts])
   ))
   
