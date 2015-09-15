@@ -73,3 +73,57 @@ find.nearest.line.point = function(xy, line, dim="xy") {
   c(x=line$x[row],y=line$y[row])
 }
 
+
+#' intersection of two lines that are characterized by two points each
+#' 
+#' Formula based on Wikipedia entry
+#' http://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+two.point.lines.intersections = function(x1,x2,x3,x4,y1,y2,y3,y4) {
+  xi.num = (x1*y2-y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4)
+  yi.num  = (x1*y2-y1*x2)*(y3-y4) -(y1-y2)*(x3*y4-y3*x4)
+  den = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
+  
+  list(x=xi.num / den, y=yi.num / den)
+}
+
+#' Find the intersections of two curves, which are characterized by their xy values
+lines.intersections = function(line1, line2, grid.length=201) {
+
+  xmin = max(min(line1$x),min(line2$x))
+  xmax = min(max(line1$x),max(line2$x))
+
+  xout = seq(xmin,xmax, length=grid.length)
+  ay1 = approx(line1$x,line1$y, xout, method="linear")$y
+  ay2 = approx(line2$x,line2$y, xout, method="linear")$y
+  
+  dy = ay1 - ay2
+  sign.change = which(diff(sign(dy))!=0)
+  
+  
+  #xi = (xout[sign.change]+xout[sign.change+1]) / 2
+  #yi = (ay1[sign.change]+ay2[sign.change])/2
+  
+  if (length(sign.change)==0)
+    return(list(x=numeric(0),y=numeric(0)))
+  
+  int = two.point.lines.intersections(
+    x1 = xout[sign.change],
+    x2 = xout[sign.change+1],
+    y1 = ay1[sign.change],
+    y2 = ay1[sign.change+1],
+    x3 = xout[sign.change],
+    x4 = xout[sign.change+1],
+    y3 = ay2[sign.change],
+    y4 = ay2[sign.change+1]
+  )
+  
+  return(int)
+}
+
+line.x.value = function(line, y) {
+  approx(x=line$y,y=line$x, xout=y, method="linear")$y
+}
+
+line.y.value = function(line, x) {
+  approx(x=line$x,y=line$y, xout=x, method="linear")$y
+}

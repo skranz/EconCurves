@@ -76,7 +76,8 @@ color.table = function() {
     base = c("black","black", "blue","blue","green","green","red","red",
       "orange","orange","lila","lila","yellow","yellow",
       "brown","brown","purple","purple","cyan","cyan"),
-    level = c(2,1)
+    level = c(2,1),
+    stringsAsFactors=FALSE
   )
   df
 }
@@ -100,7 +101,10 @@ curve.color = function(base="blue",level=1,color=NULL) {
   
   sel.df = data_frame(base=base, level=level)
   df = left_join(sel.df, color.table, by=c("base","level"))
+  
   df$color[is.na(df$color)] = "black"
+  df$color[df$level>2] = grey(0.8)
+  
   df$color
 } 
 

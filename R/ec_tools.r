@@ -1,4 +1,14 @@
 
+copy.into.null.fields = function(dest, source) {
+  snames = names(source)
+  dest.val = dest[snames]
+  dest.null = sapply(dest.val, is.null)
+  
+  dest[snames[dest.null]] = source[dest.null]
+  dest
+}
+
+
 replace.whiskers = function(str, env=parent.frame()) {
   restore.point("replace.whiskers")
   

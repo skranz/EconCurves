@@ -58,7 +58,6 @@ html.table = function(content, ref=NULL, rc=NULL, nrow=NULL,ncol=NULL) {
   txt
 }
 
-html.table
 
 ref.to.rowcol = function(ref) {
   if (is.null(ref)) return(NULL)
