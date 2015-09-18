@@ -7,13 +7,15 @@ get.endpoints = function(lines) {
     n = min(length(line$x), length(line$y))
     if (n==0) return(NULL)
     if (n==1) {
-      res = data_frame(x=line$x[1],y=line$y[1],line=line$name)
+      res = quick.df(x=line$x[1],y=line$y[1],
+        line=line$name, label=line[["label"]])
     } else {
-      res = data_frame(x=line$x[c(1,n)],y=line$y[c(1,n)],line=line$name)
+      res = quick.df(x=line$x[c(1,n)],y=line$y[c(1,n)],
+        line=rep(line$name,2), label=rep(line$label,2))
     }
     res
   })   
-  bind_rows(li)
+  as_data_frame(bind_rows(li))
 }
 
 find.label.pos = function(lines, yrange,yshift=diff(yrange)*0.05, do.shuffle=FALSE) {
@@ -53,7 +55,7 @@ find.label.pos = function(lines, yrange,yshift=diff(yrange)*0.05, do.shuffle=FAL
       ep.df$remain[sel.row] = TRUE
     }
   }  
-  label.pos = ep.df[ep.df$remain, 1:3]
+  label.pos = ep.df[ep.df$remain, 1:4]
   dupl = which(duplicated(label.pos[,c("x","y")]))
   sign = -((-1)^(seq_along(dupl)))
   label.pos$y[dupl] = label.pos$y[dupl]+sign*yshift 

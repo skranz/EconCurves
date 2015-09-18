@@ -16,12 +16,12 @@ compute.model.pane.lines = function(em, pane, t, sim=em$sim, val=as.list(sim[t,,
   
   # marker
   ma.li = lapply(pane$markers[marker.names], function(marker) {
-    compute.marker.line(marker=marker, val = val,xrange = xrange,yrange=yrange, t=t, pane.name=pane.name,level=level)
+    marker.to.geom(marker=marker, val = val,xrange = xrange,yrange=yrange, t=t, pane.name=pane.name,level=level)
   })
   
   cu = em$curves[[1]]
   cu.li = lapply(em$curves[curve.names], function(cu) {
-    curve.to.line(cu=cu, xrange = xrange,yrange=yrange,val = val,level=level,t=t, pane.name=pane.name)
+    curve.to.geom(cu=cu, xrange = xrange,yrange=yrange,val = val,level=level,t=t, pane.name=pane.name)
   })
 
   li = c(ma.li, cu.li)
@@ -79,6 +79,6 @@ plot.model.pane = function(em,pane=1, lines=NULL, alpha=1,main="",mar=c(4,3,1,1)
   if (is.null(label.df))
     label.df = find.label.pos(lines,yrange=yrange)
   
-  boxed.labels(x = label.df$x,y = label.df$y,labels = label.df$line,cex=label.cex,bg="white",border=FALSE,xpad=1.1,ypad=1.1)
+  boxed.labels(x = label.df$x,y = label.df$y,labels = label.df$label,cex=label.cex,bg="white",border=FALSE,xpad=1.1,ypad=1.1)
 }
 

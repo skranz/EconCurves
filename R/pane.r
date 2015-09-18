@@ -1,46 +1,80 @@
+# Structure of objects
+# 
+# Abstract type:   Geom Type:
+#
+# curve            line
+# marker           line (horizontal, vertical)
+# pointmarker      point
+# area             polygon
+
+
+
 example.plot.pane = function() {
 
 yaml = '
 pane:
   curves:
     demand:
+      label: D
       eq: y = A - b *p
       color: red
     supply:
+      label: S
       eq: p = mc
       color: blue
   xy: [y,p]
   xrange: [0,100]
   yrange: [0,100]
+  xmarkers: [y_eq]
 '
   pane = init.yaml.pane(yaml=yaml)  
-  params = list(A=100, b=1, mc=20)
-  pane$lines = compute.pane.lines(pane, params=params)
+  params = list(A=100, b=1, mc=20,y_eq=30)
+  pane$geoms = compute.pane.geoms(pane, params=params)
   
   plot.pane(pane)
 }
 
-plot.pane = function(pane,lines=pane$lines, alpha=1,main="",mar=c(4,3,1,1), show.grid=!TRUE, label.df=NULL,lwd.factor=1,label.cex=0.75, cex.axis=0.8) {
+#' Plot a pane
+plot.pane = function(pane,geoms=pane$geoms, xrange=pane$xrange, yrange=pane$yrange, alpha=1,main="",mar=c(4,3,1,1), show.grid=!TRUE, label.df=NULL,lwd.factor=1,label.cex=0.75, cex.axis=0.8) {
   
   par(mar=mar)
-  plot.empty.pane(xlim=pane$xrange, ylim=pane$yrange,mar=mar,xlab=pane$xvar,ylab=pane$yvar,main=main, show.grid=show.grid, cex.axis=cex.axis)
+  plot.empty.pane(xlim=xrange, ylim=yrange,mar=mar,xlab=pane$xvar,ylab=pane$yvar,main=main, show.grid=show.grid, cex.axis=cex.axis)
 
-  if (length(lines)==0)
+  if (length(geoms)==0)
     return()
-  draw.lines(lines,lwd.factor=lwd.factor)
+  draw.geoms(geoms,lwd.factor=lwd.factor)
   
   if (is.null(label.df))
-    label.df = find.label.pos(lines,yrange=pane$yrange)
+    label.df = find.label.pos(geoms,yrange=pane$yrange)
   
-  boxed.labels(x = label.df$x,y = label.df$y,labels = label.df$line,cex=label.cex,bg="white",border=FALSE,xpad=1.1,ypad=1.1)
+  boxed.labels(x = label.df$x,y = label.df$y,labels = label.df$label,cex=label.cex,bg="white",border=FALSE,xpad=1.1,ypad=1.1)
 
 }
 
-compute.pane.lines = function(pane,params, curves=pane$curve,...) {
-  lines = lapply(curves,curve.to.line, params=params, xrange=pane$xrange, yrange=pane$yrange,...) 
-  lines
+
+compute.pane.geoms = function(pane, params, objs = pane$objs,xrange=pane$xrange, yrange=pane$yrange,...) {
+  geoms = objects.to.geoms(objs=objs, params=params, xrange = xrange,yrange=yrange,...)
 }
 
+
+
+create.yaml.pane.markers = function(pane) {
+  restore.point("create.yaml.pane.markers")
+  
+  xnames = pane$xmarkers; ynames = pane$ymarkers
+  pane$xmarkers = lapply(pane$xmarkers, function(marker) {
+    init.marker(name=marker, axis="x")
+  })
+  names(pane$xmarkers) = xnames
+  pane$ymarkers = lapply(pane$ymarkers, function(marker) {
+    init.marker(name=marker, axis="x")
+  })
+  names(pane$ymarkers) = ynames
+  markers = c(pane$xmarkers,pane$ymarkers)
+  markers
+}
+
+#' Initilize a pane
 init.pane = function(name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL,  xmarkers=NULL, ymarkers=NULL, lines=NULL, curves=NULL, pane=list(), init.curves=TRUE) {
   
   pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers))
@@ -57,22 +91,7 @@ init.pane = function(name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, 
       pane$yvar = pane$xy[2]
   }
   
-  
-  xnames = pane$xmarkers; ynames = pane$ymarkers
-  pane$xmarkers = lapply(pane$xmarkers, function(marker) {
-    marker = list(name=marker)
-    marker$axis = "x"
-    marker
-  })
-  names(pane$xmarkers) = xnames
-  pane$ymarkers = lapply(pane$ymarkers, function(marker) {
-    marker = list(name=marker)
-    marker$axis = "y"
-    marker
-  })
-  names(pane$ymarkers) = ynames
-
-  pane$markers = c(pane$xmarkers,pane$ymarkers)
+  pane$markers= create.yaml.pane.markers(pane)
   
   if (!is.null(pane$curves) & init.curves) {
     curve.names = names(pane$curves)
@@ -82,10 +101,12 @@ init.pane = function(name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, 
     names(pane$curves) = curve.names
   }
 
+  pane$objs = c(pane$curves, pane$markers)
+  
   pane
 }
 
-
+#' Initialize a pane specified with yaml code
 init.yaml.pane = function(yaml=NULL, pane=NULL) {
   restore.point("init.yaml.pane")
   

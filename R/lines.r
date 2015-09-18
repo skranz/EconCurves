@@ -3,13 +3,9 @@ draw.line = function(line,lwd.factor=1,...) {
   lines(x=line$x,y=line$y,col=line$color,lty=line$lty,lwd=line$lwd*lwd.factor,...)
 }
 
-draw.lines = function(lines,...) {
-  lapply(lines, draw.line,...)
-}
 
 
-
-compute.marker.line = function(marker, params, xrange,yrange, lty=2, lwd=1, t=0, pane.name="", level=1) {
+marker.to.geom = marker.to.line = function(marker, params, xrange,yrange, lty=2, lwd=1, t=0, pane.name="", level=1) {
   restore.point("computer.marker.line")
   name = marker$name
   pos = params[[name]]
@@ -29,11 +25,11 @@ compute.marker.line = function(marker, params, xrange,yrange, lty=2, lwd=1, t=0,
   lab = ifelse(str.starts.with(m,"lag_"),str.right.of(lab,"lag_"),lab)
   lab = paste0(lab,lab.t)
   
-  list(base=name,name=lab,pane=pane.name,t=t,type="marker",label=lab,axis=marker$axis,x=x,y=y,color=color, lty=lty,lwd=lwd)  
+  list(base=name,name=lab,pane=pane.name,t=t,type="marker", geom.type="line", label=lab,axis=marker$axis,x=x,y=y,color=color, lty=lty,lwd=lwd)  
 }
 
 # compute.curve.line
-curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), params=list(), name.addon = "", label.replace=NULL, color.level=1,lty=1,lwd=2, pane.name="") {
+curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), params=list(), name.addon = "", label.replace=params,color.level=1,lty=1,lwd=2, pane.name="") {
   restore.point("curve.to.line")
   cu = curve
   xy = compute.curve.points(cu, xrange, yrange, params=params)
@@ -50,9 +46,9 @@ curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), params=list(), name
   } else {
     lab = curve$label
     if (!is.null(label.replace))
-      lab = replace.whiskers(lab , label.replace)
+      lab = replace.whiskers(lab , params)
   }
-  list(base=cu$name,name=name,pane=pane.name,type="curve",lab=lab,axis="",x=x,y=y,color=color, lty=lty,lwd=lwd)    
+  list(base=cu$name,name=name,pane=pane.name,type="curve",geom.type="line",label=lab,axis="",x=x,y=y,color=color, lty=lty,lwd=lwd)    
 }
 
 
