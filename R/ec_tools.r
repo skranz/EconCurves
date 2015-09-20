@@ -1,5 +1,7 @@
 
 copy.into.null.fields = function(dest, source) {
+  restore.point("copy.into.fields")
+  
   snames = names(source)
   dest.val = dest[snames]
   dest.null = sapply(dest.val, is.null)

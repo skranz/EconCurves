@@ -5,10 +5,9 @@ draw.line = function(line,lwd.factor=1,...) {
 
 
 
-marker.to.geom = marker.to.line = function(marker, params, xrange,yrange, lty=2, lwd=1, t=0, pane.name="", level=1) {
+marker.to.geom = marker.to.line = function(marker, params, xrange,yrange, lty=2, lwd=1, name.prefix = "", name.postfix = "", label.replace=params, pane.name="", level=1) {
   restore.point("computer.marker.line")
-  name = marker$name
-  pos = params[[name]]
+  pos = params[[marker$var]]
   
   if (marker$axis == "x") {
     x = c(pos,pos)
@@ -19,17 +18,20 @@ marker.to.geom = marker.to.line = function(marker, params, xrange,yrange, lty=2,
   }
   color = curve.color("black", level=level)
   
-  m = marker$name
-  lab = ifelse(str.ends.with(m,"_"),substring(m,1,nchar(m)-1),m)
-  lab.t = ifelse(str.starts.with(m,"lag_"),t-1,t)
-  lab = ifelse(str.starts.with(m,"lag_"),str.right.of(lab,"lag_"),lab)
-  lab = paste0(lab,lab.t)
-  
-  list(base=name,name=lab,pane=pane.name,t=t,type="marker", geom.type="line", label=lab,axis=marker$axis,x=x,y=y,color=color, lty=lty,lwd=lwd)  
+  base = marker$name
+  name = paste0(name.prefix, marker$name,name.postfix)
+  if (is.null(marker$label)) {
+    lab = name
+  } else {
+    lab = marker$label
+    if (!is.null(label.replace))
+      lab = replace.whiskers(lab , label.replace)
+  }
+  list(base=base,name=name,pane=pane.name,t=t,type="marker", geom.type="line", label=lab,axis=marker$axis,x=x,y=y,color=color, lty=lty,lwd=lwd)  
 }
 
 # compute.curve.line
-curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), params=list(), name.addon = "", label.replace=params,color.level=1,lty=1,lwd=2, pane.name="") {
+curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), params=list(), name.prefix = "", name.postfix = "", label.replace=params,color.level=1,lty=1,lwd=2, pane.name="") {
   restore.point("curve.to.line")
   cu = curve
   xy = compute.curve.points(cu, xrange, yrange, params=params)
@@ -40,13 +42,13 @@ curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), par
   x=xy$x[rows]
   y=xy$y[rows]
   
-  name = paste0(cu$name,name.addon)
+  name = paste0(name.prefix, cu$name,name.postfix)
   if (is.null(curve$label)) {
     lab = name
   } else {
     lab = curve$label
     if (!is.null(label.replace))
-      lab = replace.whiskers(lab , params)
+      lab = replace.whiskers(lab , label.replace)
   }
   list(base=cu$name,name=name,pane=pane.name,type="curve",geom.type="line",label=lab,axis="",x=x,y=y,color=color, lty=lty,lwd=lwd)    
 }
