@@ -1,7 +1,9 @@
 #' Convert a list of abstract geometrical objects to a list of geoms
 objects.to.geoms = function(objs, params, xrange, yrange,...) {
   geoms = lapply(objs, object.to.geom, params=params, xrange=xrange, yrange=yrange,...)
-  geoms
+  nulls = sapply(geoms, is.null)
+
+  geoms[!nulls]
 }
 
 #' Convert an abstract geometrical object to a geom
