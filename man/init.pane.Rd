@@ -4,9 +4,9 @@
 \alias{init.pane}
 \title{Initilize a pane}
 \usage{
-init.pane(name = NULL, xvar = NULL, yvar = NULL, xrange = NULL,
-  yrange = NULL, xmarkers = NULL, ymarkers = NULL, lines = NULL,
-  curves = NULL, pane = list(), init.curves = TRUE)
+init.pane(pane = list(), name = NULL, xvar = NULL, yvar = NULL,
+  xrange = NULL, yrange = NULL, xmarkers = NULL, ymarkers = NULL,
+  lines = NULL, curves = NULL, init.curves = TRUE)
 }
 \description{
 Initilize a pane

@@ -5,14 +5,14 @@ draw.line = function(line,lwd.factor=1,...) {
 
 
 
-marker.to.geom = marker.to.line = function(marker, params, xrange,yrange, lty=2, lwd=1, color="grey", color.level=1, name.prefix = "", name.postfix = "", label.replace=params, pane.name="") {
+marker.to.geom = marker.to.line = function(marker, values, xrange,yrange, lty=2, lwd=1, color="grey", color.level=1, name.prefix = "", name.postfix = "", label.replace=values, pane.name="") {
   restore.point("computer.marker.line")
   
   fields = c("color", "color.level", "lty","lwd")
   opts = copy.into.null.fields(dest=marker[fields],source=nlist(color,color.level,lty,lwd))
 
   
-  pos = params[[marker$var]]
+  pos = values[[marker$var]]
   
   if (!isTRUE(is.finite(pos))) {
     warning(paste0("No finite values in param for marker ", marker$name))
@@ -42,14 +42,14 @@ marker.to.geom = marker.to.line = function(marker, params, xrange,yrange, lty=2,
 }
 
 # compute.curve.line
-curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), params=list(), name.prefix = "", name.postfix = "", label.replace=params,color.level=1,lty=1,lwd=2, color="black", pane.name="") {
+curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name.prefix = "", name.postfix = "", label.replace=values,color.level=1,lty=1,lwd=2, color="black", pane.name="") {
   restore.point("curve.to.line")
   
   fields = c("color", "color.level", "lty","lwd")
   opts = copy.into.null.fields(dest=curve[fields],source=nlist(color,color.level,lty,lwd))
   
   cu = curve
-  xy = compute.curve.points(cu, xrange, yrange, params=params)
+  xy = compute.curve.points(cu, xrange, yrange, values=values)
   
   if (!isTRUE((any(is.finite(xy$x+xy$y))))) {
     warning(paste0("No finite values for curve ", curve$name))
@@ -76,31 +76,31 @@ curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), par
 
 
 
-compute.curve.points = function(cu, xrange, yrange, params,xlen = 101,ylen=xlen, ...) {
+compute.curve.points = function(cu, xrange, yrange, values,xlen = 101,ylen=xlen, ...) {
   restore.point("compute.curve.points")
 
-  if (!is.data.frame(params)) {
-    pdf = do.call(quick.df,as.list(params))
+  if (!is.data.frame(values)) {
+    pdf = do.call(quick.df,as.list(values))
   } else {
-    pdf = as.data.frame(params)
+    pdf = as.data.frame(values)
   }
-  params = as.list(params)
+  values = as.list(values)
   if (!is.null(cu$yformula_)) {
     xseq = seq(xrange[1],xrange[2], length=xlen)
-    params[[cu$xvar]] = xseq
-    yseq = eval(cu$yformula_, params)
+    values[[cu$xvar]] = xseq
+    yseq = eval(cu$yformula_, values)
     if (length(yseq)==1) yseq <- rep(yseq,xlen)
     return(list(x=xseq,y=yseq))    
   }
   if (!is.null(cu$xformula_)) {
     yseq = seq(yrange[1],yrange[2], length=ylen)
-    params[[cu$yvar]] = yseq
-    xseq = eval(cu$xformula_, params)
+    values[[cu$yvar]] = yseq
+    xseq = eval(cu$xformula_, values)
     if (length(xseq)==1) xseq <- rep(xseq,ylen)
     return(list(x=xseq,y=yseq))
   }
   
-  li = compute.implicit.z(cu, xrange, yrange, params, xlen=xlen,ylen=ylen, z.as.matrix=TRUE)
+  li = compute.implicit.z(cu, xrange, yrange, values, xlen=xlen,ylen=ylen, z.as.matrix=TRUE)
   options("max.contour.segments" =xlen) 
   res = contourLines(li$xseq,li$yseq,li$z, level = 0)
   if (length(res)==0) {

@@ -4,7 +4,7 @@
 \alias{objects.to.geoms}
 \title{Convert a list of abstract geometrical objects to a list of geoms}
 \usage{
-objects.to.geoms(objs, params, xrange, yrange, ...)
+objects.to.geoms(objs, values, xrange, yrange, ...)
 }
 \description{
 Convert a list of abstract geometrical objects to a list of geoms

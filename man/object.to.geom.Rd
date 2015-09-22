@@ -4,7 +4,7 @@
 \alias{object.to.geom}
 \title{Convert an abstract geometrical object to a geom}
 \usage{
-object.to.geom(obj, params, xrange, yrange, ...)
+object.to.geom(obj, values, xrange, yrange, ...)
 }
 \description{
 Convert an abstract geometrical object to a geom

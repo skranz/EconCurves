@@ -29,8 +29,8 @@ pane:
   ymarkers: [p_eq]
 '
   pane = init.yaml.pane(yaml=yaml)
-  params = list(A=100, b=1, mc=20,y_eq=30, p_eq=40)
-  pane$geoms = compute.pane.geoms(pane, params=params)
+  values = list(A=100, b=1, mc=20,y_eq=30, p_eq=40)
+  pane$geoms = compute.pane.geoms(pane, values=values)
 
   plot.pane(pane)
 }
@@ -53,8 +53,8 @@ plot.pane = function(pane,geoms=pane$geoms, xrange=pane$xrange, yrange=pane$yran
 }
 
 
-compute.pane.geoms = function(pane, params, objs = pane$objs,xrange=pane$xrange, yrange=pane$yrange,...) {
-  geoms = objects.to.geoms(objs=objs, params=params, xrange = xrange,yrange=yrange,...)
+compute.pane.geoms = function(pane, values, objs = pane$objs,xrange=pane$xrange, yrange=pane$yrange,...) {
+  geoms = objects.to.geoms(objs=objs, values=values, xrange = xrange,yrange=yrange,...)
 }
 
 

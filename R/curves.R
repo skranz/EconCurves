@@ -7,7 +7,7 @@ IS:
 '
   
   curve = init.yaml.curve(yaml=yaml)
-  line = curve.to.line(curve,xrange=c(0,1),yrange=c(0,200),params=list(A=100,a=1))
+  line = curve.to.line(curve,xrange=c(0,1),yrange=c(0,200),values=list(A=100,a=1))
 }
 
 init.curve = function(name=NULL, eq=NULL, xvar=NULL,yvar=NULL, color=NULL,label=NULL, curve=list(), var.funs=NULL) {
