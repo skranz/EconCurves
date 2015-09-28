@@ -33,6 +33,9 @@ pane:
   pane$geoms = compute.pane.geoms(pane, values=values)
 
   plot.pane(pane)
+  
+  res = locator(1)
+  
 }
 
 #' Plot a pane

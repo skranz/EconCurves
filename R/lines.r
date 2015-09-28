@@ -76,7 +76,7 @@ curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), val
 
 
 
-compute.curve.points = function(cu, xrange, yrange, values,xlen = 101,ylen=xlen, ...) {
+compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, ...) {
   restore.point("compute.curve.points")
 
   if (!is.data.frame(values)) {
@@ -85,14 +85,21 @@ compute.curve.points = function(cu, xrange, yrange, values,xlen = 101,ylen=xlen,
     pdf = as.data.frame(values)
   }
   values = as.list(values)
-  if (!is.null(cu$yformula_)) {
+  
+  if (!is.null(cu$yformula_) & (!isTRUE(cu$is.vertical))) {
+    if (isTRUE(cu$is.horizontal) | isTRUE(cu$is.linear)) {
+      xlen=2
+    }
     xseq = seq(xrange[1],xrange[2], length=xlen)
     values[[cu$xvar]] = xseq
     yseq = eval(cu$yformula_, values)
-    if (length(yseq)==1) yseq <- rep(yseq,xlen)
+    if (length(yseq)==1) yseq <- rep(yseq,length(xseq))
     return(list(x=xseq,y=yseq))    
   }
   if (!is.null(cu$xformula_)) {
+    if (isTRUE(cu$is.vertical) | isTRUE(cu$is.linear)) {
+      ylen=2
+    }
     yseq = seq(yrange[1],yrange[2], length=ylen)
     values[[cu$yvar]] = yseq
     xseq = eval(cu$xformula_, values)
