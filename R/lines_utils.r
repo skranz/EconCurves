@@ -2,6 +2,7 @@
 line.to.line.shift = function(line, ref.line, num.points=5,...) {
   restore.point("line.to.line.shift")
   n = length(line$x)
+  num.points = min(num.points,n)
   if (n>1) {
     rows = unique(round(seq(1,n,length=num.points)))
   } else {

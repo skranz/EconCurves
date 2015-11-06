@@ -6,11 +6,11 @@ pane:
   curves:
     demand:
       label: D
-      eq: y = A - b *p
+      eq: y == A - b *p
       color: red
     supply:
       label: S
-      eq: p = mc
+      eq: p == mc
       color: blue
   xy: [y,p]
   xrange: [0,100]

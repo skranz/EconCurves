@@ -1,11 +1,11 @@
 # Structure of objects
 #
-# Abstract type:   Geom Type:
+# Abstract object:   geom:
 #
-# curve            line
-# marker           line (horizontal, vertical)
-# pointmarker      point
-# area             polygon
+# Curve              curve
+# Marker             marker
+# Point              point
+# Area               area
 
 
 
@@ -15,23 +15,31 @@ yaml = '
 pane:
   curves:
     demand:
-      label: D
-      eq: y = A - b *p
+      label: D{{idD}}
+      eq: y == A - b *p
       color: red
     supply:
-      label: S
-      eq: p = mc
+      label: S{{idS}}
+      eq: p == mc
       color: blue
   xy: [y,p]
   xrange: [0,100]
-  yrange: [0,100]
+  yrange: [0,150]
   xmarkers: [y_eq]
   ymarkers: [p_eq]
 '
   pane = init.yaml.pane(yaml=yaml)
-  values = list(A=100, b=1, mc=20,y_eq=30, p_eq=40)
-  pane$geoms = compute.pane.geoms(pane, values=values)
+  values1 = list(A=100, b=1, mc=20,y_eq=30, p_eq=40, idD=1,idS="")
+  geoms1 = compute.pane.geoms(pane, values=values1, name.postfix="1")
 
+  values2 = list(A=130, b=1, mc=20,y_eq=30, p_eq=40, idD=2,idS="")
+  geoms2 = compute.pane.geoms(pane, values=values2, name.postfix="2", color.level = 2)
+
+  pane$geoms = c(geoms1, geoms2["demand2"])
+  #  pane$geoms = compute.pane.geoms(pane, values=values, name.postfix="2")
+
+  check.geoms.beside(geoms1[["demand1"]], geoms2[["demand2"]])
+  
   plot.pane(pane)
   
   res = locator(1)
@@ -55,9 +63,19 @@ plot.pane = function(pane,geoms=pane$geoms, xrange=pane$xrange, yrange=pane$yran
 
 }
 
-
-compute.pane.geoms = function(pane, values, objs = pane$objs,xrange=pane$xrange, yrange=pane$yrange,...) {
-  geoms = objects.to.geoms(objs=objs, values=values, xrange = xrange,yrange=yrange,...)
+#' Compute concrete geoms for all objects of a pane
+#' 
+#' @pane the pane object
+#' @values a list of values used to evaluate the object formulas to compute the geoms
+#' @values objs by default all objects of the pane, but alternatively, other objects can be provided
+#' @xrange the x-axis range on which geoms shall be computed (default is pane$xrange)
+#' @yrange the y-axis range on which geoms shall be computed (default is pane$yrange)
+#' @name.prefix a prefix added to object names (useful if we have several geoms per object computed from different values)
+#' @name.postfix a postfix added to object names (useful if we have several geoms per object computed from different values)
+#' @label.prefix a prefix added to object label (useful if we have several geoms per object computed from different values)
+#' @label.postfix a postfix added to object label (useful if we have several geoms per object computed from different values)
+compute.pane.geoms = function(pane, values, objs = pane$objs,xrange=pane$xrange, yrange=pane$yrange,name.prefix="", name.postfix="", label.prefix="", label.postfix="", ...) {
+  geoms = objects.to.geoms(objs=objs, values=values, xrange = xrange,yrange=yrange, name.prefix=name.prefix, name.postfix=name.postfix, label.prefix=label.prefix, label.postfix=label.postfix,...)
 }
 
 

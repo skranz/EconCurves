@@ -114,7 +114,7 @@ specialize.curve.formula = function(eq, xvar, yvar, level=NULL, solve.symbolic =
   
   curve = nlist(eq_=eq,yformula_, xformula_,implicit_,is.horizontal, is.vertical,xvar,yvar)
   slope_ = compute.curve.slope(curve)
-  slope.vars = find.variables(slope)
+  slope.vars = find.variables(slope_)
   is.linear = (!xvar %in% slope.vars) & (! yvar %in% slope.vars) 
   
   ret = nlist(xformula_, yformula_, implicit_,slope_, is.vertical, is.horizontal, is.linear, curve.vars, slope.vars)

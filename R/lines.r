@@ -5,7 +5,7 @@ draw.line = function(line,lwd.factor=1,...) {
 
 
 
-marker.to.geom = marker.to.line = function(marker, values, xrange,yrange, lty=2, lwd=1, color="grey", color.level=1, name.prefix = "", name.postfix = "", label.replace=values, pane.name="") {
+marker.to.geom = marker.to.line = function(marker, values, xrange,yrange, lty=2, lwd=1, color="grey", color.level=1, name.prefix = "", name.postfix = "", label.prefix="", label.postfix="", label.replace=values, pane.name="",...) {
   restore.point("computer.marker.line")
   
   fields = c("color", "color.level", "lty","lwd")
@@ -35,14 +35,16 @@ marker.to.geom = marker.to.line = function(marker, values, xrange,yrange, lty=2,
     lab = name
   } else {
     lab = marker$label
-    if (!is.null(label.replace))
+    if (!is.null(label.replace)) 
       lab = replace.whiskers(lab , label.replace)
+    lab = paste0(label.prefix,lab,label.postfix)
   }
+
   list(base=base,name=name,pane=pane.name,type="marker", geom.type="line", label=lab,axis=marker$axis,x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)  
 }
 
 # compute.curve.line
-curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name.prefix = "", name.postfix = "", label.replace=values,color.level=1,lty=1,lwd=2, color="black", pane.name="") {
+curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name.prefix = "", name.postfix = "", label.prefix=name.prefix, label.postfix=name.postfix,  label.replace=values,color.level=1,lty=1,lwd=2, color="black", pane.name="", ...) {
   restore.point("curve.to.line")
   
   fields = c("color", "color.level", "lty","lwd")
@@ -70,6 +72,7 @@ curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), val
     lab = curve$label
     if (!is.null(label.replace))
       lab = replace.whiskers(lab , label.replace)
+    lab = paste0(label.prefix,lab,label.postfix)
   }
   list(base=cu$name,name=name,pane=pane.name,type="curve",geom.type="line",label=lab,axis="",x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)    
 }
