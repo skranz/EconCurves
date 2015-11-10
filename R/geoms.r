@@ -21,23 +21,29 @@ objects.to.geoms = function(objs, values, xrange, yrange,name.prefix="", name.po
 }
 
 #' Convert an abstract geometrical object to a geom
-object.to.geom = function(obj,values,xrange, yrange,...) {
+object.to.geom = function(obj,values,xrange, yrange,xlen=201,ylen=201,...) {
   type = obj$type
   if (type=="curve") {
-    geom = curve.to.geom(obj,values=values,xrange=xrange,yrange=yrange,...)
+    geom = curve.to.geom(obj,values=values,xrange=xrange,yrange=yrange,xlen=xlen,ylen=ylen,...)
   } else if (type=="marker") {
-    geom = marker.to.geom(obj,values=values,xrange=xrange,yrange=yrange,...)
+    geom = marker.to.geom(obj,values=values,xrange=xrange,yrange=yrange,xlen=xlen, ylen=ylen,...)
   }
+  geom = as.environment(geom)
   geom$values = values
   geom$obj = obj
+  geom$xrange=xrange
+  geom$yrange=yrange
+  geom$xlen = xlen
+  geom$ylen = ylen
+  
   geom
 }
 
 #' Draw a geom
 draw.geom = function(geom,...) {
   geom.type = geom$geom.type
-  if (geom.type == "line") {
-    draw.line(geom,...)
+  if (geom.type == "gcurve") {
+    draw.gcurve(geom,...)
   }
 }
 

@@ -39,7 +39,7 @@ draw.click = function(click,x=click[["x"]],y=click[["y"]],pch="+", color=grey(0.
   
 }
 
-draw.clicks = function(clicks,pch="+", color=grey(0.2), cex=1.2, add.line=TRUE) {
+draw.clicks = function(clicks,pch="+", color=grey(0.2), cex=1.2, add.gcurve=TRUE) {
   restore.point("draw.clicks")
   
   if ((!is.data.frame(clicks)) & is.list(clicks)) {
@@ -119,12 +119,12 @@ check.shift.answer = function(es,xy,pane.name,task, em=es$em,t=es$t)  {
   if (!has.pane.all.symbols(pane, symbols))
     return(FALSE)
 
-  ref.line = compute.symbol.lines(t=t, em=em, symbols=symbols[1], pane.names=pane.name)[[1]]
-  line = compute.symbol.lines(t=t, em=em, symbols=symbols[2], pane.names=pane.name)[[1]]
+  ref.gcurve = compute.symbol.gcurves(t=t, em=em, symbols=symbols[1], pane.names=pane.name)[[1]]
+  gcurve = compute.symbol.gcurves(t=t, em=em, symbols=symbols[2], pane.names=pane.name)[[1]]
 
-  ref.shift = line.to.line.shift(line, ref.line)
+  ref.shift = gcurve.to.gcurve.shift(gcurve, ref.gcurve)
 
-  point.shift = sign(point.to.line.pos(xy,ref.line))
+  point.shift = sign(point.to.gcurve.pos(xy,ref.gcurve))
   if (all(point.shift==ref.shift))
     return(TRUE)
   return(FALSE)

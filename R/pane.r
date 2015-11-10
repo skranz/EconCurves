@@ -2,10 +2,10 @@
 #
 # Abstract object:   geom:
 #
-# Curve              curve
-# Marker             marker
-# Point              point
-# Area               area
+# curve              gcurve
+# marker             gcurve
+# point              gpoint
+# area               garea
 
 
 
@@ -97,7 +97,7 @@ create.yaml.pane.markers = function(pane) {
 }
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL,  xmarkers=NULL, ymarkers=NULL, lines=NULL, curves=NULL, init.curves=TRUE) {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL,  xmarkers=NULL, ymarkers=NULL, gcurves=NULL, curves=NULL, init.curves=TRUE) {
 
   pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers))
 

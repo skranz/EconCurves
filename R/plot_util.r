@@ -62,7 +62,7 @@ plot.arrow.axes = function(x=NULL,y=NULL,xlim=range(x),ylim=range(y),axes = !TRU
 
 
 
-barlegend <- function (col, labels=NULL, line.labels=NULL, x = NULL , y = NULL ,orient="vert",...) 
+barlegend <- function (col, labels=NULL, gcurve.labels=NULL, x = NULL , y = NULL ,orient="vert",...) 
 {
    if (is.null(x)) {
      if (orient=="vert") {
@@ -89,11 +89,11 @@ barlegend <- function (col, labels=NULL, line.labels=NULL, x = NULL , y = NULL ,
     for (i in 1:length(col)) {
       rect(xpos[1],y.seq[i],xpos[2],y.seq[i+1],col=col[i])
     }
-    if (!is.null(line.labels)) {
-      if (length(line.labels) == length(col)-1) {
-        text(xpos[2],y.seq[2:(length(y.seq)-1)],labels=line.labels,pos=4,...)
+    if (!is.null(gcurve.labels)) {
+      if (length(gcurve.labels) == length(col)-1) {
+        text(xpos[2],y.seq[2:(length(y.seq)-1)],labels=gcurve.labels,pos=4,...)
       } else {
-        text(xpos[2],y.seq,labels=line.labels,pos=4,...)
+        text(xpos[2],y.seq,labels=gcurve.labels,pos=4,...)
       }
     }
    }

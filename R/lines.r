@@ -1,12 +1,12 @@
 
-draw.line = function(line,lwd.factor=1,...) {
-  lines(x=line$x,y=line$y,col=line$color,lty=line$lty,lwd=line$lwd*lwd.factor,...)
+draw.gcurve = function(gcurve,lwd.factor=1,...) {
+  lines(x=gcurve$x,y=gcurve$y,col=gcurve$color,lty=gcurve$lty,lwd=gcurve$lwd*lwd.factor,...)
 }
 
 
 
-marker.to.geom = marker.to.line = function(marker, values, xrange,yrange, lty=2, lwd=1, color="grey", color.level=1, name.prefix = "", name.postfix = "", label.prefix="", label.postfix="", label.replace=values, pane.name="",...) {
-  restore.point("computer.marker.line")
+marker.to.geom = marker.to.gcurve = function(marker, values, xrange,yrange, lty=2, lwd=1, color="grey", color.level=1, name.prefix = "", name.postfix = "", label.prefix="", label.postfix="", label.replace=values, pane.name="",...) {
+  restore.point("computer.marker.gcurve")
   
   fields = c("color", "color.level", "lty","lwd")
   opts = copy.into.null.fields(dest=marker[fields],source=nlist(color,color.level,lty,lwd))
@@ -40,18 +40,18 @@ marker.to.geom = marker.to.line = function(marker, values, xrange,yrange, lty=2,
     lab = paste0(label.prefix,lab,label.postfix)
   }
 
-  list(base=base,name=name,pane=pane.name,type="marker", geom.type="line", label=lab,axis=marker$axis,x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)  
+  list(base=base,name=name,pane=pane.name,type="marker", geom.type="gcurve", label=lab,axis=marker$axis,x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)  
 }
 
-# compute.curve.line
-curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name.prefix = "", name.postfix = "", label.prefix=name.prefix, label.postfix=name.postfix,  label.replace=values,color.level=1,lty=1,lwd=2, color="black", pane.name="", ...) {
-  restore.point("curve.to.line")
+# compute.curve.gcurve
+curve.to.geom = curve.to.gcurve = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name.prefix = "", name.postfix = "", label.prefix=name.prefix, label.postfix=name.postfix,  label.replace=values,color.level=1,lty=1,lwd=2, color="black", pane.name="", xlen=201, ylen=201, ...) {
+  restore.point("curve.to.gcurve")
   
   fields = c("color", "color.level", "lty","lwd")
   opts = copy.into.null.fields(dest=curve[fields],source=nlist(color,color.level,lty,lwd))
   
   cu = curve
-  xy = compute.curve.points(cu, xrange, yrange, values=values)
+  xy = compute.curve.points(cu, xrange, yrange, values=values,xlen=xlen,ylen=ylen)
   
   if (!isTRUE((any(is.finite(xy$x+xy$y))))) {
     warning(paste0("No finite values for curve ", curve$name))
@@ -74,12 +74,62 @@ curve.to.geom = curve.to.line = function(curve, xrange=c(0,1),yrange=c(0,1), val
       lab = replace.whiskers(lab , label.replace)
     lab = paste0(label.prefix,lab,label.postfix)
   }
-  list(base=cu$name,name=name,pane=pane.name,type="curve",geom.type="line",label=lab,axis="",x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)    
+  list(base=cu$name,name=name,pane=pane.name,type="curve",geom.type="gcurve",label=lab,axis="",x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)    
 }
 
+compute.curve.grid = function(cu=geom$obj, values=geom$values, xrange=geom$xrange,yrange=geom$yrange, xlen=geom$xlen,ylen=geom$ylen, dim="x",x=geom$x, y=geom$y, geom=NULL) {
+  restore.point("compute.curve.grid")
+  
+  if (dim=="x") {
+    xseq = seq(xrange[1], xrange[2], length=xlen)
+    if (isTRUE(cu$is.vertical)) {
+      xy=compute.curve.points(cu, values=values, xrange=xrange,yrange=yrange, xlen=xlen,ylen=ylen)
+      xy$x = round.to.grid(xy$x,length=xlen, range=xrange)
+      return(xy)
+    } else if (!is.null(cu$yformula_)) {
+      values[[cu$xvar]] = xseq
+      yseq = eval(cu$yformula_, values)
+      if (length(yseq)==1) yseq <- rep(yseq,length(xseq))
+      return(list(x=xseq,y=yseq))  
 
+    } else if (!is.null(x) & !is.null(y)) {
+      if (is.null(geom))
+        geom = list(x=x,y=y, xrange=xrange, yrange=yrange,
+                    xlen=xlen,ylen=ylen)
+      return(compute.geom.grid(geom=geom,dim = dim,use.object = FALSE))
+    } else {
+      xy=compute.curve.points(cu, values=values, xrange=xrange,yrange=yrange, xlen=xlen,ylen=ylen, use.xformula=FALSE)
+      return(xy)
+    }
+  }
 
-compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, ...) {
+  if (dim=="y") {
+    yseq = seq(yrange[1], yrange[2], length=xlen)
+    if (isTRUE(cu$is.horizontal)) {
+      xy=compute.curve.points(cu, values=values, xrange=xrange,yrange=yrange, xlen=xlen,ylen=ylen)
+      xy$y = round.to.grid(xy$y,length=ylen, range=yrange)
+      return(xy)
+    } else if (!is.null(cu$xformula_)) {
+      values[[cu$yvar]] = yseq
+      xseq = eval(cu$xformula_, values)
+      if (length(xseq)==1) xseq <- rep(xseq,length(yseq))
+      return(list(x=xseq,y=yseq))  
+
+    } else if (!is.null(x) & !is.null(y)) {
+      if (is.null(geom))
+        geom = list(x=x,y=y, xrange=xrange, yrange=yrange,
+                    xlen=xlen,ylen=ylen)
+      return(compute.geom.grid(geom=geom,dim = dim,use.object = FALSE))
+    } else {
+      xy=compute.curve.points(cu, values=values, xrange=xrange,yrange=yrange, xlen=xlen,ylen=ylen, use.yformula=FALSE)
+      return(xy)
+    }
+  }
+   
+  
+}
+
+compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, use.xformula=TRUE, use.yformula=TRUE, ...) {
   restore.point("compute.curve.points")
 
   if (!is.data.frame(values)) {
@@ -89,8 +139,8 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
   }
   values = as.list(values)
   
-  if (!is.null(cu$yformula_) & (!isTRUE(cu$is.vertical))) {
-    if (isTRUE(cu$is.horizontal) | isTRUE(cu$is.linear)) {
+  if (!is.null(cu$yformula_) & (!isTRUE(cu$is.vertical)) & use.yformula) {
+    if (isTRUE(cu$is.horizontal) | isTRUE(cu$is.gcurvear)) {
       xlen=2
     }
     xseq = seq(xrange[1],xrange[2], length=xlen)
@@ -99,8 +149,8 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
     if (length(yseq)==1) yseq <- rep(yseq,length(xseq))
     return(list(x=xseq,y=yseq))    
   }
-  if (!is.null(cu$xformula_)) {
-    if (isTRUE(cu$is.vertical) | isTRUE(cu$is.linear)) {
+  if (!is.null(cu$xformula_) & use.xformula) {
+    if (isTRUE(cu$is.vertical) | isTRUE(cu$is.gcurvear)) {
       ylen=2
     }
     yseq = seq(yrange[1],yrange[2], length=ylen)
@@ -124,7 +174,7 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
 compute.implicit.z = function(cu, xrange, yrange,par,  xlen=101,ylen=xlen, z.as.matrix=FALSE) {
   restore.point("compute.implicit")
   
-  # Compute a contour line using the implicit function
+  # Compute a contour gcurve using the implicit function
   xseq = seq(xrange[1],xrange[2], length=xlen)
   yseq = seq(yrange[1],yrange[2], length=ylen)
   grid = expand.grid(list(x=xseq,y=yseq))

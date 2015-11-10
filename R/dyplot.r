@@ -40,9 +40,9 @@ dyplot = function (data, xcol = colnames(data)[1], ycol = setdiff(colnames(data)
     dygraph(ts,...)
 }
 
-dyplot.timelines = function(sim, cols=em$var.names, em, main="",xlab="t",ylab="", shocks=em$sim.shocks,...) {
+dyplot.timegcurves = function(sim, cols=em$var.names, em, main="",xlab="t",ylab="", shocks=em$sim.shocks,...) {
   
-  restore.point("dyplot.timelines")
+  restore.point("dyplot.timegcurves")
   dat = sim
   dat$t = t.to.date(dat$t)
   p = dyplot(dat, xcol="t",ycol=cols,

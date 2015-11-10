@@ -33,18 +33,18 @@ dynry.panes.ui = function(app=getApp(), es=app$es) {
 
 dynry.tell.part.task = function(app=getApp(),es=app$es, t=es$t, step.num=es$step.num) {
 
-  lines = get.dynry.step.lines(es = es,t = t,step = step.num,solved=FALSE,previous.steps = TRUE)
-  shiny.plot.lines(em=es$em,lines)
+  gcurves = get.dynry.step.gcurves(es = es,t = t,step = step.num,solved=FALSE,previous.steps = TRUE)
+  shiny.plot.gcurves(em=es$em,gcurves)
 }
 
 
-shiny.plot.lines = function(lines,app=getApp(), es=app$es, em=es$em,pane.names=names(em$panes),...) {
-  restore.point("shiny.plot.lines")
-  line.panes = sapply(lines, function(line) line$pane)
+shiny.plot.gcurves = function(gcurves,app=getApp(), es=app$es, em=es$em,pane.names=names(em$panes),...) {
+  restore.point("shiny.plot.gcurves")
+  gcurve.panes = sapply(gcurves, function(gcurve) gcurve$pane)
   lapply(em$panes[pane.names], function(pane) {
-    plines = lines[line.panes %in% pane$name]
+    pgcurves = gcurves[gcurve.panes %in% pane$name]
     plotId = paste0(pane$name,"_PanePlot")
-    setPlot(id = plotId, plot.pane(em=em,pane=pane,lines=plines,lwd.factor=2,label.cex=1,cex.axis=1))
+    setPlot(id = plotId, plot.pane(em=em,pane=pane,gcurves=pgcurves,lwd.factor=2,label.cex=1,cex.axis=1))
   })
   setText("plotCounter",sample(1:1000,1))
 }

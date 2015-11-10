@@ -1,37 +1,37 @@
 
-get.endpoints = function(lines) {
+get.endpoints = function(gcurves) {
   restore.point("get.endpoints")
-  #line = lines[[2]]
-  li = lapply(lines, function(line) {
+  #gcurve = gcurves[[2]]
+  li = lapply(gcurves, function(gcurve) {
     restore.point("uhsfanjadnfjn")
-    n = min(length(line$x), length(line$y))
+    n = min(length(gcurve$x), length(gcurve$y))
     if (n==0) return(NULL)
     if (n==1) {
-      res = quick.df(x=line$x[1],y=line$y[1],
-        line=line$name, label=line[["label"]])
+      res = quick.df(x=gcurve$x[1],y=gcurve$y[1],
+        gcurve=gcurve$name, label=gcurve[["label"]])
     } else {
-      res = quick.df(x=line$x[c(1,n)],y=line$y[c(1,n)],
-        line=rep(line$name,2), label=rep(line$label,2))
+      res = quick.df(x=gcurve$x[c(1,n)],y=gcurve$y[c(1,n)],
+        gcurve=rep(gcurve$name,2), label=rep(gcurve$label,2))
     }
     res
   })   
   as_data_frame(bind_rows(li))
 }
 
-find.label.pos = function(lines, yrange,yshift=diff(yrange)*0.05, do.shuffle=FALSE) {
+find.label.pos = function(gcurves, yrange,yshift=diff(yrange)*0.05, do.shuffle=FALSE) {
   restore.point("find.label.pos")    
-  linas = sapply(lines, function(line) line$name)
+  linas = sapply(gcurves, function(gcurve) gcurve$name)
   
-  ep.df = get.endpoints(lines)
+  ep.df = get.endpoints(gcurves)
   ep.df$remain = TRUE
 
   
-  # For a single line pick the last point
+  # For a single gcurve pick the last point
   if (length(linas)==1) {
     ep.df$remain = FALSE
     ep.df$remain[NROW(ep.df)] = TRUE
   
-  # For multiple lines try to find endpoint that is farthest away
+  # For multiple gcurves try to find endpoint that is farthest away
   # from other endpoints
   } else {
     if (do.shuffle) {
@@ -44,7 +44,7 @@ find.label.pos = function(lines, yrange,yshift=diff(yrange)*0.05, do.shuffle=FAL
     # greedy search: find end points that are closest
     for (i in shuffle) {
       cuna =linas[i]
-      rows = which(ep.df$line == cuna)
+      rows = which(ep.df$gcurve == cuna)
       ep.df$remain[rows] = FALSE
       dist = sapply(rows,ep.df=ep.df, function(row, ep.df) {
         x = ep.df$x[row]; y = ep.df$y[row]
