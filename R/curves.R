@@ -7,7 +7,7 @@ IS:
 '
   
   curve = init.yaml.curve(yaml=yaml)
-  gcurve = curve.to.gcurve(curve,xrange=c(0,1),yrange=c(0,200),values=list(A=100,a=1))
+  geom = curve.to.geom(curve,xrange=c(0,1),yrange=c(0,200),values=list(A=100,a=1))
 }
 
 init.curve = function(name=NULL, eq=NULL, xvar=NULL,yvar=NULL, color=NULL,label=NULL, curve=list(), var.funs=NULL) {
@@ -115,9 +115,9 @@ specialize.curve.formula = function(eq, xvar, yvar, level=NULL, solve.symbolic =
   curve = nlist(eq_=eq,yformula_, xformula_,implicit_,is.horizontal, is.vertical,xvar,yvar)
   slope_ = compute.curve.slope(curve)
   slope.vars = find.variables(slope_)
-  is.gcurvear = (!xvar %in% slope.vars) & (! yvar %in% slope.vars) 
+  is.linear = (!xvar %in% slope.vars) & (! yvar %in% slope.vars) 
   
-  ret = nlist(xformula_, yformula_, implicit_,slope_, is.vertical, is.horizontal, is.gcurvear, curve.vars, slope.vars)
+  ret = nlist(xformula_, yformula_, implicit_,slope_, is.vertical, is.horizontal, is.linear, curve.vars, slope.vars)
   ret
 }
 

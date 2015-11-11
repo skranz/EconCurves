@@ -6,10 +6,23 @@ Date: 2015-05-06
 Author: Sebastian Kranz
 Maintainer: Sebastian Kranz <sebastian.kranz@uni-ulm.de>
 Description: Drawing curves used in economic models
-License: 
-    Code: GPL >= 2.0
-    Modells and Stories: CC BY-NC-SA (Creative Commons, Non-Commercial, Copyleft)
-Depends: dplyr,restorepoint,codeUtils, sktools, stringtools, grid,
-         YamlObjects, nleqslv,whisker, markdown, shinyEvents, shiny,
-         dygraphs, shinyBS, shinyAce, RColorBrewer, dplyrExtras, hwriter,
-         symbeqs
+License: Code: GPL >= 2.0 Modells and Stories: CC BY-NC-SA (Creative Commons,
+    Non-Commercial, Copyleft)
+Depends:
+    dplyr,restorepoint,codeUtils,
+    sktools,
+    stringtools,
+    grid,
+    YamlObjects,
+    nleqslv,whisker,
+    markdown,
+    shinyEvents,
+    shiny,
+    dygraphs,
+    shinyBS,
+    shinyAce,
+    RColorBrewer,
+    dplyrExtras,
+    hwriter,
+    symbeqs
+RoxygenNote: 5.0.0

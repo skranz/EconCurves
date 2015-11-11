@@ -41,9 +41,9 @@ object.to.geom = function(obj,values,xrange, yrange,xlen=201,ylen=201,...) {
 
 #' Draw a geom
 draw.geom = function(geom,...) {
-  geom.type = geom$geom.type
-  if (geom.type == "gcurve") {
-    draw.gcurve(geom,...)
+  type = geom$type
+  if (geom.type == "curve") {
+    draw.curve(geom,...)
   }
 }
 

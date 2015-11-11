@@ -97,9 +97,9 @@ create.yaml.pane.markers = function(pane) {
 }
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL,  xmarkers=NULL, ymarkers=NULL, gcurves=NULL, curves=NULL, init.curves=TRUE) {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL,  xmarkers=NULL, ymarkers=NULL, geoms=geoms, curves=NULL, init.curves=TRUE) {
 
-  pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers))
+  pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms))
 
   restore.point("init.pane")
 
@@ -124,7 +124,7 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
   }
 
   pane$objs = c(pane$curves, pane$markers)
-
+  
   pane
 }
 

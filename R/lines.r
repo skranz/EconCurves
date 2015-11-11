@@ -1,12 +1,14 @@
 
-draw.gcurve = function(gcurve,lwd.factor=1,...) {
-  lines(x=gcurve$x,y=gcurve$y,col=gcurve$color,lty=gcurve$lty,lwd=gcurve$lwd*lwd.factor,...)
+draw.curve = function(geom,lwd.factor=1,...) {
+  lines(x=geom$x,y=geom$y,col=geom$color,lty=geom$lty,lwd=geom$lwd*lwd.factor,...)
 }
 
+gcurve.slopes = function(gcurve) {
+  diff(gcurve$y) / diff(gcurve$x)
+}
 
-
-marker.to.geom = marker.to.gcurve = function(marker, values, xrange,yrange, lty=2, lwd=1, color="grey", color.level=1, name.prefix = "", name.postfix = "", label.prefix="", label.postfix="", label.replace=values, pane.name="",...) {
-  restore.point("computer.marker.gcurve")
+marker.to.geom = function(marker, values, xrange,yrange, lty=2, lwd=1, color="grey", color.level=1, name.prefix = "", name.postfix = "", label.prefix="", label.postfix="", label.replace=values, pane.name="",...) {
+  restore.point("computer.marker.geom")
   
   fields = c("color", "color.level", "lty","lwd")
   opts = copy.into.null.fields(dest=marker[fields],source=nlist(color,color.level,lty,lwd))
@@ -44,8 +46,8 @@ marker.to.geom = marker.to.gcurve = function(marker, values, xrange,yrange, lty=
 }
 
 # compute.curve.gcurve
-curve.to.geom = curve.to.gcurve = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name.prefix = "", name.postfix = "", label.prefix=name.prefix, label.postfix=name.postfix,  label.replace=values,color.level=1,lty=1,lwd=2, color="black", pane.name="", xlen=201, ylen=201, ...) {
-  restore.point("curve.to.gcurve")
+curve.to.geom = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name.prefix = "", name.postfix = "", label.prefix=name.prefix, label.postfix=name.postfix,  label.replace=values,color.level=1,lty=1,lwd=2, color="black", pane.name="", xlen=201, ylen=201, ...) {
+  restore.point("curve.to.geom")
   
   fields = c("color", "color.level", "lty","lwd")
   opts = copy.into.null.fields(dest=curve[fields],source=nlist(color,color.level,lty,lwd))
@@ -140,7 +142,7 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
   values = as.list(values)
   
   if (!is.null(cu$yformula_) & (!isTRUE(cu$is.vertical)) & use.yformula) {
-    if (isTRUE(cu$is.horizontal) | isTRUE(cu$is.gcurvear)) {
+    if (isTRUE(cu$is.horizontal) | isTRUE(cu$is.linear)) {
       xlen=2
     }
     xseq = seq(xrange[1],xrange[2], length=xlen)
@@ -150,7 +152,7 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
     return(list(x=xseq,y=yseq))    
   }
   if (!is.null(cu$xformula_) & use.xformula) {
-    if (isTRUE(cu$is.vertical) | isTRUE(cu$is.gcurvear)) {
+    if (isTRUE(cu$is.vertical) | isTRUE(cu$is.linear)) {
       ylen=2
     }
     yseq = seq(yrange[1],yrange[2], length=ylen)
@@ -160,7 +162,7 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
     return(list(x=xseq,y=yseq))
   }
   
-  li = compute.implicit.z(cu, xrange, yrange, values, xlen=xlen,ylen=ylen, z.as.matrix=TRUE)
+  li = compute.curve.implicit.z(cu, xrange, yrange, values, xlen=xlen,ylen=ylen, z.as.matrix=TRUE)
   options("max.contour.segments" =xlen) 
   res = contourLines(li$xseq,li$yseq,li$z, level = 0)
   if (length(res)==0) {
@@ -171,7 +173,7 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
   return(list(x = res$x, y=res$y))
 }
 
-compute.implicit.z = function(cu, xrange, yrange,par,  xlen=101,ylen=xlen, z.as.matrix=FALSE) {
+compute.curve.implicit.z = function(cu, xrange, yrange,par,  xlen=101,ylen=xlen, z.as.matrix=FALSE) {
   restore.point("compute.implicit")
   
   # Compute a contour gcurve using the implicit function

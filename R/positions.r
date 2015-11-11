@@ -35,9 +35,22 @@ examples.geom.relations = function() {
   #  pane$geoms = compute.pane.geoms(pane, values=values, name.postfix="2")
 
   plot.pane(pane)
+
+  
+    
+  click = locator(n=1,type="p")
+  click.selects.single.geom(click, pane$geoms)
   
   geom1 = geoms1[[1]]
   geom2 = geoms2[[1]]
+
+  
+  pane$geoms = geoms1
+  plot.pane(pane)
+  click = locator(n=1,type="p")  
+  click.finds.geom.to.geom.pos(click, geom2, geom1)
+  
+  
   is.geom.right(geom2, geom1)
   is.geom.below(geom2, geom1)
   is.geom.above(geom2, geom1)
@@ -47,53 +60,154 @@ examples.geom.relations = function() {
 
   geom.to.geom.pos(geom2, geom1)
 
-    
-  geom.to.geom.pos(geom1, geom2)
+  point.to.geom.pos(c(90,30), geom2)
+  point.to.geom.pos(c(90,30), geom1)
+  
+  point.to.geom.pos(c(90,30), geoms1[[3]])
+  point.to.geom.pos(c(30,30), geoms1[[3]])
 
+  geom.to.geom.pos(geom1, geom2)
+  geom.to.geom.pos(geom1, geoms1[[3]])
+
+  
   check.geoms.beside(geoms1[["demand1"]], geoms2[["demand2"]])
 }
 
-geom.to.geom.pos = function(new, old, check=c("above","below","left","right")) {
+#' Find relative position (above, below, left, right) of a point to a geom
+point.to.geom.pos = function(xy, geom,check=c("above","below","left","right","on"), tol.on=0.01) {
+  restore.point("point.to.geom.pos")
+  
   found = NULL
   
+  for (pos in check) {
+    fun.name = paste0("is.point.",pos,".geom")
+    call = substitute(fun(xy=xy,geom=geom, tol.on=tol.on), list(fun=as.name(fun.name))) 
+    if (eval(call)) found = c(found, pos) 
+  }
+  found
+  
+  
+}
+
+#' Find relative position (above, below, left, right) of a geom to a geom
+#' 
+#' If the geoms intersect non of the attributes holds true, i.e.
+#' the geom new must be stricly above old
+geom.to.geom.pos = function(new, old, check=c("above","below","left","right")) {
+  found = NULL
   for (pos in check) {
     fun.name = paste0("is.geom.",pos)
     call = substitute(fun(new,old), list(fun=as.name(fun.name))) 
     if (eval(call)) found = c(found, pos) 
   }
   found
-  
 }
 
-add.geom.grids = function(geom, dim=c("x","y"), add.min.max=TRUE, overwrite=FALSE) {
-  if ("x" %in% dim) {
-    if (is.null(geom[["xgr"]]) |  overwrite) {
-      geom$xgr = compute.geom.grid(geom, dim="x")
-    }
-    if (add.min.max) {
-      if (is.null(geom[["xgr.max"]])  | overwrite) {
-        geom$xgr.max = geom.max.grid(geom,geom$xgr,dim = "x")
-      }
-      if (is.null(geom[["xgr.min"]])  | overwrite) {
-        geom$xgr.min = geom.min.grid(geom,geom$xgr,dim = "x")
-      }
-    }  
-  }
-  if ("y" %in% dim) {
-    if (is.null(geom[["ygr"]]) |  overwrite) {
-      geom$ygr = compute.geom.grid(geom, dim="y")
-    }
-    if (add.min.max) {
-      if (is.null(geom[["ygr.max"]])  | overwrite) {
-        geom$ygr.max = geom.max.grid(geom,geom$ygr,dim = "y")
-      }
-      if (is.null(geom[["ygr.min"]])  | overwrite) {
-        geom$ygr.min = geom.min.grid(geom,geom$ygr,dim = "y")
-      }
-    }  
-  }
-  geom  
+is.point.below.geom = function(xy, geom,...) {
+  restore.point("is.point.below.geom")
+  x = xy[[1]]; y = xy[[2]]
+  
+  x = round.to.grid(x,range=geom$xrange, length = geom$xlen)
+  geom = add.geom.grids(geom,dim="x")   
+
+  ind = which(geom$xgr.min$x==x)
+  
+  isTRUE(y < geom$xgr.min$y[ind])
 }
+
+is.point.above.geom = function(xy, geom,...) {
+  restore.point("is.point.above.geom")
+  x = xy[[1]]; y = xy[[2]]
+
+  x = round.to.grid(x,range=geom$xrange, length = geom$xlen)
+  geom = add.geom.grids(geom,dim="x")   
+
+  ind = which(geom$xgr.max$x==x)
+  
+  isTRUE(y > geom$xgr.max$y[ind])
+}
+
+is.point.left.geom = function(xy, geom,...) {
+  restore.point("is.point.above.geom")
+  x = xy[[1]]; y = xy[[2]]
+
+  y = round.to.grid(y,range=geom$yrange, length = geom$ylen)
+  geom = add.geom.grids(geom,dim="y")   
+
+  ind = which(geom$ygr.min$y==y)
+  
+  isTRUE(x < geom$ygr.min$x[ind])
+}
+
+
+is.point.right.geom = function(xy, geom,...) {
+  restore.point("is.point.above.geom")
+  x = xy[[1]]; y = xy[[2]]
+
+  y = round.to.grid(y,range=geom$yrange, length = geom$ylen)
+  geom = add.geom.grids(geom,dim="y")   
+
+  ind = which(geom$ygr.max$y==y)
+  
+  isTRUE(x > geom$ygr.max$x[ind])
+}
+
+point.to.point.dist = function(xy,ref, axis="xy",normalize=TRUE, xrange=pane$xrange, yrange=pane$yrange,pane=NULL, ...) {
+  restore.point("point.dist.to.geom")
+  x = xy[[1]]; y = xy[[2]]
+  rx= ref[[1]]; ry = ref[[2]]
+  
+  if (normalize) {
+    xs = diff(pane$xrange)
+    ys = diff(pane$yrange)
+  } else {
+    xs = ys = 1
+  }
+
+  if (axis=="x") {
+    dist = abs(x-rx) / xs
+  } else if (axis=="y") {
+    dist = abs(y-ry) / ys
+  } else if (axis=="xy") {
+    dist = sqrt(((x-rx)/xs)^2+ ((y-ry)/ys)^2)
+  }
+  dist
+}
+
+
+point.to.geom.dist = function(xy, geom, axis="xy",normalize=TRUE, xrange=geom$xrange, yrange=geom$yrange, ...) {
+  restore.point("point.dist.to.geom")
+  x = xy[[1]]; y = xy[[2]]
+
+  if (normalize) {
+    xs = diff(pane$xrange)
+    ys = diff(pane$yrange)
+  } else {
+    xs = ys = 1
+  }
+
+  geom = add.geom.grids(geom,dim=c("x", "y"))   
+  gx=c(geom$x, geom$xgr$x, geom$ygr$x)
+  gy=c(geom$y, geom$xgr$y, geom$ygr$y)
+      
+  if (axis=="x") {
+    dist = min(abs(x-gx) / xs, na.rm = TRUE)
+  } else if (axis=="y") {
+    dist = min(abs(y-gy) / ys, na.rm = TRUE)
+  } else if (axis=="xy") {
+    dist = min(sqrt(((x-gx)/xs)^2+ ((y-gy)/ys)^2), na.rm=TRUE)
+  }
+  dist
+}
+
+
+is.point.on.geom = function(xy, geom, on.tol=0.01,...) {
+  restore.point("is.point.on.geom")
+  dist = point.to.geom.dist(xy,geom, normalize=TRUE)
+  if (length(dist)==0) return(FALSE)
+  dist <= on.tol
+}
+
 
 is.geom.below = function(new, old) {
   restore.point("is.geom.below")
@@ -156,49 +270,11 @@ is.geom.right = function(new, old) {
   any(is.true(right)) & !any(is.false(right))
 }
 
-  
-check.geoms.beside = function(old, new) {
-  restore.point("check.geom.beside")
-  
-  if (old$type != new$type) {
-    return(ok=NA, ydir = NA, xdir=NA)
-  }
-  geom.type = old$geom.type
-  if (geom.type=="gcurve") {
-    return(check.gcurves.beside(old, new))
-  }
-  return(ok=NA, ydir = NA, xdir=NA)
-
-}
 
 round.to.grid = function(val, step=(end-start)/(length-1), start=range[1], end=range[2], length=101, range=c(0,NA)) {
   round( (val-start) / step)*step + start 
 }
 
-gcurve.slopes = function(gcurve) {
-  diff(gcurve$y) / diff(gcurve$x)
-}
-
-examples.get.geom.monotone.parts = function() {
-  rad = seq(0,2*pi, length=100)
-  x = sin(rad)
-  y = cos(rad)
-  plot(x,y)
-  geom = list(x=x,y=y)
-  segs = get.geom.segments(geom, dim="y")
-  colors = c("blue","red","green","orange")
-  for (i in seq_along(segs)) {
-    seg = segs[[i]]
-    points(seg$x,seg$y, col=colors[i])
-  }
-  
-  old = geom
-  new = list(x=geom$x+1.7,y=geom$y+1.7 )
-  plot(old, ylim=range(c(old$y,new$y)), xlim=range(c(old$x,new$x)))
-  points(new, col="blue")
-  
-  is.geom.below(old=new, new=old)  
-}
 
 get.geom.segments = function(geom, dim="x") {
   restore.point("get.geom.segments")
@@ -218,49 +294,6 @@ get.geom.segments = function(geom, dim="x") {
     list(x=geom$x[rows],y=geom$y[rows])
   })
   res 
-}
-
-check.geoms.beside.default = function(old, new, dims = c("x","y")) {
-  restore.point("check.gcurves.beside")
-
-  dim = "x"
-  for (dim in dims)
-  
-  
-  old.slopes = gcurve.slopes(old)
-  new.slopes = gcurve.slopes(new)
-  
-  # all points of new a right of old
-  if (min(new$x) > max(old$x)) {
-    xdir = 1
-    if ( all(old.slopes<0) & all(new.slopes<0) ) {
-      ydir = 1
-    } else if ( all(old.slopes>0) & all(new.slopes>0) ) {
-      ydir = -1
-    } else  {
-      ydir = 0
-    }
-    return(ok=TRUE)
-  }
-      
-  nr = length(old$y)
-  nc = length(new$y)
-  
-
-  oymat = matrix(old$y, nrow=nr,ncol=nc)
-  nymat = matrix(new$y, nrow=nr,ncol=nc, byrow=TRUE)
-
-  oxmat = matrix(old$y, nrow=nr,ncol=nc)
-  nxmat = matrix(new$y, nrow=nr,ncol=nc, byrow=TRUE)
-
-    
-  ref.shift = gcurve.to.gcurve.shift(gcurve, ref.gcurve)
-
-  point.shift = sign(point.to.gcurve.pos(xy,ref.gcurve))
-  if (all(point.shift==ref.shift))
-    return(TRUE)
-  return(FALSE)
-
 }
 
 geom.max.grid = function(geom, grid=NULL, dim="x", dir="max") {
@@ -287,7 +320,6 @@ geom.min.grid = function(geom, grid=NULL, dim="x", dir="min") {
     ny = y[!dupl]
     nord = order(nx)
     return(list(x=nx[nord],y=ny[nord]))
-    
   }
   
   if (dim=="y") {
@@ -320,18 +352,27 @@ compute.geom.grid = function(geom, dim="x", use.object=TRUE) {
     }
   }
   if (dim=="x") {
+    if (length(unique(geom$x))==1) {
+      restore.point("nfbdhfbhrbdufbur")
+      
+      return(list(
+        x=round.to.grid(geom$x,length=geom$xlen, range=geom$xrange),
+        y=geom$y
+      ))
+    }
+    
     segs = get.geom.segments(geom=geom, dim=dim)
     xseq = seq(geom$xrange[1], geom$xrange[2], length=geom$xlen)
     
     if (length(segs)==1) {
       # nice one-to-one function
-      yseq = approx(x = geom$x,y=geom$y,xout=xseq)
+      yseq = approx(x = geom$x,y=geom$y,xout=xseq)$y
       return(list(x=xseq,y=yseq))
     } else {
       
       # deal with backward bending curve
       yseqs = unlist(lapply(segs, function(seg) {
-        approx(x=seg$x,y=seg$y, xout=xseq)
+        approx(x=seg$x,y=seg$y, xout=xseq)$y
       }))
       keep = !is.na(yseqs) 
       xseqs = rep(xseq,times=NROW(segs))[keep]
@@ -344,17 +385,25 @@ compute.geom.grid = function(geom, dim="x", use.object=TRUE) {
   }
   if (dim=="y") {
     restore.point("compute.grid.y")
+    if (length(unique(geom$y))==1) {
+     restore.point("nfbdhfbhrbdufefef3bur")
+      
+      return(list(
+        x=geom$x,
+        y=round.to.grid(geom$y,length=geom$ylen, range=geom$yrange)
+      ))
+    }
     
     segs = get.geom.segments(geom=geom, dim=dim)
     yseq = seq(geom$yrange[1], geom$yrange[2], length=geom$ylen)
     if (length(segs)==1) {
+      xseq = approx(x = geom$y,y=geom$x,xout=yseq)$y
       # nice one-to-one function
-      xseq = approx(x = geom$y,y=geom$x,xout=yseq)
       return(list(x=xseq,y=yseq))
     } else {
       # deal with backward bending curve
       xseqs = unlist(lapply(segs, function(seg) {
-        approx(x=seg$y,y=seg$x, xout=yseq)
+        approx(x=seg$y,y=seg$x, xout=yseq)$y
       }))
       keep = !is.na(xseqs) 
       yseqs = rep(yseq,times=NROW(segs))[keep]
@@ -366,3 +415,36 @@ compute.geom.grid = function(geom, dim="x", use.object=TRUE) {
   }
   
 }
+
+add.geom.grids = function(geom, dim=c("x","y"), add.min.max=TRUE, overwrite=FALSE) {
+  restore.point("add.geom.grids")
+  
+  if ("x" %in% dim) {
+    if (is.null(geom[["xgr"]]) |  overwrite) {
+      geom$xgr = compute.geom.grid(geom, dim="x")
+    }
+    if (add.min.max) {
+      if (is.null(geom[["xgr.max"]])  | overwrite) {
+        geom$xgr.max = geom.max.grid(geom,geom$xgr,dim = "x")
+      }
+      if (is.null(geom[["xgr.min"]])  | overwrite) {
+        geom$xgr.min = geom.min.grid(geom,geom$xgr,dim = "x")
+      }
+    }  
+  }
+  if ("y" %in% dim) {
+    if (is.null(geom[["ygr"]]) |  overwrite) {
+      geom$ygr = compute.geom.grid(geom, dim="y")
+    }
+    if (add.min.max) {
+      if (is.null(geom[["ygr.max"]])  | overwrite) {
+        geom$ygr.max = geom.max.grid(geom,geom$ygr,dim = "y")
+      }
+      if (is.null(geom[["ygr.min"]])  | overwrite) {
+        geom$ygr.min = geom.min.grid(geom,geom$ygr,dim = "y")
+      }
+    }  
+  }
+  geom  
+}
+

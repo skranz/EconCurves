@@ -36,10 +36,9 @@ pane:
 
 draw.click = function(click,x=click[["x"]],y=click[["y"]],pch="+", color=grey(0.2), cex=1.2) {
   points(x,y,pch=pch,col=color,cex=cex)
-  
 }
 
-draw.clicks = function(clicks,pch="+", color=grey(0.2), cex=1.2, add.gcurve=TRUE) {
+draw.clicks = function(clicks,pch="+", color=grey(0.2), cex=1.2, add.line=TRUE) {
   restore.point("draw.clicks")
   
   if ((!is.data.frame(clicks)) & is.list(clicks)) {
@@ -49,120 +48,67 @@ draw.clicks = function(clicks,pch="+", color=grey(0.2), cex=1.2, add.gcurve=TRUE
   lines(clicks[,1],clicks[,2], col=color)
 }
 
-
-
-has.click.found = function(click.val, ref.val, axis="xy", tol=0.05, tol.units=c("perc","inches")[1],pane=NULL) {
-  restore.point("has.click.found")
-
-  if (tol.units=="inches") {
-    if (axis=="x") {
-      ref.inch = grconvertX(ref.val, from = "user", to = "inches")
-      click.inch = grconvertX(click.val[[1]], from = "user", to = "inches")
-      dist = abs(ref.inch-click.inch)
-    } else if (axis=="y") {
-      ref.inch = grconvertY(ref.val, from = "user", to = "inches")
-      click.inch = grconvertY(click.val[[length(click.val)]], from = "user", to = "inches")
-      dist = abs(ref.inch-click.inch)
-    } else if (axis=="xy") {
-      riX = grconvertX(ref.val[[1]], from = "user", to = "inches")
-      ciX = grconvertX(click.val[[1]], from = "user", to = "inches")
-      riY = grconvertY(ref.val[[2]], from = "user", to = "inches")
-      ciY = grconvertY(click.val[[2]], from = "user", to = "inches")
-      dist = sqrt((riX-ciX)^2+(riY-ciY)^2)
-    }
-    return(dist<=tol)
+click.finds.geom.to.geom.pos = function(click, new, old, check=c("above","below","left","right"), need.all.dir = TRUE,...) {
+  gg = geom.to.geom.pos(new, old, check=check)
+  cg = point.to.geom.pos(click, old, check=check)
+  
+  cg = setdiff(cg,"on")
+  
+  if (need.all.dir) {
+    ok = setequal(gg,cg)
+  } else {
+    ok = length(intersect(gg,cg))>0
   }
-  if (tol.units=="perc") {
-    xlen = diff(pane$xrange)
-    ylen = diff(pane$yrange)
-    if (axis=="x") {
-      dist = abs(ref.val-click.val[[1]]) / xlen
-    } else if (axis=="y") {
-      dist = abs(ref.val-click.val[[length(click.val)]]) / ylen
-    } else if (axis=="xy") {
-      dist = sqrt(((ref.val[[1]]-click.val[[1]])/xlen)^2+
-                  ((ref.val[[2]]-click.val[[2]])/ylen)^2)
-    }
-    return(dist<=tol)
-  }
-  stop("unknown.tol.units")
-
+  ok
+  
 }
 
-
-
-check.click.answer = function(es,xy,pane.name,t=es$cur$t, step.num=es$cur$step.num,task=NULL,...) {
-  restore.point("check.click.answer")
-  em = es$em
-  if (is.null(task)) {
-    frame = get.dynry.frame(es,t, step.num)
-    task = frame$task
+click.selects.single.geom = function(click, geoms, on.tol=0.05, single.tol=0.05) {
+  dists = click.dist.to.geoms(click, geoms)
+  
+  on = which(dists<=on.tol)
+  if (length(on)==1) {
+    list(ok=TRUE, selected=on)
   }
-  if (task$type == "shift") {
-    ret = check.shift.answer(es=es,xy=xy,em=em,t=t,task=task, pane.name=pane.name)
-  } else if (task$type == "find") {
-    ret = check.find.answer(es=es,xy=xy,em=em,t=t,task=task, pane.name=pane.name)
-  } else if (task$type == "findPoint") {
-    ret = check.findPoint.answer(es=es,xy=xy,em=em,t=t,task=task, pane.name=pane.name)
+  if (length(on)==0) {
+    list(ok=FALSE, selected=NULL)
   }
-
-  return(ret)
+  
+  close = which(dists<=single.tol)
+  if (length(close)==1) {
+    list(ok=TRUE, selected=close)
+  }
+  if (length(close)==0) {
+    list(ok=FALSE, selected=on)
+  }
+  list(ok=FALSE, selected=close)
+  
 }
 
-check.shift.answer = function(es,xy,pane.name,task, em=es$em,t=es$t)  {
-  restore.point("check.shift.answer")
-  #cat("\nAnswer by clicking correctly in the figure.")
-  symbols = task$shift$symbol
-
-  # wrong pane clicked
-  pane = es$em$panes[[pane.name]]
-  if (!has.pane.all.symbols(pane, symbols))
-    return(FALSE)
-
-  ref.gcurve = compute.symbol.gcurves(t=t, em=em, symbols=symbols[1], pane.names=pane.name)[[1]]
-  gcurve = compute.symbol.gcurves(t=t, em=em, symbols=symbols[2], pane.names=pane.name)[[1]]
-
-  ref.shift = gcurve.to.gcurve.shift(gcurve, ref.gcurve)
-
-  point.shift = sign(point.to.gcurve.pos(xy,ref.gcurve))
-  if (all(point.shift==ref.shift))
-    return(TRUE)
-  return(FALSE)
+click.dist.to.geoms = function(click, geoms, ...) {
+  sapply(geoms, function(geom) {
+    point.to.geom.dist(click, geom,...)
+  })
 }
 
-# Find a marker
-check.find.answer = function(es,xy,pane.name,task, em=es$em,t=es$t, val = as.list(em$sim[t,]), tol=es$tol) {
-  restore.point("check.find.answer")
-  symbol = task$find$symbol
-  ref.val = val[[symbol]]
-  pane = em$panes[[pane.name]]
-  # wrong pane clicked
-  if (!all(symbol %in% names(pane$markers))) {
-    return(FALSE)
-  }
-  axis = pane$markers[[symbol]]$axis
-  found = has.click.found(click.val = xy,ref.val = ref.val,axis = axis, tol=tol,pane=pane)
-  return(found)
+click.dist.to.geom = function(click, geom,...) {
+  point.to.geom.dist(click, geom,...)
+} 
+
+is.click.on.geoms = function(click, geoms, on.tol=0.05) {
+  sapply(geoms, function(geom) {
+    is.point.on.geom(click, geom, on.tol=on.tol)
+  })
 }
 
-
-
-
-
-# Find a marker
-check.findPoint.answer = function(es,xy,pane.name,task, em=es$em,t=es$t, val = as.list(em$sim[t,]), tol=es$tol) {
-  restore.point("check.findPoint.answer")
-
-  symbols = task$findPoint$symbol
-  pane = em$panes[[pane.name]]
-  # wrong pane clicked
-  if (!all(symbols %in% names(pane$markers))) {
-    return(FALSE)
-  }
-
-  ref.val = unlist(val[symbols])
-
-  axis = "xy"
-  found = has.click.found(click.val = xy,ref.val = ref.val,axis = axis, tol=tol,pane=pane)
-  return(found)
+is.click.on.geom = function(click, geom, on.tol=0.05) {
+  is.point.on.geom(click, geom, on.tol=on.tol)
 }
+
+is.click.on.point = function(click, ref, axis="xy", on.tol=0.05,xrange=pane$xrange, yrange=pane$yrange, pane=NULL) {
+  restore.point("has.click.found.point")
+  dist = point.to.point.dist(click, ref, axis=axis, xrange=xrange, yrange=yrange, normalize=TRUE)
+  
+  return(dist<=tol)
+}
+
