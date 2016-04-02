@@ -19,7 +19,7 @@ Main objects:
   - marker: a horizontal or vertical straight line
   - data: a dataframe or list that contains parameter values
     used to compute a curve.
-  - line: contains actually computed x and y values of a curve
+  - geom: contains actually computed x and y values of a curve
     or marker given x and y ranges and some data.
 
 [http://econfin.de:3838/makro/](http://econfin.de:3838/makro/)

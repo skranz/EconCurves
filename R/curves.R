@@ -10,10 +10,16 @@ IS:
   geom = curve.to.geom(curve,xrange=c(0,1),yrange=c(0,200),values=list(A=100,a=1))
 }
 
-init.curve = function(name=NULL, eq=NULL, xvar=NULL,yvar=NULL, color=NULL,label=NULL, curve=list(), var.funs=NULL) {
+init.curve = function(name=NULL, eq=NULL, xvar=NULL,yvar=NULL, color=NULL,label=NULL, curve=list(), var.funs=NULL,...) {
   restore.point("init.curve")
   
   curve = copy.into.null.fields(dest=curve, source=nlist(name,eq,xvar, yvar,color, label))
+
+  if (is.character(curve$eq)) {
+    curve$eq_ = parse.as.call(text=curve$eq)
+  } else {
+    curve$eq_ = curve$eq = strip.parentheses(curve$eq)
+  }
 
   
   if (is.null(curve$name)) {
@@ -31,7 +37,6 @@ init.curve = function(name=NULL, eq=NULL, xvar=NULL,yvar=NULL, color=NULL,label=
 
   check.curve(curve)
   
-  curve$eq_ = parse.as.call(text=curve$eq)
   
   # Replace derivatives and variable functions
   if (!is.null(var.funs))

@@ -16,8 +16,15 @@ marker.to.geom = function(marker, values, xrange,yrange, lty=2, lwd=1, color="gr
   
   pos = values[[marker$var]]
   
+  if (is.null(pos)) {
+    msg = paste0("Value of ",marker$var," missing for marker ", marker$name)
+    warning(msg); cat(msg)
+    return(NULL)
+  }
+  
   if (!isTRUE(is.finite(pos))) {
-    warning(paste0("No finite values in param for marker ", marker$name))
+    msg = paste0("No finite values in param for marker ", marker$name)
+    warning(msg); cat(msg)
     return(NULL)
   }
   
@@ -134,11 +141,7 @@ compute.curve.grid = function(cu=geom$obj, values=geom$values, xrange=geom$xrang
 compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, use.xformula=TRUE, use.yformula=TRUE, ...) {
   restore.point("compute.curve.points")
 
-  if (!is.data.frame(values)) {
-    pdf = do.call(quick.df,as.list(values))
-  } else {
-    pdf = as.data.frame(values)
-  }
+  #if (is.null(values)) values=list()
   values = as.list(values)
   
   if (!is.null(cu$yformula_) & (!isTRUE(cu$is.vertical)) & use.yformula) {

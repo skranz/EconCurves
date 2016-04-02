@@ -10,7 +10,7 @@
 #' @label.prefix a prefix added to object label (useful if we have several geoms per object computed from different values)
 #' @label.postfix a postfix added to object label (useful if we have several geoms per object computed from different values)
 
-objects.to.geoms = function(objs, values, xrange, yrange,name.prefix="", name.postfix="", label.prefix="", label.postfix="", ...) {
+objects.to.geoms = function(objs=pane$objs, values=pane$values, xrange=pane$xrange, yrange=pane$yrange,name.prefix="", name.postfix="", label.prefix="", label.postfix="", pane=NULL, color.level=1, ...) {
   geoms = lapply(objs, object.to.geom, values=values, xrange=xrange, yrange=yrange, name.prefix=name.prefix, name.postfix=name.postfix, label.prefix=label.prefix, label.postfix=label.postfix,...)
   
   names(geoms) = paste0(name.prefix, names(objs), name.postfix)
@@ -21,13 +21,19 @@ objects.to.geoms = function(objs, values, xrange, yrange,name.prefix="", name.po
 }
 
 #' Convert an abstract geometrical object to a geom
-object.to.geom = function(obj,values,xrange, yrange,xlen=201,ylen=201,...) {
+object.to.geom = function(obj,values=pane$values,xrange=pane$xrange, yrange=pane$yrange,xlen=201,ylen=201,pane=NULL, color.level=1,...) {
+  restore.point("object.to.geom")
+  
   type = obj$type
   if (type=="curve") {
-    geom = curve.to.geom(obj,values=values,xrange=xrange,yrange=yrange,xlen=xlen,ylen=ylen,...)
+    geom = curve.to.geom(obj,values=values,xrange=xrange,yrange=yrange,xlen=xlen,ylen=ylen,color.level=1,...)
   } else if (type=="marker") {
-    geom = marker.to.geom(obj,values=values,xrange=xrange,yrange=yrange,xlen=xlen, ylen=ylen,...)
+    geom = marker.to.geom(obj,values=values,xrange=xrange,yrange=yrange,xlen=xlen, ylen=ylen,color.level=1,...)
   }
+  if (is.null(geom)) {
+    return(NULL)
+  }
+  
   geom = as.environment(geom)
   geom$values = values
   geom$obj = obj
@@ -41,8 +47,10 @@ object.to.geom = function(obj,values,xrange, yrange,xlen=201,ylen=201,...) {
 
 #' Draw a geom
 draw.geom = function(geom,...) {
+  restore.point("draw.geom")
+  
   type = geom$type
-  if (geom.type == "curve") {
+  if (type == "curve" | type=="marker") {
     draw.curve(geom,...)
   }
 }

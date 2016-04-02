@@ -69,8 +69,6 @@ examples.geom.relations = function() {
   geom.to.geom.pos(geom1, geom2)
   geom.to.geom.pos(geom1, geoms1[[3]])
 
-  
-  check.geoms.beside(geoms1[["demand1"]], geoms2[["demand2"]])
 }
 
 #' Find relative position (above, below, left, right) of a point to a geom
@@ -180,8 +178,8 @@ point.to.geom.dist = function(xy, geom, axis="xy",normalize=TRUE, xrange=geom$xr
   x = xy[[1]]; y = xy[[2]]
 
   if (normalize) {
-    xs = diff(pane$xrange)
-    ys = diff(pane$yrange)
+    xs = diff(xrange)
+    ys = diff(yrange)
   } else {
     xs = ys = 1
   }

@@ -63,25 +63,28 @@ click.finds.geom.to.geom.pos = function(click, new, old, check=c("above","below"
   
 }
 
+#' 
 click.selects.single.geom = function(click, geoms, on.tol=0.05, single.tol=0.05) {
+  restore.point("click.selects.single.geom")
+  
   dists = click.dist.to.geoms(click, geoms)
   
   on = which(dists<=on.tol)
   if (length(on)==1) {
-    list(ok=TRUE, selected=on)
+    return(list(ok=TRUE, selected=on))
   }
   if (length(on)==0) {
-    list(ok=FALSE, selected=NULL)
+    return(list(ok=FALSE, selected=NULL))
   }
   
   close = which(dists<=single.tol)
   if (length(close)==1) {
-    list(ok=TRUE, selected=close)
+    return(list(ok=TRUE, selected=close))
   }
   if (length(close)==0) {
-    list(ok=FALSE, selected=on)
+    return(list(ok=FALSE, selected=on))
   }
-  list(ok=FALSE, selected=close)
+  return(list(ok=FALSE, selected=close))
   
 }
 
