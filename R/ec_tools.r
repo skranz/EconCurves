@@ -1,3 +1,9 @@
+random.string = function(n=1,nchar=14, set=c(letters,LETTERS,0:9)) {
+  chars = sample(set,nchar*n, replace = TRUE)
+  if (n == 1) return(paste0(chars, collapse=""))
+  mat = as.data.frame(matrix(chars, n, nchar))
+  do.call(paste0,mat)
+}
 
 copy.into.null.fields = function(dest, source) {
   restore.point("copy.into.fields")

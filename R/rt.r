@@ -26,7 +26,7 @@ rtutor.addon.plotpane = function() {
     change.task.env = FALSE,
     is.task = FALSE,
     is.static = TRUE,
-    parse.fun = function(inner.txt,type="pane",name=args$name,id=paste0("addon__",type,"__",name),args=NULL, bdf=NULL, task.ind=NULL,...) {
+    parse.fun = function(inner.txt,type="pane",name=args$name,id=paste0("addon__",type,"__",name),args=NULL, task.ind=NULL,ps,bdf=ps$bdf,bi,...) {
       restore.point("showpane.parse.fun")
       yaml = merge.lines(inner.txt)
       arg.li = read.yaml(text=yaml)
@@ -41,18 +41,20 @@ rtutor.addon.plotpane = function() {
       } else {
         pane = init.yaml.pane(pane=arg.li$pane)        
       }
-      if (is.null(pane$width)) pane$width = 4
-      if (is.null(pane$height)) pane$height = 3
+      if (is.null(pane$width.in)) pane$width.in = 5
+      if (is.null(pane$height.in)) pane$height.in = 4
       
       
-      cols = setdiff(names(arg.li),c("name","pane","height","width","params"))
+      cols = setdiff(names(arg.li),c("name","pane","height.in","width.in","params"))
       pane[cols] = arg.li[cols]
       if (is.null(pane$params)) pane$params = list()
       pane$params[names(arg.li$params)] = arg.li$params
       
-      html = plot.to.html(plot.pane(pane), height=pane$height,width=pane$width)
-      plot.pane(pane)
-      list(html=html)
+      filename = paste0("plotpane_",bi,".png")
+      img.id = paste0(ps$ps.id,"_plotpane_",bi)
+      
+      res = plot.to.html(plot.pane(pane), height.in=pane$height.in,width.in=pane$width.in,out.dir = ps$figure.dir,src.path = ps$figure.web.dir, filename=filename, embed=FALSE, compute.coordmap = TRUE, img.id = img.id,res=144)
+      c(list(img.id=img.id),res)
     },
     ui.fun = function(ao,...) {
       HTML(ao$html)
