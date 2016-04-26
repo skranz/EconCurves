@@ -1,5 +1,7 @@
 
 draw.curve = function(geom,lwd.factor=1,...) {
+  restore.point("draw.curve")
+  
   lines(x=geom$x,y=geom$y,col=geom$color,lty=geom$lty,lwd=geom$lwd*lwd.factor,...)
 }
 
@@ -36,20 +38,13 @@ marker.to.geom = function(marker, values, xrange,yrange, lty=2, lwd=1, color="gr
     y = c(pos,pos)
     x = xrange
   }
-  color = curve.color(opts$color, level=opts$color.level)
-  
   base = marker$name
   name = paste0(name.prefix, marker$name,name.postfix)
-  if (is.null(marker$label)) {
-    lab = name
-  } else {
-    lab = marker$label
-    if (!is.null(label.replace)) 
-      lab = replace.whiskers(lab , label.replace)
-    lab = paste0(label.prefix,lab,label.postfix)
-  }
-
-  list(base=base,name=name,pane=pane.name,type="marker", geom.type="gcurve", label=lab,axis=marker$axis,x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)  
+  
+  color = geom.color(base.color = opts$color, color.level=opts$color.level)
+  label = geom.label(label.prefix = label.prefix, label.postfix=label.postfix,label.replace=label.replace,label = marker$label,name = name)
+  
+  list(base=base,name=name,pane=pane.name,type="marker", geom.type="gcurve", label=label,axis=marker$axis,x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)  
 }
 
 # compute.curve.gcurve
@@ -67,7 +62,6 @@ curve.to.geom = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name
     return(NULL)
   }
 
-  color = curve.color(opts$color, opts$color.level)  
   rows = xy$x >= min(xrange) & xy$x <= max(xrange) &
          xy$y >= min(yrange) & xy$y <= max(yrange) 
 
@@ -75,15 +69,11 @@ curve.to.geom = function(curve, xrange=c(0,1),yrange=c(0,1), values=list(), name
   y=xy$y[rows]
   
   name = paste0(name.prefix, cu$name,name.postfix)
-  if (is.null(curve$label)) {
-    lab = name
-  } else {
-    lab = curve$label
-    if (!is.null(label.replace))
-      lab = replace.whiskers(lab , label.replace)
-    lab = paste0(label.prefix,lab,label.postfix)
-  }
-  list(base=cu$name,name=name,pane=pane.name,type="curve",geom.type="gcurve",label=lab,axis="",x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)    
+  
+  color = geom.color(base.color = opts$color, color.level=opts$color.level)
+  label = geom.label(label.prefix = label.prefix, label.postfix=label.postfix,label.replace=label.replace,label = cu$label)
+  
+  list(base=cu$name,name=name,pane=pane.name,type="curve",geom.type="gcurve",label=label,axis="",x=x,y=y,color=color, lty=opts$lty,lwd=opts$lwd)    
 }
 
 compute.curve.grid = function(cu=geom$obj, values=geom$values, xrange=geom$xrange,yrange=geom$yrange, xlen=geom$xlen,ylen=geom$ylen, dim="x",x=geom$x, y=geom$y, geom=NULL) {
@@ -143,6 +133,21 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
 
   #if (is.null(values)) values=list()
   values = as.list(values)
+  
+  if (isTRUE(cu$is.linear) & (!cu$is.vertical) & (!cu$is.horizontal)) {
+    # need to add both x and y range to have at least 
+    # 2 points inside the pane
+    xseq = seq(xrange[1],xrange[2], length=2)
+    values[[cu$xvar]] = xseq
+    yval = eval(cu$yformula_, values)
+
+    yseq = seq(yrange[1],yrange[2], length=2)
+    values[[cu$yvar]] = yseq
+    xval = eval(cu$xformula_, values)
+
+    return(list(x=c(xseq,xval),y=c(yval,yseq)))    
+  }
+
   
   if (!is.null(cu$yformula_) & (!isTRUE(cu$is.vertical)) & use.yformula) {
     if (isTRUE(cu$is.horizontal) | isTRUE(cu$is.linear)) {

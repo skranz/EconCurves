@@ -56,6 +56,24 @@ draw.geom = function(geom,...) {
 }
 
 #' Draw a list of geoms
-draw.geoms = function(geoms,...) {
-  for (geom in geoms) draw.geom(geom,...)
+draw.geoms = function(geoms, ...) {
+  for (geom in geoms) try(draw.geom(geom,...))
+}
+
+
+geom.label = function(label=obj$label,label.prefix="", label.postfix="", label.replace=NULL, geom=NULL, name=geom$name, obj=geom$obj) {
+  restore.point("geom.label")
+  
+  if (is.null(label)) {
+    label = name
+  } else {
+    if (!is.null(label.replace)) 
+      label = replace.whiskers(label , label.replace)
+    label = paste0(label.prefix,label,label.postfix)
+  }
+  label
+}
+
+geom.color = function(base.color = geom$obj$color, color.level = 1, geom=NULL, obj=geom$obj) {
+  curve.color(base.color, level=color.level)
 }

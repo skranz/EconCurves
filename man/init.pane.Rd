@@ -5,8 +5,9 @@
 \title{Initilize a pane}
 \usage{
 init.pane(pane = list(), name = NULL, xvar = NULL, yvar = NULL,
-  xrange = NULL, yrange = NULL, xmarkers = NULL, ymarkers = NULL,
-  geoms = geoms, curves = NULL, init.curves = TRUE)
+  xrange = NULL, yrange = NULL, xlab = NULL, ylab = NULL,
+  xmarkers = NULL, ymarkers = NULL, geoms = NULL, curves = NULL,
+  init.curves = TRUE)
 }
 \description{
 Initilize a pane

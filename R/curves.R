@@ -74,6 +74,7 @@ init.yaml.curve = function(yaml=NULL, curve=NULL, var.funs=NULL) {
 init.marker = function(name=NULL, var=name, axis = "x", color="grey", lwd=1, lty=2, marker = list()) {
   marker = copy.into.null.fields(dest=marker, source=nlist(name,var,axis,color,lwd,lty))
   marker$type = "marker"
+  marker$parnames = var
   marker
 }
 
@@ -122,7 +123,7 @@ specialize.curve.formula = function(eq, xvar, yvar, level=NULL, solve.symbolic =
   slope.vars = find.variables(slope_)
   is.linear = (!xvar %in% slope.vars) & (! yvar %in% slope.vars) 
   
-  ret = nlist(xformula_, yformula_, implicit_,slope_, is.vertical, is.horizontal, is.linear, curve.vars, slope.vars)
+  ret = nlist(xformula_, yformula_, implicit_,slope_, is.vertical, is.horizontal, is.linear, curve.vars, slope.vars, parnames = setdiff(curve.vars,c(xvar,yvar)))
   ret
 }
 

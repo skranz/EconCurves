@@ -7,7 +7,8 @@
 \method{plot}{pane}(pane, geoms = pane$geoms, xrange = pane$xrange,
   yrange = pane$yrange, alpha = 1, main = "", mar = c(4, 3, 1, 1),
   show.grid = !TRUE, label.df = NULL, lwd.factor = 1, label.cex = 0.75,
-  cex.axis = 0.8)
+  cex.axis = 0.8, xlab = if (is.null(pane$xlab)) pane$xvar else pane$xlab,
+  ylab = if (is.null(pane$ylab)) pane$yvar else pane$ylab)
 }
 \description{
 Plot a pane
