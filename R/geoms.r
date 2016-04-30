@@ -20,6 +20,8 @@ objects.to.geoms = function(objs=pane$objs, values=pane$values, xrange=pane$xran
   geoms[!nulls]
 }
 
+
+
 #' Convert an abstract geometrical object to a geom
 object.to.geom = function(obj,values=pane$values,xrange=pane$xrange, yrange=pane$yrange,xlen=201,ylen=201,pane=NULL, color.level=1,...) {
   restore.point("object.to.geom")

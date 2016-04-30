@@ -5,15 +5,13 @@ compute.step.shows = function(step, given_show=NULL, all.names=names(pane$objs),
   if (!is.null(given_show) & !is.list(given_show))
     given_show = compute.show.list(given_show, data_rows=data_rows, all.names=all.names)
   
-  preshow = postshow = compute.show.list(hide = step$hide, data_rows=data_rows, all.names=all.names, given_show = given_show)  
+  preshow = postshow = compute.show.list(show=step$show,hide = step$hide, data_rows=data_rows, all.names=all.names, given_show = given_show)  
   
   
-  task.show = c(postshow,step[["find"]], step[["find_shift"]])
+  success.show = unique(c(step[["find"]], step[["find_shift"]], step$show_success))
   
-  postshow = compute.show.list(task.show, data_rows=data_rows, all.names=all.names, given_show = postshow)
-  
-  postshow = compute.show.list(step$show_success, data_rows=data_rows, all.names=all.names, given_show = postshow)
-  
+  postshow = compute.show.list(success.show, data_rows=data_rows, all.names=all.names, given_show = postshow)
+ 
   postshow = compute.show.list(hide = step$hide_success, data_rows=data_rows, all.names=all.names, given_show = postshow)  
   
   nlist(preshow, postshow)
@@ -23,7 +21,9 @@ compute.step.shows = function(step, given_show=NULL, all.names=names(pane$objs),
 compute.show.list = function(show=NULL, hide=NULL, data_rows=1, given_show=NULL, all.names=names(pane$objs), pane=NULL) {
   restore.point("compute.show.list")
   
-  if (is.null(show) & is.null(hide)) return(given_show)
+  if (is.null(show) & is.null(hide)) {
+    if (!is.null(given_show)) return(given_show)
+  }
   
   n = length(data_rows)
   
@@ -39,7 +39,7 @@ compute.show.list = function(show=NULL, hide=NULL, data_rows=1, given_show=NULL,
     return(show)
   }
   
-  show = show.hide.to.list(show, all.names = all.names, role.names = role.names)
+  show = show.to.list(show, all.names = all.names, role.names = role.names)
   
   if (!is.null(given_show)) {
     show = lapply(seq_along(show), function(i) {
@@ -47,20 +47,30 @@ compute.show.list = function(show=NULL, hide=NULL, data_rows=1, given_show=NULL,
     })
   }
   if (!is.null(hide)) {
-    hide = show.hide.to.list(hide, all.names = all.names, role.names = role.names)
+    hide = hide.to.list(hide, all.names = all.names, role.names = role.names)
     show = lapply(seq_along(show), function(i) {
-      setdiff(show[[i]], hide[[i]]))
+      setdiff(show[[i]], hide[[i]])
     })
   }
+  names(show) = role.names
   show
 }
 
-show.hide.to.list = function(sh, all.names, role.names="1") {
+show.to.list = function(sh, all.names, role.names="1") {
   restore.point("show.hide.to.list")
-  if (is.list(sh)) return(sh)
+  if (is.list(sh)) {
+    for (i in seq_along(sh)) {
+      if (identical(sh[[i]],".all")) {
+        sh[[i]] = all.names
+      } else if (identical(sh[[i]],".none")) {
+        sh[[names(sh)[i] ]] = character(0)
+      }
+    }
+    return(sh)
+  }
 
   if (identical(sh,".all")) {
-    li = lapply(role_names, function(dr) all.names)
+    li = lapply(role.names, function(dr) all.names)
     names(li) = role.names
     return(li)
   }
@@ -68,9 +78,23 @@ show.hide.to.list = function(sh, all.names, role.names="1") {
   all.sh = sh[sh %in% all.names]
   
   li = lapply(seq_along(role.names), function(i) {
-    dr.ind = sh %in% paste0(all.names,"_",role.names[i])
-    unique(all.sh,all.names[dr.ind])
-  }
+    dr.ind = which(paste0(all.names,"_",role.names[i]) %in% sh)
+    unique(c(all.sh,all.names[dr.ind]))
+  })
+  names(li) = role.names
+  li
+  
+}  
+  
+hide.to.list = function(sh, all.names, role.names="1") {
+  restore.point("hide.to.list")
+  if (is.list(sh)) return(sh)
+
+  all.sh = sh[sh %in% all.names]
+  li = lapply(seq_along(role.names), function(i) {
+    dr.ind = which(paste0(all.names,"_",role.names[i]) %in% sh) 
+    unique(c(all.sh,all.names[dr.ind]))
+  })
   names(li) = role.names
   li
   

@@ -64,10 +64,10 @@ pane:
 }
 
 #' Plot a pane
-plot.pane = function(pane, show = pane$show, hide=pane$hide, xrange=pane$xrange, yrange=pane$yrange, alpha=1,main="",mar=c(4,3,1,1), show.grid=!TRUE, label.df=NULL,lwd.factor=1,label.cex=0.75, cex.axis=0.8, 
+plot.pane = function(pane, show = pane$show, hide=pane$hide, xrange=pane$xrange, yrange=pane$yrange, alpha=1,main="",mar=NULL, show.grid=!TRUE, label.df=NULL,lwd.factor=1,label.cex=0.75, cex.axis=0.8, 
   xlab= if (is.null(pane$xlab)) pane$xvar else pane$xlab,
   ylab= if (is.null(pane$ylab)) pane$yvar else pane$ylab,
-compute.geoms=TRUE, params = pane$params, data=pane$data, data.rows=1
+compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1
   ) {
   restore.point("plot.pane")
   
@@ -79,8 +79,12 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data.rows=1
   missing.cols = check.for.missing.data.cols(pane,pane$data, show=show)
 
   if (compute.geoms)
-    compute.pane.geoms(pane=pane,data.rows=data.rows)
+    compute.pane.geoms(pane=pane,data_rows=data_rows)
   
+  if (is.null(mar)) {
+    mar = c(4,3,1,1)
+    if (is.null(main)) mar[3] = 0
+  }
   par(mar=mar)
   plot.empty.pane(xlim=xrange, ylim=yrange,mar=mar,xlab=xlab,ylab=ylab,main=main, show.grid=show.grid, cex.axis=cex.axis)
 
@@ -90,8 +94,8 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data.rows=1
   if (identical(show,".all")) {
     show = names(pane$objs)
   }  
-  for (i in seq_along(data.rows)) {
-    row = data.rows[i]
+  for (i in seq_along(data_rows)) {
+    row = data_rows[i]
     if (is.list(show)) {
       cur.show = show[[i]]
     } else {
@@ -133,20 +137,59 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data.rows=1
 #' @name.postfix a postfix added to object names (useful if we have several geoms per object computed from different values)
 #' @label.prefix a prefix added to object label (useful if we have several geoms per object computed from different values)
 #' @label.postfix a postfix added to object label (useful if we have several geoms per object computed from different values)
-compute.pane.geoms = function(pane, data.rows = 1, objs = pane$objs, overwrite = TRUE,...) {
+compute.pane.geoms = function(pane, data_rows = 1, objs = pane$objs, overwrite = TRUE,...) {
   restore.point("computer.pane.geoms")
 
-  for (i in data.rows) {
+  for (i in seq_along(data_rows)) {
+    r = data_rows[[i]]
     if (!overwrite) {
-      if (!is.null(pane$geoms.li[[i]])) next
+      if (!is.null(pane$geoms.li[[r]])) next
     }
-    values = as.list(pane$data[i,])
+    values = c(as.list(pane$data[r,]), list(.row=r, .role=names(data_rows[i])))
     
     pane$geoms.li[[i]] = objects.to.geoms(objs=objs, values=values, pane=pane,...)
   }
-
 }
 
+does.geom.change.with.data.row = function(data_rows,obj=geom$obj, data=pane$data, pane=NULL, geom=NULL) {
+  parnames =  
+  len = sapply(obj$parnames, function(par) {
+    length(unique(data[[par]][data_rows]))
+  })
+  any(len>0)
+}
+
+do.geoms.differ.across.rows = function(pane, data_rows, objs=pane$objs) {
+  data = pane$data
+  lapply(seq_along(objs), function(oi) {
+    obj = objs[[oi]]
+    parnames = obj$parnames 
+    
+        
+  })
+  for (oi in seq_along(objs)) {
+  }
+  
+  
+}
+
+compute.geoms.label = function(pane, data_rows) {
+  
+  
+geom.label = function(label=obj$label,label.prefix="", label.postfix="", label.replace=NULL, geom=NULL, name=geom$name, obj=geom$obj) {
+  restore.point("geom.label")
+  
+  if (is.null(label)) {
+    label = name
+  } else {
+    if (!is.null(label.replace)) 
+      label = replace.whiskers(label , label.replace)
+    label = paste0(label.prefix,label,label.postfix)
+  }
+  label
+}
+
+}
 
 #' Compute concrete geoms for all objects of a pane
 #' 
@@ -159,7 +202,7 @@ compute.pane.geoms = function(pane, data.rows = 1, objs = pane$objs, overwrite =
 #' @name.postfix a postfix added to object names (useful if we have several geoms per object computed from different values)
 #' @label.prefix a prefix added to object label (useful if we have several geoms per object computed from different values)
 #' @label.postfix a postfix added to object label (useful if we have several geoms per object computed from different values)
-old.compute.pane.geoms = function(pane, objs = pane$objs,xrange=pane$xrange, yrange=pane$yrange,name.prefix=rep("",nr), name.postfix=rep("",nr), label.prefix=rep("",nr), label.postfix=rep("",nr), params=pane$params, data = pane$data, data.rows = NULL, color.level=rep(1,nr), nr=max(1,length(data.rows)), compute.data = FALSE, ...) {
+old.compute.pane.geoms = function(pane, objs = pane$objs,xrange=pane$xrange, yrange=pane$yrange,name.prefix=rep("",nr), name.postfix=rep("",nr), label.prefix=rep("",nr), label.postfix=rep("",nr), params=pane$params, data = pane$data, data_rows = NULL, color.level=rep(1,nr), nr=max(1,length(data_rows)), compute.data = FALSE, ...) {
   restore.point("computer.pane.geoms")
   
   
@@ -167,10 +210,10 @@ old.compute.pane.geoms = function(pane, objs = pane$objs,xrange=pane$xrange, yra
   if (is.null(values)) {
     values = params
   }
-  if (is.null(data.rows) | length(data.rows)==1) {
+  if (is.null(data_rows) | length(data_rows)==1) {
     geoms = objects.to.geoms(objs=objs, values=values, xrange = xrange,yrange=yrange, name.prefix=name.prefix, name.postfix=name.postfix, label.prefix=label.prefix, label.postfix=label.postfix,color.level=color.level,...)
   } else {
-    geoms.li = lapply(seq_along(data.rows), function(i) {
+    geoms.li = lapply(seq_along(data_rows), function(i) {
       objects.to.geoms(objs=objs, values=values, xrange = xrange,yrange=yrange, name.prefix=name.prefix[i], name.postfix=name.postfix[i], label.prefix=label.prefix[i], label.postfix=label.postfix[i],color.level=color.level[i],...)
     })
     geoms = do.call("c", geom.li)

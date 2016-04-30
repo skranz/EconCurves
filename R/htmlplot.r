@@ -22,7 +22,7 @@ examples.plot.to.html = function() {
     args = list(...)
     pixelratio = get.pixelratio()
     restore.point("my.image.handler")
-    cat("\nclicked on image pxielratio = ", pixelratio,"\n")
+    cat("\nclicked on image pixelratio = ", pixelratio,"\n")
     x = args$x
     y = args$y
     
@@ -36,7 +36,6 @@ plot.to.html = function(expr,envir=parent.frame(), quoted=NULL, width.px=width.i
   restore.point("plot.to.html")
   
   library(rmdtools)
-  library(svglite)
  
   if (is.null(quoted)) {
     quoted = substitute(expr)
@@ -47,9 +46,11 @@ plot.to.html = function(expr,envir=parent.frame(), quoted=NULL, width.px=width.i
   }
   if (!is.null(img.id)) img.id = paste0(' id = "',img.id,'"')
   if (!is.null(img.class)) img.class = paste0(' class = "',img.class,'"')
-  if (!is.null(img.style)) img.style = paste0(' style = "',img.style,'"')
+  #if (!is.null(img.style)) img.style = paste0(' style = "',img.style,'"')
   
   if (format == "svg") {
+    library(svglite)
+
     if (embed) {
       s <- svgstring(bg=bg, pointsize=pointsize, width=width.in, height=height.in)
       html = s()
@@ -66,7 +67,7 @@ plot.to.html = function(expr,envir=parent.frame(), quoted=NULL, width.px=width.i
       html = paste0('<div style="width: ',width.in,'in; height: ',height.in,'in;">\n',html,'\n</div>')
 
     } else {
-      html = paste0('<img src="',src.path,'/',filename,'" style="width: ',width.in,'in; height: ',height.in,'in;"',img.id,img.class, img.style,'>')
+      html = paste0('<img src="',src.path,'/',filename,'" style="width: ',width.in,'in; height: ',height.in,'in;', img.style,';"',img.id,img.class,'>')
     }
     dev.off()
  
@@ -78,13 +79,13 @@ plot.to.html = function(expr,envir=parent.frame(), quoted=NULL, width.px=width.i
       ret = plot.png.with.coordmap(quoted=quoted,width.px = width.px,height.px = height.px, res=res,envir = envir,dir = out.dir,filename = filename)
       library(base64enc)
       enc = base64encode(paste0(out.dir,"/",filename))
-      html = paste0('<img src="data:image/png;base64,',enc,'" style="width: ',width.in,'in; height: ',height.in,'in;">')
+      html = paste0('<img src="data:image/png;base64,',enc,'" style="width: ',width.in,'in; height: ',height.in,'in;', img.style,'"', img.class, img.id,'>')
       #html = paste0('<img src="',src.path,'/',filename,'"',img.id,img.class, img.style,'>')
       #html = paste0('<div style="width: ',width.in,'in; height: ',height.in,'in;">\n',html,'\n</div>')
     } else {
       restore.point("html.external.png")
       ret = plot.png.with.coordmap(quoted=quoted,width.px = width.px,height.px = height.px, res=res,envir = envir,dir = out.dir,filename = filename)
-      html = paste0('<img src="',src.path,'/',filename,'" style="width: ',width.in,'in; height: ',height.in,'in;">')
+      html = paste0('<img src="',src.path,'/',filename,'" style="width: ',width.in,'in; height: ',height.in,'in;', img.style,'"', img.class, img.id,'>')
       #html = paste0('<img src="',src.path,'/',filename,'"',img.id,img.class, img.style,'>')
       #html = paste0('<div style="width: ',width.in,'in; height: ',height.in,'in;">\n',html,'\n</div>')
     }

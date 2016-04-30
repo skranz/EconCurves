@@ -21,7 +21,7 @@ split.text.in.startline.blocks = function(txt, start.with = NULL, block.lines = 
   
   if (length(txt)==0) return(NULL)
   if (is.null(block.lines)) {
-    block.lines =  which(str.starts.with(txt,hashdot))
+    block.lines =  which(str.starts.with(txt,start.with))
   }
   if (length(block.lines)==0) {
     if (!add.start) return(NULL)
