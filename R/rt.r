@@ -116,27 +116,43 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
     ao = parse.hashdot.yaml(txt[start.lines])
   }
   show = ao$show
-  ao$pane = pane = get.pane.from.ps(pane = ao$pane, ps = ps,arg.li=ao)
+  if (is.null(ao$panes)) {
+    ao$panes = list(ao$pane)
+  }
+  
+  ao$panes = lapply(ao$panes, function(pane) {
+    pane = get.pane.from.ps(pane = ao$pane, ps = ps,arg.li=ao)    
+    pane$show = show
+    # compute pane$data
+    make.pane.data(pane=pane)
+    pane
+  })
+  names(ao$panes) = sapply(ao$panes, function(pane) pane$name)
+  
+  ao$all.names = unique(unlist(lapply(ao$panes, function(pane) names(pane$objs))))
+  
+  # compute steps
+  given_show = compute.show.list(show=ao$show,hide=ao$hide, data_rows=ao$data_rows, all.names = ao$all.names)
+
   # overwrite default show = ".all"
-  ao$pane$show = show
-  
-  ao$pane$img.id = paste0("panequiz_",bi,"_",ao$pane$name)
-  
+  ao$imgs = lapply(ao$panes, function(pane) {
+    id = paste0("panequiz_",bi,"_",pane$name)
+    list(
+      id = id,
+      html = tags$img(id=id, style="width: 5in; height:4in; cursor: pointer;", src="")
+    )
+  }) 
+
   lines = c(step.lines,length(txt)+1)
   steps = list("vector", length(step.lines))
   names(steps) = str.trim(str.right.of(txt[step.lines], "#. step "))
 
-  # compute pane$data
-  make.pane.data(pane=pane)
-  
-  # compute steps
-  given_show = compute.show.list(show=pane$show,hide=pane$show, data_rows=pane$data_rows, pane=pane)
   
   i = 1  
   for (i in seq_along(steps)) {
     step = parse.hashdot.yaml(txt[(lines[i]+1):(lines[i+1]-1)])
     step$step.num = i
-    step = panequiz.make.step(step, given_show=given_show, pane=ao$pane,ps=ps,bi=bi)
+    step = panequiz.make.step(step, given_show=given_show, panes=ao$panes,ps=ps,bi=bi,ao=ao)
     steps[[i]] = step
     given_show = step$postshow      
   }
@@ -153,6 +169,8 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
     </tr></table>
     '    
   }
+  
+  
   ao$textId = paste0("panequiz_text_",bi)
   ao$paneId = paste0("panequiz_pane_",bi)
   
@@ -192,7 +210,7 @@ panequiz.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], a
   } else {
     pmode = "post"    
   }
-  plot.html = HTML(step[[paste0(pmode,".plot")]]$html)
+  plot.html = HTML(step[[paste0(pmode,".plot")]][[1]]$html)
   setUI(ao$paneId,plot.html)  
 }
 
@@ -228,30 +246,34 @@ panequiz.show.prev.step = function(ts, next.step.mode="pre",...) {
 
 
 
-panequiz.make.step = function(step, pane, given_shows,ps,bi) {
+panequiz.make.step = function(step, panes=ao$panes, given_shows,ps,bi, ao) {
   restore.point("panequiz.make.step")
   
   if (is.null(step$points)) step$points = 0
   if (is.null(step$score)) step$score = 0
   
   
-  res = compute.step.shows(step=step, given_show=given_shows, pane=pane)
+  res = compute.step.shows(step=step, given_show=given_shows, all.names=ao$all.names, data_rows=ao$data_rows)
   step$preshow = res$preshow
   step$postshow = res$postshow
 
 
-  img.id = pane$img.id
-
-  filename = paste0("panequiz_",bi,"_",pane$name,"_pre_",step$step.num,".png")
+  step$pre.plot = step$post.plot = vector("list", length(panes))
+  for (i in seq_along(panes)) {
+    pane = panes[[i]]
+    img.id = ao$imgs[[i]]$id
   
-  res = plot.to.html(plot.pane(pane,show = step$preshow, hide=NULL,data_rows=pane$data_rows), height.in=pane$height.in,width.in=pane$width.in,out.dir = ps$figure.dir,src.path = ps$figure.web.dir, filename=filename, embed=FALSE, compute.coordmap = TRUE, img.id = img.id,res=144,img.style = "cursor: pointer;")
+    filename = paste0("panequiz_",bi,"_",pane$name,"_pre_",step$step.num,".png")
+    
+    res = plot.to.html(plot.pane(pane,show = step$preshow, hide=NULL,data_rows=pane$data_rows), height.in=pane$height.in,width.in=pane$width.in,out.dir = ps$figure.dir,src.path = ps$figure.web.dir, filename=filename, embed=FALSE, compute.coordmap = TRUE, img.id = img.id,res=144,img.style = "cursor: pointer;")
+    
+    step$pre.plot[[i]] = res 
   
-  step$pre.plot = res 
-
-  filename = paste0("panequiz_",bi,"_",pane$name,"_post_",step$step.num,".png")
-  res = plot.to.html(plot.pane(pane,show = step$postshow, hide=NULL,data_rows=pane$data_rows), height.in=pane$height.in,width.in=pane$width.in,out.dir = ps$figure.dir,src.path = ps$figure.web.dir, filename=filename, embed=FALSE, compute.coordmap = TRUE, img.id = img.id,res=144,img.style = "cursor: pointer;")
-  
-  step$post.plot = res 
+    filename = paste0("panequiz_",bi,"_",pane$name,"_post_",step$step.num,".png")
+    res = plot.to.html(plot.pane(pane,show = step$postshow, hide=NULL,data_rows=pane$data_rows), height.in=pane$height.in,width.in=pane$width.in,out.dir = ps$figure.dir,src.path = ps$figure.web.dir, filename=filename, embed=FALSE, compute.coordmap = TRUE, img.id = img.id,res=144,img.style = "cursor: pointer;")
+    
+    step$post.plot[[i]] = res 
+  }
   
   whisker.values = whisker.values.from.data_rows(data=pane$data, data_rows=pane$data_rows)
   
@@ -264,14 +286,18 @@ panequiz.make.step = function(step, pane, given_shows,ps,bi) {
   step$success.html = withMathJax(HTML(paste0(pre.html, success.html)))
   step$failure.html = withMathJax(HTML(paste0(pre.html,failure.html)))
   
-  step = panequiz.make.step.task(step=step, pane=pane, ps=ps) 
+  step = panequiz.make.step.task(step=step, ps=ps,ao=ao) 
   
   step
 }
 
-panequiz.make.step.task = function(step,pane,ps) {
+panequiz.make.step.task = function(step,panes=ao$panes,ps,ao) {
   restore.point("panequiz.make.step.task")
 
+  data_rows = ao$data_rows
+  # NEED TO CORRECT
+  pane = panes[[1]]
+  
   task.fields = c("find","find_shift")
   step$task.type = task.type = task.fields[task.fields %in% names(step)]
   if (length(step$task.type)==0) step$task.type = "none"
@@ -282,12 +308,12 @@ panequiz.make.step.task = function(step,pane,ps) {
   task.fun.env = new.env(parent=globalenv())
 
   # find geom that are specified in the task
-  nr = get.geom.name.and.row(step[[task.type]],pane$data_rows, data=pane$data)
+  nr = get.geom.name.and.row(step[[task.type]],data_rows, data=pane$data)
   if (task.type == "find") {
     restore.point("make.find.task")
     
     task.fun.env$geom = pane$geoms.li[[nr$row]][[nr$name]]
-    task.fun = function(xy,...) {
+    task.fun = function(xy,pane.name=NULL,...) {
       ok = is.point.on.geom(xy,geom)
       list(ok=ok)
     }
@@ -308,7 +334,7 @@ panequiz.make.step.task = function(step,pane,ps) {
     
     task.fun.env$source.geom = source.geom
     task.fun.env$ggpos = ggpos
-    task.fun = function(xy,...) {
+    task.fun = function(xy,pane.name = NULL,...) {
       pgpos = point.to.geom.pos(xy, source.geom)
       ok = length(setdiff(ggpos,pgpos))==0
       list(ok=ok)
@@ -372,8 +398,11 @@ panequiz.sol.txt.fun = panequiz.out.txt.fun = function(ts,solved=TRUE,...) {
 panequiz.init.handlers = function(ao=ts$ao,ps=get.ps(), app=getApp(),ts=NULL,bi,...) {
   restore.point("panequiz.init.handlers")
   
-  pane = ao$pane
-  imageClickHandler(pane$img.id,fun = panequiz.click,ts=ts,pane=pane)  
+  # NEED TO CORRECT
+  pane = ao$panes[[1]]
+  img.id = ao$imgs[[1]]$id
+  
+  imageClickHandler(img.id,fun = panequiz.click,ts=ts,pane=pane)  
   
   nextBtnId = paste0("panequizNextBtn_",bi)
   prevBtnId = paste0("panequizPrevBtn_",bi)
@@ -398,7 +427,8 @@ panequiz.click = function(x,y,...,ts=NULL,pane=NULL) {
   }
   
   # translate pixel to plot coordinates
-  coordmap = step$pre.plot$coordmap
+  ## NEED TO CHANGE FOR MULTIPLE PANES
+  coordmap = step$pre.plot[[1]]$coordmap
   px = x; py = y
   xy = unlist(scaleInvCoords(px,py,coordmap))
   
@@ -490,4 +520,19 @@ replace.data_rows.whiskers = function(txt, data=pane$data, data_rows=pane$data_r
   restore.point("panequiz.replace.whiskers")
   values = whisker.values.from.data_rows(data=data, data_rows=data_rows)
   replace.whiskers(txt, values)
+}
+
+set_image_src_js = function() {
+"  
+// change the src of an img without flicker
+function set_image_src(src,id) {
+  // create a new Image object
+  var imgvar = new Image();
+  // when preload is complete, apply the image to the img object
+  imgvar.onload = function() {
+    ('#'+id).src=src;
+  };
+  imgvar.src = src;
+}
+"
 }
