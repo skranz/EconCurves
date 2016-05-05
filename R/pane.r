@@ -46,17 +46,10 @@ pane:
   ymarkers: [p_eq]
 '
   pane = init.yaml.pane(yaml=yaml)
-  values1 = list(A=100, b=1, mc=20,y_eq=30, p_eq=40, idD=1,idS="")
-  geoms1 = compute.pane.geoms(pane, values=values1, name.postfix="1")
+  pane$params = list(A=100, b=1, mc=20,y_eq=30, p_eq=40, idD=1,idS="")
+  make.pane.data(pane)
 
-  values2 = list(A=130, b=1, mc=20,y_eq=30, p_eq=40, idD=2,idS="")
-  geoms2 = compute.pane.geoms(pane, values=values2, name.postfix="2", color.level = 2)
-
-  pane$geoms = c(geoms1, geoms2["demand2"])
-  #  pane$geoms = compute.pane.geoms(pane, values=values, name.postfix="2")
-
-  check.geoms.beside(geoms1[["demand1"]], geoms2[["demand2"]])
-  
+  compute.pane.geoms(pane)
   plot.pane(pane)
   
   res = locator(1)
@@ -324,14 +317,14 @@ has.pane.all.symbols = function(pane, symbols) {
 }
 
 
-make.pane.data = function(params=pane$params, priority_params = pane$priority_params, data=pane$data, datavar = pane$datavar, dataenv = pane$dataenv, use_dataenv = pane$use_dataenv, parnames = pane$parnames, pane=NULL, warn.missing.param, compute.model=TRUE) {
+make.pane.data = function(pane=NULL,params=pane$params, priority_params = pane$priority_params, data=pane$data, datavar = pane$datavar, dataenv = pane$dataenv, use_dataenv = pane$use_dataenv, parnames = pane$parnames, warn.missing.param, compute.model=TRUE) {
   restore.point("make.pane.data")
   
   # fetch datavar from dataenv
   if (is.null(data) & !is.null(dataenv) & !is.null(datavar)) {
     data = dataenv[[datavar]]
   }
-  if (is.null(data)) data = list()
+  if (is.null(data) | NROW(data)==0) data = list()
   
   # copy params into data
   cols = setdiff(names(params),names(data))

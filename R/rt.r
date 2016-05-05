@@ -246,7 +246,7 @@ panequiz.show.prev.step = function(ts, next.step.mode="pre",...) {
 
 
 
-panequiz.make.step = function(step, panes=ao$panes, given_shows,ps,bi, ao) {
+panequiz.make.step = function(step, panes=ao$panes, given_shows,ps,bi, ao, prev_shows=NULL, prev_src=NULL) {
   restore.point("panequiz.make.step")
   
   if (is.null(step$points)) step$points = 0
