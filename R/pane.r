@@ -130,7 +130,7 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1
 #' @name.postfix a postfix added to object names (useful if we have several geoms per object computed from different values)
 #' @label.prefix a prefix added to object label (useful if we have several geoms per object computed from different values)
 #' @label.postfix a postfix added to object label (useful if we have several geoms per object computed from different values)
-compute.pane.geoms = function(pane, data_rows = 1, objs = pane$objs, overwrite = TRUE,...) {
+compute.pane.geoms = function(pane, data_rows = 1, objs = pane$objs, overwrite = TRUE) {
   restore.point("computer.pane.geoms")
 
   for (i in seq_along(data_rows)) {
@@ -140,7 +140,7 @@ compute.pane.geoms = function(pane, data_rows = 1, objs = pane$objs, overwrite =
     }
     values = c(as.list(pane$data[r,]), list(.row=r, .role=names(data_rows[i])))
     
-    pane$geoms.li[[i]] = objects.to.geoms(objs=objs, values=values, pane=pane,...)
+    pane$geoms.li[[i]] = objects.to.geoms(objs=objs, values=values, pane=pane)
   }
 }
 
@@ -216,30 +216,28 @@ old.compute.pane.geoms = function(pane, objs = pane$objs,xrange=pane$xrange, yra
 
 
 
-create.yaml.pane.markers = function(pane) {
-  restore.point("create.yaml.pane.markers")
+init.pane.markers = function(pane) {
+  restore.point("init.pane.markers")
 
-  xnames = pane$xmarkers; ynames = pane$ymarkers
-  pane$xmarkers = lapply(pane$xmarkers, function(marker) {
-    init.marker(name=marker, axis="x")
+  xmarkers = lapply(names(pane$xmarkers), function(name) {
+    init.marker(pane$xmarkers[[name]],name=name, axis="x", pane=pane)
   })
-  names(pane$xmarkers) = xnames
-  pane$ymarkers = lapply(pane$ymarkers, function(marker) {
-    init.marker(name=marker, axis="y")
+  ymarkers = lapply(names(pane$ymarkers), function(name) {
+    init.marker(pane$ymarkers[[name]],name=name, axis="y", pane=pane)
   })
-  names(pane$ymarkers) = ynames
-  markers = c(pane$xmarkers,pane$ymarkers)
-  markers
+  pane$markers = c(xmarkers,ymarkers)
+  names(pane$markers) = c(names(pane$xmarkers),names(pane$ymarkers))
+  invisible(pane$markers)
 }
 
 pane = function(...) as.environment(init.pane(...))
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xlab=NULL, ylab=NULL,  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, dataenv = NULL, datavar=NULL, use_dataenv = TRUE, data_roles =NULL, show=".all", hide=NULL) {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xlab=NULL, ylab=NULL,  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, dataenv = NULL, datavar=NULL, use_dataenv = TRUE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 480, org.height=320, margins=c(bottom=60,left=60, top=20, right=30)) {
   restore.point("init.pane")
 
   pane = as.list(pane)
-  pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms.li, xlab, ylab, params, datavar, use_dataenv, data_roles, show, hide))
+  pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms.li, xlab, ylab, params, datavar, use_dataenv, data_roles, show, hide,xlen,ylen))
 
   pane = as.environment(pane)
 
@@ -253,7 +251,6 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
       pane$yvar = pane$xy[2]
   }
 
-  pane$markers= create.yaml.pane.markers(pane)
 
   if (!is.null(pane$curves) & init.curves) {
     curve.names = names(pane$curves)
@@ -263,6 +260,9 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
     names(pane$curves) = curve.names
   }
 
+  pane$markers= init.pane.markers(pane)
+
+  
   pane$objs = c(pane$curves, pane$markers)
   
   pane$parnames =unique(unlist(lapply(pane$objs, function(obj) obj$parnames)))
@@ -273,7 +273,10 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
   }
   
   pane$data = make.pane.data(pane=pane)
-
+  pane$org.width = org.width
+  pane$org.height = org.height
+  pane$margins = margins
+  
   pane
 }
 

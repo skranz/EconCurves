@@ -10,27 +10,25 @@
 #' @label.prefix a prefix added to object label (useful if we have several geoms per object computed from different values)
 #' @label.postfix a postfix added to object label (useful if we have several geoms per object computed from different values)
 
-objects.to.geoms = function(objs=pane$objs, values=pane$values, xrange=pane$xrange, yrange=pane$yrange,name.prefix="", name.postfix="", label.prefix="", label.postfix="", pane=NULL, color.level=1, ...) {
-  geoms = lapply(objs, object.to.geom, values=values, xrange=xrange, yrange=yrange, name.prefix=name.prefix, name.postfix=name.postfix, label.prefix=label.prefix, label.postfix=label.postfix,...)
+objects.to.geoms = function(objs=pane$objs,pane, values=pane$values,name.postfix="") {
+  restore.point("objects.to.geoms")
   
-  names(geoms) = paste0(name.prefix, names(objs), name.postfix)
-  
+  geoms = lapply(objs, object.to.geom, values=values, pane=pane)
+  names(geoms) = paste0(names(objs), name.postfix)
   nulls = sapply(geoms, is.null)
- 
   geoms[!nulls]
 }
 
 
 
 #' Convert an abstract geometrical object to a geom
-object.to.geom = function(obj,values=pane$values,xrange=pane$xrange, yrange=pane$yrange,xlen=201,ylen=201,pane=NULL, color.level=1,...) {
+object.to.geom = function(obj,pane,values=pane$values) {
   restore.point("object.to.geom")
-  
   type = obj$type
   if (type=="curve") {
-    geom = curve.to.geom(obj,values=values,xrange=xrange,yrange=yrange,xlen=xlen,ylen=ylen,color.level=1,...)
+    geom = curve.to.geom(obj,values=values,pane=pane)
   } else if (type=="marker") {
-    geom = marker.to.geom(obj,values=values,xrange=xrange,yrange=yrange,xlen=xlen, ylen=ylen,color.level=1,...)
+    geom = marker.to.geom(obj,values=values,pane=pane)
   }
   if (is.null(geom)) {
     return(NULL)
@@ -39,33 +37,23 @@ object.to.geom = function(obj,values=pane$values,xrange=pane$xrange, yrange=pane
   geom = as.environment(geom)
   geom$values = values
   geom$obj = obj
-  geom$xrange=xrange
-  geom$yrange=yrange
-  geom$xlen = xlen
-  geom$ylen = ylen
-  
+  geom$xrange=pane$xrange
+  geom$yrange=pane$yrange
+  geom$xlen = pane$xlen
+  geom$ylen = pane$ylen
+  geom$name = obj$name
   geom
 }
 
-#' Draw a geom
-draw.geom = function(geom,...) {
-  restore.point("draw.geom")
-  
-  type = geom$type
-  if (type == "curve" | type=="marker") {
-    draw.curve(geom,...)
-  }
-}
-
-#' Draw a list of geoms
-draw.geoms = function(geoms, ...) {
-  for (geom in geoms) try(draw.geom(geom,...))
-}
-
-
-geom.label = function(label=obj$label,label.prefix="", label.postfix="", label.replace=NULL, geom=NULL, name=geom$name, obj=geom$obj) {
+geom.label = function(geom=NULL,role=NULL, label.replace=NULL, for.svg=TRUE,label.postfix="", label.prefix="") {
   restore.point("geom.label")
   
+  if (for.svg) {
+    label = geom$obj$svg_label
+  } else {
+    label = geom$obj$label
+  }
+
   if (is.null(label)) {
     label = name
   } else {
@@ -76,6 +64,16 @@ geom.label = function(label=obj$label,label.prefix="", label.postfix="", label.r
   label
 }
 
-geom.color = function(base.color = geom$obj$color, color.level = 1, geom=NULL, obj=geom$obj) {
-  curve.color(base.color, level=color.level)
+geom.color = function(geom, role) {
+  restore.point("geom.color")
+  
+  obj = geom$obj
+  if (is.null(geom[["color"]])) {
+    if (!is.null(obj[["color"]])) {
+      geom$color =  obj$color
+    } else if (!is.null(obj$colors)) {
+      geom$color =  curve.color(obj$colors, level=role$color.level)
+    }
+  }
+  geom$color
 }

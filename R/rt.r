@@ -27,18 +27,27 @@ rtutor.addon.plotpane = function() {
     is.task = FALSE,
     is.static = TRUE,
     parse.fun = function(inner.txt,type="pane",name=args$name,id=paste0("addon__",type,"__",name),args=NULL, task.ind=NULL,ps,bdf=ps$bdf,bi,...) {
-      restore.point("showpane.parse.fun")
+      restore.point("plotpane.parse.fun")
       yaml = merge.lines(inner.txt)
       arg.li = read.yaml(text=yaml)
       if (is.null(arg.li$pane)) arg.li$pane = name
+      
+      
       pane = get.pane.from.ps(pane = arg.li$pane, ps = ps,arg.li=arg.li)
       
-      filename = paste0("plotpane_",bi,".png")
+      if (!is.null(arg.li$zoom)) {
+        pane$width = round(pane$org.width*arg.li$zoom)
+        pane$height = round(pane$org.height*arg.li$zoom)
+      }
+      
       img.id = paste0(ps$ps.id,"_plotpane_",bi)
-      res = plot.to.html(plot.pane(pane), height.in=pane$height.in,width.in=pane$width.in,out.dir = ps$figure.dir,src.path = ps$figure.web.dir, filename=filename, embed=FALSE, compute.coordmap = TRUE, img.id = img.id,res=144)
+      res = pane.svg(pane,id=img.id)
+
       c(list(img.id=img.id),res)
     },
     ui.fun = function(ao,...) {
+      restore.point("plotpane.ui.fun")
+      
       HTML(ao$html)
     }
   )

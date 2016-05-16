@@ -1,3 +1,10 @@
+is.false = function(val) {
+  if (length(val)==0)
+    return(FALSE)
+  val[is.na(val)] = TRUE  
+  return(!val)
+}
+
 random.string = function(n=1,nchar=14, set=c(letters,LETTERS,0:9)) {
   chars = sample(set,nchar*n, replace = TRUE)
   if (n == 1) return(paste0(chars, collapse=""))
