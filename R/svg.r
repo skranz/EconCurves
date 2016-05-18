@@ -260,10 +260,10 @@ svg_polyline = function(svg, x,y,id=NULL, class="polyline",style=c(nlist(fill, s
   svg_add(svg,el,id,level=level)
 }
 
-svg_boxed_label = function(svg, x,y, text,id=NULL, class="boxed-label",style=c(nlist("font-size"=font_size), extra.style), font_size=NULL, extra.style=list(), level=1, tooltip=NULL, to.range=TRUE) {
+svg_boxed_label = function(svg, x,y, text,id=NULL, class="boxed-label",style=c(nlist("font-size"=font_size), extra.style), font_size=NULL, extra.style=list(), level=1, tooltip=NULL, to.range=TRUE,...) {
   restore.point("svg_boxed_label")
   rp = domain.to.range(x=x,y=y,svg=svg, to.range=to.range)
-  el = svg_tag("text", nlist(x=rp$x,y=rp$y,id,class,style), tooltip=tooltip, inner=text)
+  el = svg_tag("text", nlist(x=rp$x,y=rp$y,id,class,style,...), tooltip=tooltip, inner=text)
   svg_add(svg,el,id,level=level)
 }
 

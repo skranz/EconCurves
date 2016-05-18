@@ -233,7 +233,7 @@ init.pane.markers = function(pane) {
 pane = function(...) as.environment(init.pane(...))
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xlab=NULL, ylab=NULL,  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, dataenv = NULL, datavar=NULL, use_dataenv = TRUE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 480, org.height=320, margins=c(bottom=60,left=60, top=20, right=30)) {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xlab=NULL, ylab=NULL,  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, dataenv = NULL, datavar=NULL, use_dataenv = TRUE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20)) {
   restore.point("init.pane")
 
   pane = as.list(pane)

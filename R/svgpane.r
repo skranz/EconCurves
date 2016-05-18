@@ -69,7 +69,8 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1, roles=NUL
   pane$xrange = xrange
   pane$show_ticks = show_ticks
   pane$show_tick_labels = show_tick_labels
-  
+  pane$height = height
+  pane$width = width
   
   
   missing.cols = check.for.missing.data.cols(pane,pane$data, show=show)
@@ -120,7 +121,7 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1, roles=NUL
     x.tit = domain.to.range(x=mean(pane$xrange),svg=svg)
     el = svg_tag("text", nlist(x=x.tit,y=15,class="boxed-label pane-title","text-anchor"="middle"), inner=pane$title)
     
-    svg_add(svg,el,level=level)
+    svg_add(svg,el,level=90)
   }
     
   pane$geoms = geoms
@@ -138,15 +139,19 @@ place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=
   rp = domain.to.range(x=label.df$x,y=label.df$y, svg=svg)
   x.min = domain.to.range(x=pane$xrange[1],svg=svg) + left.offset
   y.min = domain.to.range(y=pane$yrange[1],svg=svg) - bottom.offset
+  is.right = label.df$x == pane$xrange[[2]]
+  
   
   rp$x = pmax(rp$x,x.min)
   rp$y = pmin(rp$y,y.min)
   
+  rp$x[is.right] = pane$width-3
   #label.xy = domain.to.range(x=label.df$x,y=label.df$y)
   
+  anchor = ifelse(is.right,"end","middle")
   for (r in seq_len(NROW(label.df))) {
     ind = label.df$ind[r]
-    svg_boxed_label(svg,x=rp$x[r],y=rp$y[r], text=labels[ind],id=paste0("geomlabel_",geoms[[ind]]$name), level=100,to.range = FALSE)
+    svg_boxed_label(svg,x=rp$x[r],y=rp$y[r], text=labels[ind],id=paste0("geomlabel_",geoms[[ind]]$name), level=100,to.range = FALSE, "text-anchor"=anchor[r])
   }
 
   
