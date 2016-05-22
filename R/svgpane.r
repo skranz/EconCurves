@@ -53,7 +53,7 @@ pane:
 #' Plot a pane
 pane.svg = function(pane, id=NULL, show = pane$show, hide=pane$hide, xrange=pane$xrange, yrange=pane$yrange, show.grid=!TRUE,  xlab= if (is.null(pane$xlab)) pane$xvar else pane$xlab,
   ylab= if (is.null(pane$ylab)) pane$yvar else pane$ylab,
-compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1, roles=NULL, css=default_svgpane_css(), show_ticks = first.non.null(pane$show_ticks,TRUE), show_tick_labels=first.non.null(pane$show_tick_labels,show_ticks, TRUE),width=first.non.null(pane$width,pane$org.width,480), height=first.non.null(pane$height,pane$org.height,320), margins=pane$margins,...
+compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=first.non.null(pane$data_rows,1), roles=NULL, css=default_svgpane_css(), show_ticks = first.non.null(pane$show_ticks,TRUE), show_tick_labels=first.non.null(pane$show_tick_labels,show_ticks, TRUE),width=first.non.null(pane$width,pane$org.width,480), height=first.non.null(pane$height,pane$org.height,320), margins=pane$margins,...
   ) {
   restore.point("pane.svg")
 
@@ -75,10 +75,12 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1, roles=NUL
   
   missing.cols = check.for.missing.data.cols(pane,pane$data, show=show)
 
-  if (compute.geoms)
+  if (compute.geoms) {
     compute.pane.geoms(pane=pane,data_rows=data_rows)
-  
-  svg = new_svg(id=id,width=width, height=height, xlim=xrange, ylim=yrange,css=css, margins=margins,...) %>%
+    xrange = pane$xrange
+    yrange = pane$yrange
+  }
+  svg = new_svg(id=id,width=width, height=height, xlim=pane$xrange, ylim=pane$yrange,css=css, margins=margins,...) %>%
     svg_xaxis(label=pane$xlab, show.ticks = pane$show_ticks, show.tick.labels = pane$show_tick_labels) %>%
     svg_yaxis(label=pane$ylab, show.ticks = pane$show_ticks, show.tick.labels = pane$show_tick_labels)
   
@@ -88,6 +90,7 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1, roles=NUL
     show = names(pane$objs)
   }
   role.inds = NULL
+  label.postfix = NULL
   for (i in seq_along(data_rows)) {
     row = data_rows[i]
     if (is.list(show)) {
@@ -101,7 +104,7 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1, roles=NUL
       cur.show = setdiff(cur.show, hide)  
     }
     cur.geoms = pane$geoms.li[[row]][cur.show]   
-
+    label.postfix = c(label.postfix,rep(row,length(cur.geoms)))
     geoms = c(geoms, cur.geoms)
     role.inds = c(role.inds, rep(i,length(cur.geoms)))
   }
@@ -115,7 +118,7 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1, roles=NUL
     draw.svg.geom(svg,geoms[[i]], role=roles[[role.inds[i]]])
   }
 
-  place.svg.pane.labels(svg,geoms=geoms, pane=pane)
+  place.svg.pane.labels(svg,geoms=geoms, pane=pane, label.postfix=label.postfix)
 
   if (!is.null(pane$title)) {
     x.tit = domain.to.range(x=mean(pane$xrange),svg=svg)
@@ -129,29 +132,34 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1, roles=NUL
   invisible(list(svg=svg,html=svg_string(svg)))
 }
 
-place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=10, label.df = NULL) {
+place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=10, label.df = NULL, label.postfix) {
   restore.point("place.svg.pane.labels")
   
-  labels = sapply(geoms, function(geom) geom.label(geom=geom, for.svg = TRUE))
+  labels = sapply(seq_along(geoms), function(i) {
+    geom = geoms[[i]]
+    geom.label(geom=geom,label.replace = c(geom$values, list(".id"=label.postfix[[i]])))
+  })
   if (is.null(label.df))
-    label.df = find.label.pos(geoms,yrange=pane$yrange)
+    label.df = find.label.pos(geoms,xrange=pane$xrange, yrange=pane$yrange)
   
   rp = domain.to.range(x=label.df$x,y=label.df$y, svg=svg)
   x.min = domain.to.range(x=pane$xrange[1],svg=svg) + left.offset
   y.min = domain.to.range(y=pane$yrange[1],svg=svg) - bottom.offset
   is.right = label.df$x == pane$xrange[[2]]
+  is.left = label.df$x == pane$xrange[[1]]
   
   
-  rp$x = pmax(rp$x,x.min)
-  rp$y = pmin(rp$y,y.min)
+  #rp$x = pmax(rp$x,x.min)
+  #rp$y = pmin(rp$y,y.min)
   
   rp$x[is.right] = pane$width-3
   #label.xy = domain.to.range(x=label.df$x,y=label.df$y)
   
-  anchor = ifelse(is.right,"end","middle")
+  anchor = ifelse(is.right,"end",ifelse(is.left,"start", "middle"))
+  
   for (r in seq_len(NROW(label.df))) {
     ind = label.df$ind[r]
-    svg_boxed_label(svg,x=rp$x[r],y=rp$y[r], text=labels[ind],id=paste0("geomlabel_",geoms[[ind]]$name), level=100,to.range = FALSE, "text-anchor"=anchor[r])
+    svg_boxed_label(svg,x=rp$x[r],y=rp$y[r], text=labels[ind],id=paste0("geomlabel_",geoms[[ind]]$name,"_",ind), level=100,to.range = FALSE, "text-anchor"=anchor[r], tooltip = geoms[[ind]]$tooltip)
   }
 
   
@@ -161,6 +169,7 @@ draw.svg.geom = function(svg,geom, role,...) {
   restore.point("draw.svg.geom")
   
   geom$color = geom.color(geom=geom, role=role)
+  geom$tooltip = replace.latex.with.unicode(replace.whiskers(geom$obj$tooltip, geom$values))
   if (geom$type=="curve") {
     draw.svg.curve(svg,geom, role=role)
   } else if (geom$type=="marker") {
@@ -172,12 +181,12 @@ draw.svg.geom = function(svg,geom, role,...) {
 draw.svg.curve = function(svg,geom, role=NULL, level=10) {
   restore.point("draw.svg.curve")
   
-  svg_polyline(svg, x=geom$x,y=geom$y, stroke=geom$color, level=level, tooltip=geom$obj$tooltip,class = "curve")
+  svg_polyline(svg, x=geom$x,y=geom$y, stroke=geom$color, level=level, tooltip=geom$tooltip,class = "curve")
 }
 draw.svg.marker = function(svg, geom, role=NULL, level=2) {
   restore.point("draw.svg.marker")
   
-  svg_polyline(svg, x=geom$x,y=geom$y, stroke=geom$color, level=level,tooltip=geom$obj$tooltip, extra.args = list("stroke-dasharray"=geom$obj$dashed), class="marker_line")
+  svg_polyline(svg, x=geom$x,y=geom$y, stroke=geom$color, level=level,tooltip=geom$tooltip, extra.args = list("stroke-dasharray"=geom$obj$dashed), class="marker_line")
 }
 
 default.role = function(ind,row) {

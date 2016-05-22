@@ -17,15 +17,25 @@ get.endpoints = function(geoms) {
   as_data_frame(bind_rows(li))
 }
 
-find.label.pos = function(geoms, yrange,yshift=diff(yrange)*0.05, do.shuffle=FALSE) {
+find.label.pos = function(geoms,xrange, yrange, yshift=diff(yrange)*0.05, do.shuffle=FALSE) {
   restore.point("find.label.pos")  
 
   inds = seq_along(geoms)
 
   ep.df = get.endpoints(geoms)
   ep.df$remain = TRUE
+  ep.df = mutate(ep.df,
+    right = x == xrange[2],
+    left = x == xrange[1],
+    top = y == yrange[1],
+    bottom = y == yrange[2],
+    outer = right | left | top | bottom
+  )
+  ep.df = mutate(group_by(ep.df, ind),
+    del = any(outer) & !outer
+  )
+  ep.df = ep.df[!ep.df$del,]
 
-  
   # For a single geom pick the last point
   if (length(inds)==1) {
     ep.df$remain = FALSE

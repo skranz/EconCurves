@@ -19,6 +19,10 @@ latex.to.textspan = function(str) {
       '</tspan>'
     )
   }
+  # put whiskers back
+  txt = gsub("jJj","{{",txt, fixed=TRUE)
+  txt = gsub("hHh","}}",txt, fixed=TRUE)
+  
   txt
 }
 
@@ -27,12 +31,18 @@ find.subscripts = function(str) {
   
   
   # remove curley braces
-  str = gsub("{","",str, fixed=TRUE)
+  str = gsub("{{","jJj",str, fixed=TRUE)
+  str = gsub("}}","hHh",str, fixed=TRUE)
+
+  
+    str = gsub("{","",str, fixed=TRUE)
   str = gsub("}"," ",str, fixed=TRUE)
   str = gsub("  "," ",str, fixed=TRUE)
   
+  
+  
   # find subscripts
-  pos = str.find(str,'_[0-9a-zA-Z_]+',fixed=FALSE)
+  pos = str.find(str,'_[0-9a-zA-Z_|.=]+',fixed=FALSE)
   if (NROW(pos)==0) {
     return(list(s=str,is.sub=FALSE))
   }
@@ -45,7 +55,9 @@ find.subscripts = function(str) {
     is.sub = rep(c(FALSE,TRUE),length.out=length(spl))
   }
   spl[is.sub] = substring(spl[is.sub],2)
+
   
+    
   list(s=spl, is.sub=is.sub)
 
 }
@@ -56,7 +68,7 @@ replace.latex.with.unicode = function(str) {
   
 uc = c( "\U3B1","\U3B2","\U3B3","\U3B4","\U3B5","\U3B6","\U3B7","\U3B8","\U3B9","\U3BA","\U3BB","\U3BC","\U3BD","\U3BE","\U3C0","\U3C1","\U3C2","\U3C3","\U3C4","\U3C5","\U3C6","\U3C7","\U3C8","\U3C9","\U393","\U394","\U398","\U39B","\U39E","\U3A0","\U3A3","\U3A5","\U3A6","\U3A8","\U3A9","\U00AC","\U00B1","\U00B7","\U2192","\U21D2","\U21D4","\U2200","\U2202","\U2203","\U2205","\U2207","\U2208","\U2209","\U220F","\U2211","\U221A","\U221E","\U2227","\U2228","\U2229","\U222A","\U222B","\U2248","\U2260","\U2261","\U2264","\U2265","\U2282","\U2283","\U00B0","\U00D7","\U230A","\U230B","\U2308","\U2309" )
   
-  pos = str.find(str,'\\\\[0-9a-zA-Z_]+',fixed=FALSE)
+  pos = str.find(str,'\\\\[0-9a-zA-Z]+',fixed=FALSE)
   spl = str.split.at.pos(str,pos,keep.pos = TRUE)  
   ind = match(spl, latex)
   rows = !is.na(ind)

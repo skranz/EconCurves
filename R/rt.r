@@ -8,10 +8,11 @@ rtutor.addon.pane = function() {
     change.task.env = FALSE,
     is.task = FALSE,
     is.static = TRUE,
-    parse.fun = function(inner.txt,type="pane",name=args$name,id=paste0("addon__",type,"__",name),args=NULL, bdf=NULL, task.ind=NULL,...) {
+    parse.fun = function(inner.txt,type="pane",name=args$name,id=paste0("addon__",type,"__",name),args=NULL, bdf=NULL, task.ind=NULL,ps = get.ps(),...) {
       restore.point("pane.parse.fun")
       
       pane = init.yaml.pane(yaml=merge.lines(inner.txt), direct=TRUE, name=name)
+      make.pane.data(pane=pane, dataenv=ps$pre.env)
       pane
   }
   )
@@ -33,8 +34,8 @@ rtutor.addon.plotpane = function() {
       if (is.null(arg.li$pane)) arg.li$pane = name
       
       
-      pane = get.pane.from.ps(pane = arg.li$pane, ps = ps,arg.li=arg.li)
-      
+      pane = get.pane.from.ps(pane = arg.li$pane, ps = ps,arg.li=arg.li, shallow.copy = TRUE)
+
       if (!is.null(arg.li$zoom)) {
         pane$width = round(pane$org.width*arg.li$zoom)
         pane$height = round(pane$org.height*arg.li$zoom)
@@ -53,7 +54,7 @@ rtutor.addon.plotpane = function() {
   )
 }
 
-get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL) {
+get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL, shallow.copy=TRUE) {
   restore.point("get.pane.from.ps")
   if (is.character(pane)) {
     pane.name = pane
@@ -63,11 +64,13 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL) {
     }
     pane = bdf$obj[[row]]$ao
     pane$pane.name = pane.name
+    if (shallow.copy)
+      pane = as.environment(as.list(pane))
   } else {
     pane = init.yaml.pane(pane=arg.li$pane)        
   }
-  if (is.null(pane$width.in)) pane$width.in = 5
-  if (is.null(pane$height.in)) pane$height.in = 4
+  #if (is.null(pane$width.in)) pane$width.in = 5
+  #if (is.null(pane$height.in)) pane$height.in = 4
   cols = setdiff(names(arg.li),c("name","pane","height.in","width.in","params"))
   for (col in cols) {
     pane[[col]] = arg.li[[col]]
@@ -75,7 +78,7 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL) {
   if (is.null(pane$params)) pane$params = list()
   pane$params[names(arg.li$params)] = arg.li$params
   if (any(c("params","datavar") %in% names(arg.li)) | isTRUE(pane$use.dataenv) ) {
-    pane$dataenv = ps$preenv
+    pane$dataenv = ps$pre.env
     make.pane.data(pane=pane) 
   }
       

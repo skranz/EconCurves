@@ -111,7 +111,7 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1
   draw.geoms(geoms,lwd.factor=lwd.factor)
   
   if (is.null(label.df))
-    label.df = find.label.pos(geoms,yrange=pane$yrange)
+    label.df = find.label.pos(geoms,xrange = pane$xrange, yrange=pane$yrange)
 
   boxed.labels(x = label.df$x,y = label.df$y,labels = label.df$label,cex=label.cex,bg="white",border=FALSE,xpad=1.1,ypad=1.1)
 
@@ -133,6 +133,13 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1
 compute.pane.geoms = function(pane, data_rows = 1, objs = pane$objs, overwrite = TRUE) {
   restore.point("computer.pane.geoms")
 
+  if (isTRUE(pane$data_xrange))
+    pane$xrange = compute.pane.range.from.data(pane=pane,ax="x", data_rows=data_rows)
+
+  if (isTRUE(pane$data_yrange))
+    pane$yrange = compute.pane.range.from.data(pane,"y", data_rows)
+
+    
   for (i in seq_along(data_rows)) {
     r = data_rows[[i]]
     if (!overwrite) {
@@ -142,6 +149,33 @@ compute.pane.geoms = function(pane, data_rows = 1, objs = pane$objs, overwrite =
     
     pane$geoms.li[[i]] = objects.to.geoms(objs=objs, values=values, pane=pane)
   }
+}
+
+compute.pane.range.from.data = function(pane, ax="x", data_rows) {
+  restore.point("compute.pane.range.from.data")
+  data = pane$data
+
+  vars = names(data)
+    
+  var = pane[[paste0(ax,"var")]]
+  minvar = paste0(var,"_min")
+  maxvar = paste0(var,"_max")
+  addrange = pane[[paste0("add_",ax,"range")]]
+  if (!minvar %in% vars) {
+    stop(paste0("The pane ", pane$name, " has not specified the ",ax,"range and neither does its data contain the variable ", minvar, ", which could be used to compute the range."))
+  }
+  if (!maxvar %in% vars) {
+    stop(paste0("The pane ", pane$name, " has not specified the ",ax,"range and neither does its data contain the variable ", maxvar, ", which could be used to compute the range."))
+  }
+  
+  
+  start = min(data[[minvar]][data_rows])
+  end = max(data[[maxvar]][data_rows])
+  start = start - (end-start)*addrange[1]
+  end =  end + (end-start)*addrange[2]
+  
+  c(start,end)
+  
 }
 
 does.geom.change.with.data.row = function(data_rows,obj=geom$obj, data=pane$data, pane=NULL, geom=NULL) {
@@ -166,23 +200,6 @@ do.geoms.differ.across.rows = function(pane, data_rows, objs=pane$objs) {
   
 }
 
-compute.geoms.label = function(pane, data_rows) {
-  
-  
-geom.label = function(label=obj$label,label.prefix="", label.postfix="", label.replace=NULL, geom=NULL, name=geom$name, obj=geom$obj) {
-  restore.point("geom.label")
-  
-  if (is.null(label)) {
-    label = name
-  } else {
-    if (!is.null(label.replace)) 
-      label = replace.whiskers(label , label.replace)
-    label = paste0(label.prefix,label,label.postfix)
-  }
-  label
-}
-
-}
 
 #' Compute concrete geoms for all objects of a pane
 #' 
@@ -233,12 +250,16 @@ init.pane.markers = function(pane) {
 pane = function(...) as.environment(init.pane(...))
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xlab=NULL, ylab=NULL,  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, dataenv = NULL, datavar=NULL, use_dataenv = TRUE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20)) {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xlab=NULL, ylab=NULL,  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0.1, 0.1) )  {
   restore.point("init.pane")
 
   pane = as.list(pane)
-  pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms.li, xlab, ylab, params, datavar, use_dataenv, data_roles, show, hide,xlen,ylen))
+  pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms.li, xlab, ylab, params, datavar, use_dataenv_directly, data_roles, show, hide,xlen,ylen, add_xrange, add_yrange, data_xrange, data_yrange))
 
+  if (is.na(pane$data_xrange)) pane$data_xrange = is.null(pane$xrange)
+  if (is.na(pane$data_yrange)) pane$data_yrange = is.null(pane$yrange)
+  
+  
   pane = as.environment(pane)
 
   if (is.null(pane[["name"]]))
@@ -272,16 +293,17 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
     make.pane.model(pane)
   }
   
-  pane$data = make.pane.data(pane=pane)
   pane$org.width = org.width
   pane$org.height = org.height
   pane$margins = margins
-  
+
+  if (init.data)  
+    pane$data = make.pane.data(pane=pane, dataenv=dataenv)
   pane
 }
 
 #' Initialize a pane specified with yaml code
-init.yaml.pane = function(yaml=NULL, pane=NULL,name=NULL, direct=FALSE) {
+init.yaml.pane = function(yaml=NULL, pane=NULL,name=NULL, direct=FALSE, init.data=FALSE) {
   restore.point("init.yaml.pane")
 
   if (is.null(pane)) {
@@ -299,7 +321,7 @@ init.yaml.pane = function(yaml=NULL, pane=NULL,name=NULL, direct=FALSE) {
   pane$xrange = unlist(pane$xrange)
   pane$yrange = unlist(pane$yrange)
 
-  pane = init.pane(pane=pane)
+  pane = init.pane(pane=pane, dataenv = parent.frame())
 
   pane
 }
@@ -320,7 +342,7 @@ has.pane.all.symbols = function(pane, symbols) {
 }
 
 
-make.pane.data = function(pane=NULL,params=pane$params, priority_params = pane$priority_params, data=pane$data, datavar = pane$datavar, dataenv = pane$dataenv, use_dataenv = pane$use_dataenv, parnames = pane$parnames, warn.missing.param, compute.model=TRUE) {
+make.pane.data = function(pane=NULL,params=pane$params, priority_params = pane$priority_params, data=pane$data, datavar = pane$datavar, dataenv = pane$dataenv, use_dataenv_directly = pane$use_dataenv_directly, parnames = pane$parnames, warn.missing.param, compute.model=TRUE) {
   restore.point("make.pane.data")
   
   # fetch datavar from dataenv
@@ -334,7 +356,7 @@ make.pane.data = function(pane=NULL,params=pane$params, priority_params = pane$p
   data[cols] = params[cols]
   
   # copy values from dataenv into data
-  if (isTRUE(use_dataenv) & (!is.null(dataenv))) {
+  if (isTRUE(use_dataenv_directly) & (!is.null(dataenv))) {
     cols = setdiff(ls(dataenv),names(data))
     for (col in cols) {
       data[[col]] = dataenv[[col]]
@@ -345,7 +367,7 @@ make.pane.data = function(pane=NULL,params=pane$params, priority_params = pane$p
   cols = names(priority_params)
   data[cols] = priority_params
   
-  data = as.data.frame(data)
+  data = as.data.frame(data,stringsAsFactors = FALSE)
   
   if (isTRUE(pane$has.model) & compute.model & NROW(data)>0) {
     var.mat = pane$em$sim.fun(data)

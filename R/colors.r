@@ -56,30 +56,23 @@ examples.hue.palette = function() {
   show.colors(c(greens,cyans, blues, lilas, purples, reds, oranges, yellows),n)
 }
 
-color.table = function() {
-#   n = 2
-#   yellows = c(hue.palette(n, h=1/8)[2],"yellow")
-#   purples = rev(hue.palette(n, h=11/12))
-#   cyans = c(hsv(h=1/2,s=0.25,v=1),hsv(h=1/2,s=1,v=0.7))
-#   browns = c("orange3",rev(hue.palette(n, h=1/16))[2])
-#   
-#   colors = c(brewer.pal(n=12, "Paired")[1:10],
-#     yellows, browns, purples, cyans)
-#   
-#   cat(paste0('"',colors,'"', collapse=","))
-  colors = c("#999999","#111111", "#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FF9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#FFDF80FF","yellow","orange3","#B34300FF","#FF80BFFF","#B30059FF","#BFFFFF","#00B3B3")
-  
-  #show.colors(colors,2)
-  
-  df = data.frame(
-    color=colors,
-    base = c("black","black", "blue","blue","green","green","red","red",
-      "orange","orange","lila","lila","yellow","yellow",
-      "brown","brown","purple","purple","cyan","cyan"),
-    level = c(2,1),
-    stringsAsFactors=FALSE
+color.pals = function() {
+  list(
+    black = c("#111111","#999999"),
+    grey = c("#111111","#999999"),
+    #blue = c("blue","#1F78B4", "#A6CEE3"),
+    blue = c("blue","#6688ff", "#A6CEE3"),
+    #green = c("green","#33A02C", "#B2DF8A"),
+    green = c("green", "#00dd00","#77ff77", "#B2DF8A"),
+    #red = c ("red","#E31A1C", "#FF9A99"),
+    red = c("#ff0000","#ff7777", "#FF9A99"),
+    orange = c("#FF7F00","#FDBF6F"),
+    lila = c("#6A3D9A","#AA92B6"),
+    yellow = c("yellow","#FFDF80"),
+    brown = c("brown","#B3430F"),
+    purple = c("#B30059","#FF80BF"),
+    cyan = c("#00A3A3","#8FCCCC")
   )
-  df
 }
 
 curve.color = function(base="blue",level=1,color=NULL) {
@@ -92,20 +85,12 @@ curve.color = function(base="blue",level=1,color=NULL) {
     return("black")
   library(RColorBrewer)
   
-  color.table = color.table()
+  pal = color.pals()  
+  if (!base %in% names(pal)) base = "grey"
   
-  
-  if (base=="grey") {
-    return(grey(0.5))
-  }
-  
-  sel.df = data_frame(base=base, level=level)
-  df = left_join(sel.df, color.table, by=c("base","level"))
-  
-  df$color[is.na(df$color)] = "black"
-  df$color[df$level>2] = grey(0.8)
-  
-  df$color
+  li = pal[[base]]
+  if (level > length(li)) return(grey(0.8))
+  li[level]
 } 
 
 show.colors = function(colors, colCount=ceiling(sqrt(length(colors)))) {

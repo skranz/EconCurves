@@ -275,7 +275,7 @@ svg_axis = function(svg,...) {
 }
 
 svg_xaxis = function(svg, id="xaxis", label=NULL,
-  align="default", dr=svg$dr, return.string=FALSE, level=100, num.ticks=5, ticks =pretty(dr$domain$x, n=num.ticks), tick.size = 10, arrow=!show.ticks, show.ticks = TRUE, show.tick.labels=show.ticks,
+  align="default", dr=svg$dr, return.string=FALSE, level=100, num.ticks=5, ticks =pretty.ticks(dr$domain$x, n=num.ticks), tick.size = 10, arrow=!show.ticks, show.ticks = TRUE, show.tick.labels=show.ticks,
   class.group= "axis x-axis",  class.line="axis-main", class.tick="axis-tick",class.tick.label="axis-ticklabel", class.label="axis-label",
   style.line=NULL, style.tick=NULL,style.tick.label=NULL, style.label=NULL, axis.offset=if (show.ticks) 10 else 0, axis.label.offset=if (show.ticks) 30 else 8) {
   restore.point("svg_xaxis")
@@ -329,7 +329,7 @@ svg_xaxis = function(svg, id="xaxis", label=NULL,
 
 
 svg_yaxis = function(svg, id="yaxis", label=NULL,
-  align="default", dr=svg$dr, return.string=FALSE, level=100, num.ticks=5, ticks =pretty(dr$domain$y, n=num.ticks), tick.size = 10, arrow=!show.ticks, show.ticks = TRUE, show.tick.labels=show.ticks,
+  align="default", dr=svg$dr, return.string=FALSE, level=100, num.ticks=5, ticks =pretty.ticks(dr$domain$y, n=num.ticks), tick.size = 10, arrow=!show.ticks, show.ticks = TRUE, show.tick.labels=show.ticks,
   axis.offset = if (show.ticks) 10 else 0, axis.label.offset=20,
   class.group= "axis y-axis",  class.line="axis-main", class.tick="axis-tick",class.tick.label="axis-ticklabel", class.label="axis-label",
   style.line=NULL, style.tick=NULL,style.tick.label=NULL, style.label=NULL  ) {
@@ -386,6 +386,14 @@ svg_yaxis = function(svg, id="yaxis", label=NULL,
 }
 
 
+
+pretty.ticks = function(x,n=5,max.rel.out = 0.01,...) {
+  ticks = pretty(x,n,...)
+  # remove ticks that are too far outside the range
+  tol = (max(x)-min(x))*max.rel.out
+  ticks = ticks[ticks >= min(x)-tol & ticks<=max(x)+tol]
+  ticks
+}
 svg_def_arrow_head =  function(svg,id="arrow_head", class="arrow_head") {
   svg_add_def(svg=svg,id=id,
     paste0('

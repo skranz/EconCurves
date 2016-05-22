@@ -45,21 +45,18 @@ object.to.geom = function(obj,pane,values=pane$values) {
   geom
 }
 
-geom.label = function(geom=NULL,role=NULL, label.replace=NULL, for.svg=TRUE,label.postfix="", label.prefix="") {
+geom.label = function(geom=NULL,role=NULL, label.replace=NULL) {
   restore.point("geom.label")
   
-  if (for.svg) {
-    label = geom$obj$svg_label
-  } else {
-    label = geom$obj$label
-  }
+  #if (geom$obj$name == "pc") stop()
+  obj = geom$obj
+  label = obj$svg_label
 
-  if (is.null(label)) {
-    label = name
-  } else {
-    if (!is.null(label.replace)) 
-      label = replace.whiskers(label , label.replace)
-    label = paste0(label.prefix,label,label.postfix)
+  if (isTRUE(obj$label.has.whiskers)) {
+    label = replace.whiskers(label , label.replace)
+    if (!is.null(obj$latex)) {
+      label = latex.to.textspan(label)
+    }
   }
   label
 }

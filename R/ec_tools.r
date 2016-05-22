@@ -1,3 +1,36 @@
+compute_frame = function(..., parent.env = parent.frame()) {
+  ali = eval(substitute(alist(...)))
+  restore.point("compute_frame")
+  
+  fun.env = new.env(parent=parent.env)
+  ..env = new.env(parent=fun.env)
+  
+  i = 1
+  fun = function(...) {}  
+  environment(fun) = ..env
+  
+  for (i in seq_along(ali)) {
+    rhs = ali[[i]] 
+    name = names(ali)[i]
+    call = substitute(val <- rhs, list(val= as.name(name), rhs=rhs))
+    try(eval(call, ..env))
+
+    body = substitute({
+      ..vli = list(...)
+      cat("\n\n",name,"\n args = \n ")
+      print(..vli)
+      cat("\nresult = ", deparse(rhs)," = \n" )
+      print(eval(quote(rhs),envir = ..vli))
+      
+      eval(quote(rhs),envir = ..vli)
+    }, list(rhs=rhs,name=name))
+    body(fun) <- body
+    fun.env[[name]] = fun
+  }
+  li = as.list(..env)[names(ali)]
+  do.call(data_frame,li)
+}
+
 is.false = function(val) {
   if (length(val)==0)
     return(FALSE)
@@ -27,6 +60,7 @@ copy.into.null.fields = function(dest, source) {
 replace.whiskers = function(str, env=parent.frame()) {
   restore.point("replace.whiskers")
   
+  if (is.null(str)) return(str)
   pos = str.blocks.pos(str,"{{","}}")
   if (NROW(pos$outer)==0) return(str)
   s = substring(str, pos$inner[,1],pos$inner[,2])

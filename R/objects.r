@@ -1,12 +1,12 @@
 init.object.extras = function(obj) {
-  if (!is.null(obj$latex)) {
-    obj$svg_label = latex.to.textspan(obj$latex)
-  } else if (!is.null(obj$label)) {
-    obj$svg_label = obj$label
+  restore.point("init.object.extras")
+  
+  lab = first.non.null(obj$latex, obj$label, obj$name)
+  obj$label.has.whiskers = grepl("{{",lab, fixed=TRUE)
+  if (!is.null(obj$latex) & !obj$label.has.whiskers) {
+    obj$svg_label = latex.to.textspan(lab)
   } else {
-    obj$label = obj$name
-  }
-  
-  
+    obj$svg_label = lab
+  }  
   obj
 }
