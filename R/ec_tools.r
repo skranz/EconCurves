@@ -1,3 +1,27 @@
+copy.into.nested.list = function(given, new, return.null.new=FALSE) {
+  restore.point("copy.into.nested.list")
+  
+  if (length(new)==0) {
+    if(return.null.new) return(new) 
+    return(given)
+  }
+  names = names(new)
+  if (is.null(names)) return(new)
+  if (is.list(given)) {
+    is.li = sapply(given[names], is.list)
+    given[names[!is.li]] = new[!is.li]
+  } else {
+    is.li = sapply(names, function(name) is.list(given[[name]]))
+    for (name in names[!is.li]) {
+      given[[name]] = new[[name]]  
+    }
+  }
+  for (name in names[is.li]) {
+    given[[name]] = copy.into.nested.list(given[[name]],new[[name]], return.null.new=TRUE)
+  }
+  given
+}
+
 compute_frame = function(..., parent.env = parent.frame()) {
   ali = eval(substitute(alist(...)))
   restore.point("compute_frame")
@@ -17,10 +41,10 @@ compute_frame = function(..., parent.env = parent.frame()) {
 
     body = substitute({
       ..vli = list(...)
-      cat("\n\n",name,"\n args = \n ")
-      print(..vli)
-      cat("\nresult = ", deparse(rhs)," = \n" )
-      print(eval(quote(rhs),envir = ..vli))
+      #cat("\n\n",name,"\n args = \n ")
+      #print(..vli)
+      #cat("\nresult = ", deparse(rhs)," = \n" )
+      #print(eval(quote(rhs),envir = ..vli))
       
       eval(quote(rhs),envir = ..vli)
     }, list(rhs=rhs,name=name))

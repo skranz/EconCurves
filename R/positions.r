@@ -199,7 +199,7 @@ point.to.geom.dist = function(xy, geom, axis="xy",normalize=TRUE, xrange=geom$xr
 }
 
 
-is.point.on.geom = function(xy, geom, on.tol=0.01,...) {
+is.point.on.geom = function(xy, geom, on.tol=0.03,...) {
   restore.point("is.point.on.geom")
   dist = point.to.geom.dist(xy,geom, normalize=TRUE)
   if (length(dist)==0) return(FALSE)

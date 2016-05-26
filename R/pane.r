@@ -147,7 +147,7 @@ compute.pane.geoms = function(pane, data_rows = 1, objs = pane$objs, overwrite =
     }
     values = c(as.list(pane$data[r,]), list(.row=r, .role=names(data_rows[i])))
     
-    pane$geoms.li[[i]] = objects.to.geoms(objs=objs, values=values, pane=pane)
+    pane$geoms.li[[i]] = objects.to.geoms(objs=objs, values=values, pane=pane, data_row=r)
   }
 }
 
@@ -250,12 +250,23 @@ init.pane.markers = function(pane) {
 pane = function(...) as.environment(init.pane(...))
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xlab=NULL, ylab=NULL,  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0.1, 0.1) )  {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xaxis=list(), yaxis=list(),  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0.1, 0.1) )  {
   restore.point("init.pane")
 
   pane = as.list(pane)
-  pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms.li, xlab, ylab, params, datavar, use_dataenv_directly, data_roles, show, hide,xlen,ylen, add_xrange, add_yrange, data_xrange, data_yrange))
+  pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms.li, xaxis, yaxis, params, datavar, use_dataenv_directly, data_roles, show, hide,xlen,ylen, add_xrange, add_yrange, data_xrange, data_yrange))
 
+  if (is.null(pane$xaxis)) pane$xaxis = list()
+  if (is.null(pane$yaxis)) pane$yaxis = list()
+  
+  pane$xaxis = copy.into.null.fields(dest=pane$xaxis, source=list(show.ticks=first.non.null(pane$show.ticks,TRUE),label=pane$xlab))
+  
+  pane$yaxis = copy.into.null.fields(dest=pane$yaxis, source=list(show.ticks=first.non.null(pane$show.ticks,TRUE),label=pane$ylab))
+ 
+  pane$xaxis = copy.into.null.fields(dest=pane$xaxis, source=list(show.tick.labels=first.non.null(pane$show.tick.labels,pane$xaxis$show.ticks)))
+ 
+  pane$yaxis = copy.into.null.fields(dest=pane$yaxis, source=list(show.tick.labels=first.non.null(pane$show.tick.labels,pane$yaxis$show.ticks)))
+  
   if (is.na(pane$data_xrange)) pane$data_xrange = is.null(pane$xrange)
   if (is.na(pane$data_yrange)) pane$data_yrange = is.null(pane$yrange)
   

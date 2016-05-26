@@ -66,7 +66,7 @@ svg_from_plot = function(call, width=500, height=400, envir=parent.frame(), bg="
 }
 
 
-new_svg = function(width=500, height=400, xlim=c(0,1),ylim=xlim,id=NULL, css=default_svg_css(), margins=c(bottom=80,left=100, top=40, right=50)) {
+new_svg = function(width=500, height=400, xlim=c(0,1),ylim=xlim,id=NULL, css=default_svg_css(), margins=c(bottom=80,left=100, top=40, right=50), class="clickable_svg") {
   restore.point("svg")
 
   if (is.null(id))
@@ -74,7 +74,7 @@ new_svg = function(width=500, height=400, xlim=c(0,1),ylim=xlim,id=NULL, css=def
   svg = new.env()
   
   svg$id = id
-  svg$head = paste0("<svg width='",width,"' height='",height,"' id = '",id,"'>")
+  svg$head = paste0("<svg width='",width,"' height='",height,"' id = '",id,"' class='",class,"'>")
   svg$width = 500
   svg$height = height
   svg$dr = make.domain.range(xlim=xlim,ylim=ylim,width=width, height=height, margins=margins)
@@ -214,6 +214,22 @@ domain.to.range = function(x=NULL,y=NULL,domain=dr$domain, range=dr$range,dr=svg
   nlist(x,y)
 }
 
+
+range.to.domain = function(x=NULL,y=NULL,domain=dr$domain, range=dr$range,dr=svg$dr, svg=NULL) {
+  restore.point("range.to.domain")
+
+  if (!is.null(x))
+    x = ((x - range$x[1]) /(range$x[2]-range$x[1])) * (domain$x[2]-domain$x[1]) + domain$x[1]
+  if (!is.null(y))
+    y = ((y - range$y[1]) /(range$y[2]-range$y[1])) * (domain$y[2]-domain$y[1]) + domain$y[1]
+
+
+  if (is.null(y)) return(x)
+  if (is.null(x)) return(y)
+  nlist(x,y)
+}
+
+
 make_style_arg = function(style) {
   if (is.list(style)) {
     style = style[!sapply(style,is.null)]
@@ -252,7 +268,7 @@ html_arg_str = function(..., .quote='"') {
 }
 
 
-svg_polyline = function(svg, x,y,id=NULL, class="polyline",style=c(nlist(fill, stroke,stroke_width), extra.style), fill="none", stroke="black",stroke_width=NULL, extra.style=list(), level=0, tooltip=NULL, extra.args = list(),...) {
+svg_polyline = function(svg, x,y,id=NULL, class="polyline",style=c(nlist(fill, stroke,stroke_width), extra.style), fill="none", stroke="black",stroke_width=NULL, extra.style=list(), level=0, tooltip=NULL, extra.args = list(...),...) {
   restore.point("svg_polyline")
   rp = domain.to.range(x=x,y=y,svg=svg)
   points = paste0(rp$x,",",rp$y, collapse=" ")
@@ -274,10 +290,7 @@ svg_axis = function(svg,...) {
   svg_yaxis(svg,...)
 }
 
-svg_xaxis = function(svg, id="xaxis", label=NULL,
-  align="default", dr=svg$dr, return.string=FALSE, level=100, num.ticks=5, ticks =pretty.ticks(dr$domain$x, n=num.ticks), tick.size = 10, arrow=!show.ticks, show.ticks = TRUE, show.tick.labels=show.ticks,
-  class.group= "axis x-axis",  class.line="axis-main", class.tick="axis-tick",class.tick.label="axis-ticklabel", class.label="axis-label",
-  style.line=NULL, style.tick=NULL,style.tick.label=NULL, style.label=NULL, axis.offset=if (show.ticks) 10 else 0, axis.label.offset=if (show.ticks) 30 else 8) {
+svg_xaxis = function(svg, id="xaxis", label=NULL, latex = NULL,  align="default", dr=svg$dr, return.string=FALSE, level=100, num.ticks=5, ticks =pretty.ticks(dr$domain$x, n=num.ticks), tick.size = 10, arrow=!show.ticks, show.ticks = TRUE, show.tick.labels=show.ticks, class.group= "axis x-axis",  class.line="axis-main", class.tick="axis-tick",class.tick.label="axis-ticklabel", class.label="axis-label", style.line=NULL, style.tick=NULL,style.tick.label=NULL, style.label=NULL, axis.offset=if (show.ticks) 10 else 0, axis.label.offset=if (show.ticks) 30 else 8,...) {
   restore.point("svg_xaxis")
   x.ax = dr$range$x
   if (align=="default" || align == "bottom") {
@@ -315,6 +328,9 @@ svg_xaxis = function(svg, id="xaxis", label=NULL,
     ti.lab = ""
   }
 
+  if (!is.null(latex)) {
+    label = latex.to.textspan(latex)
+  }
   if (!is.null(label)) {
     y.lab =  y2.tick+axis.label.offset
     x.lab = x.ax[2]+arrow*10
@@ -328,11 +344,11 @@ svg_xaxis = function(svg, id="xaxis", label=NULL,
 }
 
 
-svg_yaxis = function(svg, id="yaxis", label=NULL,
+svg_yaxis = function(svg, id="yaxis", label=NULL,latex = NULL,
   align="default", dr=svg$dr, return.string=FALSE, level=100, num.ticks=5, ticks =pretty.ticks(dr$domain$y, n=num.ticks), tick.size = 10, arrow=!show.ticks, show.ticks = TRUE, show.tick.labels=show.ticks,
   axis.offset = if (show.ticks) 10 else 0, axis.label.offset=20,
   class.group= "axis y-axis",  class.line="axis-main", class.tick="axis-tick",class.tick.label="axis-ticklabel", class.label="axis-label",
-  style.line=NULL, style.tick=NULL,style.tick.label=NULL, style.label=NULL  ) {
+  style.line=NULL, style.tick=NULL,style.tick.label=NULL, style.label=NULL,...  ) {
   restore.point("svg_yaxis")
 
   y.ax = dr$range$y
@@ -372,7 +388,9 @@ svg_yaxis = function(svg, id="yaxis", label=NULL,
     ti.lab = ""
   }
 
-
+  if (!is.null(latex)) {
+    label = latex.to.textspan(latex)
+  }
   if (!is.null(label)) {
     x.lab =  x1.tick
     y.lab = y.ax[2]-10-arrow*10

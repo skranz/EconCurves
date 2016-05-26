@@ -51,9 +51,8 @@ pane:
 
 
 #' Plot a pane
-pane.svg = function(pane, id=NULL, show = pane$show, hide=pane$hide, xrange=pane$xrange, yrange=pane$yrange, show.grid=!TRUE,  xlab= if (is.null(pane$xlab)) pane$xvar else pane$xlab,
-  ylab= if (is.null(pane$ylab)) pane$yvar else pane$ylab,
-compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=first.non.null(pane$data_rows,1), roles=NULL, css=default_svgpane_css(), show_ticks = first.non.null(pane$show_ticks,TRUE), show_tick_labels=first.non.null(pane$show_tick_labels,show_ticks, TRUE),width=first.non.null(pane$width,pane$org.width,480), height=first.non.null(pane$height,pane$org.height,320), margins=pane$margins,...
+pane.svg = function(pane, id=NULL, show = pane$show, hide=pane$hide, show.grid=!TRUE,
+compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), roles=NULL, css=default_svgpane_css(), width=first.non.null(pane$width,pane$org.width,480), height=first.non.null(pane$height,pane$org.height,320), margins=pane$margins,display=NULL,...
   ) {
   restore.point("pane.svg")
 
@@ -64,11 +63,6 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=first.non.nu
   }
   
   pane$data = data
-  pane$params = params
-  pane$yrange = yrange
-  pane$xrange = xrange
-  pane$show_ticks = show_ticks
-  pane$show_tick_labels = show_tick_labels
   pane$height = height
   pane$width = width
   
@@ -80,9 +74,12 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=first.non.nu
     xrange = pane$xrange
     yrange = pane$yrange
   }
-  svg = new_svg(id=id,width=width, height=height, xlim=pane$xrange, ylim=pane$yrange,css=css, margins=margins,...) %>%
-    svg_xaxis(label=pane$xlab, show.ticks = pane$show_ticks, show.tick.labels = pane$show_tick_labels) %>%
-    svg_yaxis(label=pane$ylab, show.ticks = pane$show_ticks, show.tick.labels = pane$show_tick_labels)
+  svg = new_svg(id=id,width=width, height=height, xlim=pane$xrange, ylim=pane$yrange,css=css, margins=margins,...)
+  
+  do.call(svg_xaxis, c(list(svg=svg), pane$xaxis))
+  do.call(svg_yaxis, c(list(svg=svg), pane$yaxis))
+  
+  restore.point("pane.svg2")
   
   geoms = NULL
   i = 1
@@ -115,10 +112,10 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=first.non.nu
   }
 
   for (i in seq_along(geoms)) {
-    draw.svg.geom(svg,geoms[[i]], role=roles[[role.inds[i]]])
+    draw.svg.geom(svg,geoms[[i]], role=roles[[role.inds[i]]], display=display)
   }
 
-  place.svg.pane.labels(svg,geoms=geoms, pane=pane, label.postfix=label.postfix)
+  place.svg.pane.labels(svg,geoms=geoms, pane=pane, label.postfix=label.postfix, display=display)
 
   if (!is.null(pane$title)) {
     x.tit = domain.to.range(x=mean(pane$xrange),svg=svg)
@@ -132,8 +129,10 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=first.non.nu
   invisible(list(svg=svg,html=svg_string(svg)))
 }
 
-place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=10, label.df = NULL, label.postfix) {
+place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=10, label.df = NULL, label.postfix, display=NULL) {
   restore.point("place.svg.pane.labels")
+  
+  if (is.null(display)) display = "yes"
   
   labels = sapply(seq_along(geoms), function(i) {
     geom = geoms[[i]]
@@ -157,36 +156,99 @@ place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=
   
   anchor = ifelse(is.right,"end",ifelse(is.left,"start", "middle"))
   
+  display.whisker = identical(display,"whisker")
   for (r in seq_len(NROW(label.df))) {
     ind = label.df$ind[r]
-    svg_boxed_label(svg,x=rp$x[r],y=rp$y[r], text=labels[ind],id=paste0("geomlabel_",geoms[[ind]]$name,"_",ind), level=100,to.range = FALSE, "text-anchor"=anchor[r], tooltip = geoms[[ind]]$tooltip)
+    
+    if (display.whisker)
+      display = paste0("{{display_",geoms[[ind]]$id,"}}")
+    
+    svg_boxed_label(svg,x=rp$x[r],y=rp$y[r], text=labels[ind],id=paste0("geomlabel_",geoms[[ind]]$id), level=100,to.range = FALSE, "text-anchor"=anchor[r], tooltip = geoms[[ind]]$tooltip, display=display)
   }
 
   
 }
 
-draw.svg.geom = function(svg,geom, role,...) {
+get.show.geoms.ids = function(pane, show) {
+  # hide and show genom
+  ids = unlist(lapply(seq_along(pane$data_rows), function(i) {
+    geoms = pane$geoms.li[[i]] 
+    obj.names = names(geoms)  
+    sapply(intersect(obj.names, show[[i]]), function(name) {
+      geoms[[name]]$id
+    })
+  }))
+
+  ids  
+}
+
+get.hide.geoms.ids = function(pane, show) {
+  # hide and show genom
+  ids = unlist(lapply(seq_along(pane$data_rows), function(i) {
+    geoms = pane$geoms.li[[i]] 
+    obj.names = names(geoms)  
+    sapply(setdiff(obj.names, show[[i]]), function(name) {
+      geoms[[name]]$id
+    })
+  }))
+
+  ids  
+}
+
+show.pane.geoms = function(pane, show, app=getApp()) {
+  restore.point("show.pane.geoms")
+  
+  if (!app$is.running)
+    stop("show.pane.geoms was called while the app was not running!")
+  
+  ids = get.show.geoms.ids(pane, show)
+  ids = c(ids, paste0("geomlabel_",ids))
+  
+  selector = paste0("#", ids, collapse=", ")
+  setHtmlAttribute(selector,attr = "display","yes")  
+}
+
+hide.pane.geoms = function(pane, show) {
+  restore.point("hide.pane.geoms")
+  ids = get.hide.geoms.ids(pane, show)
+  ids = c(ids, paste0("geomlabel_",ids))
+  selector = paste0("#", ids, collapse=", ")
+  setHtmlAttribute(selector,attr = "display","none") 
+}
+
+
+
+draw.svg.geom = function(svg,geom, role,display=NULL,...) {
   restore.point("draw.svg.geom")
   
   geom$color = geom.color(geom=geom, role=role)
   geom$tooltip = replace.latex.with.unicode(replace.whiskers(geom$obj$tooltip, geom$values))
   if (geom$type=="curve") {
-    draw.svg.curve(svg,geom, role=role)
+    draw.svg.curve(svg,geom, role=role, display=display)
   } else if (geom$type=="marker") {
-    draw.svg.marker(svg,geom, role=role)
+    draw.svg.marker(svg,geom, role=role, display=display)
   }
   svg
 }
 
-draw.svg.curve = function(svg,geom, role=NULL, level=10) {
+draw.svg.curve = function(svg,geom, role=NULL, level=10, display=NULL) {
   restore.point("draw.svg.curve")
+  display = init.geom.display(geom, display)
   
-  svg_polyline(svg, x=geom$x,y=geom$y, stroke=geom$color, level=level, tooltip=geom$tooltip,class = "curve")
+  svg_polyline(svg, id=geom$id, x=geom$x,y=geom$y, stroke=geom$color, level=level, tooltip=geom$tooltip,class = "curve", display=display)
 }
-draw.svg.marker = function(svg, geom, role=NULL, level=2) {
+draw.svg.marker = function(svg, geom, role=NULL, level=2, display=NULL) {
   restore.point("draw.svg.marker")
+  display = init.geom.display(geom, display)
   
-  svg_polyline(svg, x=geom$x,y=geom$y, stroke=geom$color, level=level,tooltip=geom$tooltip, extra.args = list("stroke-dasharray"=geom$obj$dashed), class="marker_line")
+  svg_polyline(svg,id=geom$id, x=geom$x,y=geom$y, stroke=geom$color, level=level,tooltip=geom$tooltip, extra.args = list("stroke-dasharray"=geom$obj$dashed, display=display), class="marker_line")
+}
+
+init.geom.display = function(geom, display) {
+  if (identical(display,"whisker")) {
+    return(paste0("{{display_",geom$id,"}}"))
+  }
+  display
 }
 
 default.role = function(ind,row) {

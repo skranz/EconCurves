@@ -43,7 +43,13 @@ compute.show.list = function(show=NULL, hide=NULL, data_rows=1, given_show=NULL,
   
   if (!is.null(given_show)) {
     show = lapply(seq_along(show), function(i) {
+      if (identical(show[[i]],".none")) return(character(0))
       unique(c(show[[i]], given_show[[i]]))
+    })
+  } else {
+    show = lapply(seq_along(show), function(i) {
+      if (identical(show[[i]],".none")) return(character(0))
+      show[[i]]
     })
   }
   if (!is.null(hide)) {
@@ -63,7 +69,7 @@ show.to.list = function(sh, all.names, role.names="1") {
       if (identical(sh[[i]],".all")) {
         sh[[i]] = all.names
       } else if (identical(sh[[i]],".none")) {
-        sh[[names(sh)[i] ]] = character(0)
+        sh[[i]] = ".none"
       }
     }
     return(sh)

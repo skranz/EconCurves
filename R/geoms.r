@@ -10,10 +10,10 @@
 #' @label.prefix a prefix added to object label (useful if we have several geoms per object computed from different values)
 #' @label.postfix a postfix added to object label (useful if we have several geoms per object computed from different values)
 
-objects.to.geoms = function(objs=pane$objs,pane, values=pane$values,name.postfix="") {
+objects.to.geoms = function(objs=pane$objs,pane, values=pane$values,name.postfix="", data_row=1) {
   restore.point("objects.to.geoms")
   
-  geoms = lapply(objs, object.to.geom, values=values, pane=pane)
+  geoms = lapply(objs, object.to.geom, values=values, pane=pane, data_row=data_row)
   names(geoms) = paste0(names(objs), name.postfix)
   nulls = sapply(geoms, is.null)
   geoms[!nulls]
@@ -22,7 +22,7 @@ objects.to.geoms = function(objs=pane$objs,pane, values=pane$values,name.postfix
 
 
 #' Convert an abstract geometrical object to a geom
-object.to.geom = function(obj,pane,values=pane$values) {
+object.to.geom = function(obj,pane,values=pane$values, data_row=1) {
   restore.point("object.to.geom")
   type = obj$type
   if (type=="curve") {
@@ -42,6 +42,7 @@ object.to.geom = function(obj,pane,values=pane$values) {
   geom$xlen = pane$xlen
   geom$ylen = pane$ylen
   geom$name = obj$name
+  geom$id = paste0(pane$name,"_",obj$type,"_",obj$name,"_",data_row)
   geom
 }
 
