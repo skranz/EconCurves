@@ -5,7 +5,7 @@ compute.step.shows = function(step, given_show=NULL, all.names=names(pane$objs),
   if (!is.null(given_show) & !is.list(given_show))
     given_show = compute.show.list(given_show, data_rows=data_rows, all.names=all.names)
   
-  preshow = postshow = compute.show.list(show=step$show,hide = step$hide, data_rows=data_rows, all.names=all.names, given_show = given_show)  
+  preshow = postshow = compute.show.list(show=step$show,hide = step[["hide"]], data_rows=data_rows, all.names=all.names, given_show = given_show)  
   
   
   success.show = unique(c(step[["find"]], step[["find_shift"]], step$show_success))

@@ -40,8 +40,12 @@ rtutor.addon.plotpane = function() {
     },
     ui.fun = function(ao,...) {
       restore.point("plotpane.ui.fun")
-      
-      HTML(ao$html)
+      #addResourcePath("econcurves",paste0(path.package("EconCurves"),"/www"))
+      tagList(
+        #singleton(tags$script(src="econcurves/comic.min.js")),
+        HTML(ao$html)
+        #tags$script(paste0("COMIC.magic([ document.getElementById('",ao$img.id,"')]);"))
+      )
     }
   )
 }
@@ -112,7 +116,7 @@ from_to = function(from, to) {
   from:to
 }
 
-panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0("addon__",type,"__",name),args=NULL, task.ind=NULL,ps,bdf=ps$bdf,bi,...) {
+panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0("addon__",type,"__",name),args=NULL, task.ind=NULL,ps,bdf=ps$bdf,bi,on.tol = 0.04,...) {
   restore.point("panequiz.parse.fun")
   
   txt = inner.txt
@@ -125,14 +129,16 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
   if (length(start.lines)>0) {
     ao = parse.hashdot.yaml(txt[start.lines])
   }
+  ao = copy.into.missing.fields(dest=ao, source=nlist(on.tol))
   
+  ao$id = paste0("panequiz_",bi)
   # init panes
   pane.names = names(ao$pane)
   
   ao$panes = lapply(pane.names, function(pane.name) {
     pane = ao$panes[[pane.name]]
     pane$name = pane.name
-    arg.li = c(pane, ao[setdiff(names(ao),c("panes"))])
+    arg.li = c(pane, ao[setdiff(names(ao),c("panes","click.rel.tol"))])
     get.pane.from.ps(pane = pane.name, ps = ps,arg.li=arg.li, shallow.copy = TRUE)
   })
   names(ao$panes) = pane.names
@@ -149,7 +155,7 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
   ao$all.names = unique(unlist(lapply(ao$panes, function(pane) names(pane$objs))))
   
   # compute steps
-  given_show = compute.show.list(show=ao$show,hide=ao$hide, data_rows=ao$data_rows, all.names = ao$all.names)
+  given_show = compute.show.list(show=ao$show,hide=ao[["hide"]], data_rows=ao$data_rows, all.names = ao$all.names)
 
   lines = c(step.lines,length(txt)+1)
   steps = vector("list", length(step.lines))
@@ -200,15 +206,26 @@ panequiz.ui.fun = function(ts,bi,...) {
   ui
 }
 
-panequiz.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], ao=ts$ao, step.mode = ts$step.mode, ts=NULL, msg="") {
+panequiz.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], ao=ts$ao, step.mode = ts$step.mode, ts=NULL, msg="", skip.plot=FALSE) {
   restore.point("panequiz.show.step")
   
   # show text
   html = p(step[[paste0(step.mode,".html")]])
+  
+  if (is.false(ao$direct_click) & step.mode != "success" & step$task.type != "none") {
+    btnId = paste0(ao$id,"_checkBtn")
+    check.btn = bsButton(btnId,"check",size = "small")
+    html = div(html,check.btn)
+  }
+  
   if (nchar(msg)>0) {
     html = div(html,p(msg))
   }
   setUI(ao$textId,html)
+  ts$xy = NULL
+  ts$click.pane = NULL
+
+  if (skip.plot) return()
   
   # show pane figure
   pmode = step.mode
@@ -218,7 +235,7 @@ panequiz.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], a
     pmode = "post"    
   }
 
-    # need to adapt
+  # need to adapt
   
   pane.ind = 1
   # hide and show genom
@@ -241,7 +258,8 @@ panequiz.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], a
       show.pane.geoms(pane, show)
       hide.pane.geoms(pane,show)
     }
-    
+    # hide click ...
+    setHtmlAttribute(attr=list(display="none"),id=c(pane$circle.marker.id,pane$poly.marker.id))
   }
 }
 
@@ -333,8 +351,9 @@ panequiz.make.step.task = function(step,panes=ao$panes,ps,ao) {
     restore.point("make.find.task")
     
     task.fun.env$geom = pane$geoms.li[[nr$row]][[nr$name]]
+    task.fun.env$on.tol = ao$on.tol
     task.fun = function(xy,pane.name=NULL,...) {
-      ok = is.point.on.geom(xy,geom)
+      ok = is.point.on.geom(xy,geom,on.tol = on.tol)
       list(ok=ok)
     }
   } else if (task.type == "find_shift") {
@@ -430,9 +449,31 @@ panequiz.init.handlers = function(ao=ts$ao,ps=get.ps(), app=getApp(),ts=NULL,bi,
   prevBtnId = paste0("panequizPrevBtn_",bi)
   buttonHandler(nextBtnId, panequiz.show.next.step, ts=ts)
   buttonHandler(prevBtnId, panequiz.show.prev.step, ts=ts)
+  btnId = paste0(ao$id,"_checkBtn")
+  buttonHandler(btnId, panequiz.check.click, ts=ts)
+  
   
   
 }
+
+panequiz.check.click = function(...,ts=NULL) {
+  args = list(...)
+  restore.point("panequiz.check.click")
+ 
+  
+  
+  ao = ts$ao
+  step = ao$steps[[ts$step.num]]
+  step.mode = ts$step.mode
+  
+  if (is.null(ts[["xy"]]) | is.null(ts[["click.pane"]])) {
+    panequiz.show.step(ts=ts,msg="You have not yet clicked on the figure.")
+    return()
+  }
+  panequiz.check.task(ts=ts)
+  
+}
+
 
 panequiz.click = function(x,y,...,ts=NULL,pane=NULL) {
   args = list(...)
@@ -453,8 +494,26 @@ panequiz.click = function(x,y,...,ts=NULL,pane=NULL) {
   coordmap = step$pre.plot[[1]]$coordmap
   dr = ao$svgs[[1]]$svg$dr
   px = x; py = y
-  xy = range.to.domain(x=px,y=py, dr=dr)
+
+  ts$xy = range.to.domain(x=px,y=py, dr=dr)
+  ts$click.pane = pane$name  
   
+  if (is.false(ao$direct_click)) {
+    restore.point("no direct click")
+    r = ao$on.tol * min(abs(diff(dr$range$x)),abs(diff(dr$range$y)))
+
+    
+    setHtmlAttribute(paste0("#",pane$circle.marker.id),list(cx= px, cy= py, r=r, display= "yes"))
+    return()
+  }
+  cat("\npixel = ",c(px,py)," xy = ",unlist(ts$xy))
+  
+  panequiz.check.task(xy=ts$xy, ts=ts,step=step)
+  
+}
+
+panequiz.check.task = function(xy=ts$xy, ts=NULL, step = ts$ao$steps[[ts$step.num]]) {
+  restore.point("panequiz.check.task")
   res = step$task.fun(xy=xy)
   
   # task correctly solved
@@ -472,7 +531,8 @@ panequiz.click = function(x,y,...,ts=NULL,pane=NULL) {
     panequiz.show.step(ts=ts)
   }
   
-  cat("\npixel = ",c(px,py)," xy = ",unlist(xy))
+    
+  
 }
 
 panequiz.menu.bar = function(bi) {

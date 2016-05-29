@@ -57,7 +57,7 @@ pane:
 }
 
 #' Plot a pane
-plot.pane = function(pane, show = pane$show, hide=pane$hide, xrange=pane$xrange, yrange=pane$yrange, alpha=1,main="",mar=NULL, show.grid=!TRUE, label.df=NULL,lwd.factor=1,label.cex=0.75, cex.axis=0.8, 
+plot.pane = function(pane, show = pane$show, hide=pane[["hide"]], xrange=pane$xrange, yrange=pane$yrange, alpha=1,main="",mar=NULL, show.grid=!TRUE, label.df=NULL,lwd.factor=1,label.cex=0.75, cex.axis=0.8, 
   xlab= if (is.null(pane$xlab)) pane$xvar else pane$xlab,
   ylab= if (is.null(pane$ylab)) pane$yvar else pane$ylab,
 compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1
@@ -139,15 +139,17 @@ compute.pane.geoms = function(pane, data_rows = 1, objs = pane$objs, overwrite =
   if (isTRUE(pane$data_yrange))
     pane$yrange = compute.pane.range.from.data(pane,"y", data_rows)
 
+  if (is.null(names(data_rows)))
+    names(data_rows) = data_rows
     
   for (i in seq_along(data_rows)) {
     r = data_rows[[i]]
     if (!overwrite) {
       if (!is.null(pane$geoms.li[[r]])) next
     }
-    values = c(as.list(pane$data[r,]), list(.row=r, .role=names(data_rows[i])))
+    values = c(as.list(pane$data[r,]), list(.row=r, .role=names(data_rows)[i]))
     
-    pane$geoms.li[[i]] = objects.to.geoms(objs=objs, values=values, pane=pane, data_row=r)
+    pane$geoms.li[[r]] = objects.to.geoms(objs=objs, values=values, pane=pane, data_row=r)
   }
 }
 
@@ -250,7 +252,7 @@ init.pane.markers = function(pane) {
 pane = function(...) as.environment(init.pane(...))
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xaxis=list(), yaxis=list(),  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0.1, 0.1) )  {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xaxis=list(), yaxis=list(),  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0.1, 0.1))  {
   restore.point("init.pane")
 
   pane = as.list(pane)

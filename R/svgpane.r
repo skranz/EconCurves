@@ -51,7 +51,7 @@ pane:
 
 
 #' Plot a pane
-pane.svg = function(pane, id=NULL, show = pane$show, hide=pane$hide, show.grid=!TRUE,
+pane.svg = function(pane, id=NULL, show = pane$show, hide=pane[["hide"]], show.grid=!TRUE,
 compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), roles=NULL, css=default_svgpane_css(), width=first.non.null(pane$width,pane$org.width,480), height=first.non.null(pane$height,pane$org.height,320), margins=pane$margins,display=NULL,...
   ) {
   restore.point("pane.svg")
@@ -123,6 +123,16 @@ compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), 
     
     svg_add(svg,el,level=90)
   }
+
+
+  pane$poly.marker.id = paste0(id,"_poly_marker")
+  el = svg_tag("polygon", nlist(id=pane$circle.marker.id, class="poly_marker", display="none"))
+  svg_add(svg,el,level=10000)
+
+  pane$circle.marker.id = paste0(id,"_circle_marker")
+  el = svg_tag("circle", nlist(id=pane$circle.marker.id, class="circle_marker", display="none"))
+  svg_add(svg,el,level=10001)
+  
     
   pane$geoms = geoms
   pane$svg = svg
@@ -169,10 +179,11 @@ place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=
   
 }
 
-get.show.geoms.ids = function(pane, show) {
+get.show.geoms.ids = function(pane, show, data_rows=pane$data_rows) {
   # hide and show genom
-  ids = unlist(lapply(seq_along(pane$data_rows), function(i) {
-    geoms = pane$geoms.li[[i]] 
+  ids = unlist(lapply(seq_along(data_rows), function(i) {
+    r = data_rows[i]
+    geoms = pane$geoms.li[[r]] 
     obj.names = names(geoms)  
     sapply(intersect(obj.names, show[[i]]), function(name) {
       geoms[[name]]$id
@@ -182,10 +193,11 @@ get.show.geoms.ids = function(pane, show) {
   ids  
 }
 
-get.hide.geoms.ids = function(pane, show) {
+get.hide.geoms.ids = function(pane, show, data_rows=pane$data_rows) {
   # hide and show genom
-  ids = unlist(lapply(seq_along(pane$data_rows), function(i) {
-    geoms = pane$geoms.li[[i]] 
+  ids = unlist(lapply(seq_along(data_rows), function(i) {
+    r = data_rows[[i]]
+    geoms = pane$geoms.li[[r]] 
     obj.names = names(geoms)  
     sapply(setdiff(obj.names, show[[i]]), function(name) {
       geoms[[name]]$id
@@ -195,17 +207,17 @@ get.hide.geoms.ids = function(pane, show) {
   ids  
 }
 
-show.pane.geoms = function(pane, show, app=getApp()) {
+show.pane.geoms = function(pane, show, data_rows=pane$data_rows, app=getApp()) {
   restore.point("show.pane.geoms")
   
   if (!app$is.running)
     stop("show.pane.geoms was called while the app was not running!")
   
-  ids = get.show.geoms.ids(pane, show)
+  ids = get.show.geoms.ids(pane, show, data_rows=data_rows)
   ids = c(ids, paste0("geomlabel_",ids))
   
   selector = paste0("#", ids, collapse=", ")
-  setHtmlAttribute(selector,attr = "display","yes")  
+  setHtmlAttribute(selector,attr = list(display="yes"))  
 }
 
 hide.pane.geoms = function(pane, show) {
@@ -213,7 +225,7 @@ hide.pane.geoms = function(pane, show) {
   ids = get.hide.geoms.ids(pane, show)
   ids = c(ids, paste0("geomlabel_",ids))
   selector = paste0("#", ids, collapse=", ")
-  setHtmlAttribute(selector,attr = "display","none") 
+  setHtmlAttribute(selector,attr = list(display="none")) 
 }
 
 
@@ -260,6 +272,12 @@ default.role = function(ind,row) {
 
 default_svgpane_css = function() {
 '
+.tooltip-inner {
+    white-space: pre-wrap;
+}
+/*
+text { font-family : "Kalam" }
+*/
 line, polyline, path, rect, circle {
   fill: none;
   stroke: #000000;
@@ -305,14 +323,14 @@ line, polyline, path, rect, circle {
 
 .axis-ticklabel {
   font-size: 10.00pt;
-  font-family: Arial;
+  /*font-family: Arial;*/
   font-weight: normal;
 }
 
 
 .boxed-label {
   font-size: 11.00pt;
-  font-family: Arial;
+  /*font-family: Arial;*/
   font-weight: normal;
   filter: url(#label_box);
 }
@@ -325,10 +343,26 @@ line, polyline, path, rect, circle {
 
 .axis-label {
   font-size: 11.00pt;
-  font-family: Arial;
+  /*font-family: Arial;*/
   font-weight: normal
 }
 
+
+.circle_marker {
+  fill: #ffff00;
+  fill-opacity: 0.7;
+  stroke-width: 0;
+  stroke-opacity: 0.7;
+  stroke: yellow;
+} 
+
+.poly_marker {
+  fill: #ffff00;
+  fill-opacity: 0.5;
+  stroke-width: 0;
+  stroke-opacity:0.5;
+  stroke: yellow;
+} 
 
 '
 }

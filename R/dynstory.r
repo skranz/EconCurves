@@ -56,7 +56,7 @@ dynstory.parse.fun = function(inner.txt,type="dynstory",name=args$name,id=paste0
   ao$all.names = unique(unlist(lapply(ao$panes, function(pane) names(pane$objs))))
   
   # compute steps
-  given_show = compute.show.list(show=ao$show,hide=ao$hide, data_rows=ao$data_rows, all.names = ao$all.names)
+  given_show = compute.show.list(show=ao$show,hide=ao[["hide"]], data_rows=ao$data_rows, all.names = ao$all.names)
 
   # overwrite default show = ".all"
   ao$imgs = lapply(ao$panes, function(pane) {

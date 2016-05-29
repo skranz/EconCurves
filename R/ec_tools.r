@@ -41,11 +41,6 @@ compute_frame = function(..., parent.env = parent.frame()) {
 
     body = substitute({
       ..vli = list(...)
-      #cat("\n\n",name,"\n args = \n ")
-      #print(..vli)
-      #cat("\nresult = ", deparse(rhs)," = \n" )
-      #print(eval(quote(rhs),envir = ..vli))
-      
       eval(quote(rhs),envir = ..vli)
     }, list(rhs=rhs,name=name))
     body(fun) <- body
