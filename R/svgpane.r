@@ -122,7 +122,11 @@ compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), 
 
   if (!is.null(pane$title)) {
     x.tit = domain.to.range(x=mean(pane$xrange),svg=svg)
-    el = svg_tag("text", nlist(x=x.tit,y=15,class="boxed-label pane-title","text-anchor"="middle"), inner=pane$title)
+    
+    title = replace.whiskers(pane$title , pane$data[1,])
+    title = latex.to.textspan(title)
+
+    el = svg_tag("text", nlist(x=x.tit,y=15,class="boxed-label pane-title","text-anchor"="middle"), inner=title)
     
     svg_add(svg,el,level=90)
   }

@@ -10,7 +10,6 @@ rtutor.addon.pane = function() {
     is.static = TRUE,
     parse.fun = function(inner.txt,type="pane",name=args$name,id=paste0("addon__",type,"__",name),args=NULL, bdf=NULL, task.ind=NULL,ps = get.ps(),...) {
       restore.point("pane.parse.fun")
-      
       pane = init.yaml.pane(yaml=merge.lines(inner.txt), direct=TRUE, name=name)
       make.pane.data(pane=pane, dataenv=ps$pre.env)
       pane
@@ -129,6 +128,8 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
   if (length(start.lines)>0) {
     ao = parse.hashdot.yaml(txt[start.lines])
   }
+  ao$org.list = ao
+  
   ao$id = paste0("panequiz_",bi)
 
   if (!is.null(ao[["continue"]])) {
@@ -139,16 +140,15 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
     }
     
     pre = bdf$obj[[row]]$ao
-    ao = copy.into.missing.fields(dest=ao, source=as.list(pre))
+    ao = copy.into.missing.fields(dest=ao, source=pre$org.list)
+    #ao = copy.into.missing.fields(dest=ao, source=pre)
     len = length(pre[["steps"]])
     if (len>0) {
       ao$show = pre$steps[[len]]$postshow
     }
-  }  else {
-    ao = copy.into.missing.fields(dest=ao, source=nlist(on.tol))
   }
-  
-  
+  ao = copy.into.missing.fields(dest=ao, source=nlist(on.tol))
+
   # init panes
   pane.names = names(ao$panes)
   
@@ -295,9 +295,11 @@ panequiz.show.next.step = function(ts,...) {
   }
     
   next.step.num = ts$step.num +1
-  if (next.step.num > length(ts$ao$steps))
-     return()
-  
+  if (next.step.num > length(ts$ao$steps)) {
+    rtutor.bubble.click(...)
+    return()
+  }
+
   ts$step.num = next.step.num
   ts$step.mode = "pre"
   panequiz.show.step(ts=ts)
@@ -456,11 +458,13 @@ panequiz.sol.txt.fun = panequiz.out.txt.fun = function(ts,solved=TRUE,...) {
 panequiz.init.handlers = function(ao=ts$ao,ps=get.ps(), app=getApp(),ts=NULL,bi,...) {
   restore.point("panequiz.init.handlers")
   
-  # NEED TO CORRECT
-  pane = ao$panes[[1]]
-  img.id = ao$imgs[[1]]$id
-  
-  svgClickHandler(img.id,fun = panequiz.click,ts=ts,pane=pane)  
+  pane.ind = 1
+  for (pane.ind in seq_along(ao$panes)) {
+    pane = ao$panes[[pane.ind]]
+    img.id = ao$img.ids[[pane.ind]]
+    svgClickHandler(id=img.id,fun = panequiz.click,ts=ts,pane=pane) 
+  }
+ 
   
   nextBtnId = paste0("panequizNextBtn_",bi)
   prevBtnId = paste0("panequizPrevBtn_",bi)
@@ -502,7 +506,7 @@ panequiz.click = function(x,y,...,ts=NULL,pane=NULL) {
   step.mode = ts$step.mode
 
   if (step.mode == "success" | !step$has.task) {
-    panequiz.show.next.step(ts=ts)
+    panequiz.show.next.step(ts=ts,...)
     return()
   }
   
