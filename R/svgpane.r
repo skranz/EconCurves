@@ -74,8 +74,10 @@ compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), 
     xrange = pane$xrange
     yrange = pane$yrange
   }
-  svg = new_svg(id=id,width=width, height=height, xlim=pane$xrange, ylim=pane$yrange,css=css, margins=margins,...)
-  
+  #svg = new_svg(id=id,width=width, height=height, xlim=pane$xrange, ylim=pane$yrange,css=css, margins=margins,...)
+  svg = new_svg(id=id,width=width, height=height, xlim=pane$xrange, ylim=pane$yrange,css=css, margins=margins)
+
+    
   do.call(svg_xaxis, c(list(svg=svg), pane$xaxis))
   do.call(svg_yaxis, c(list(svg=svg), pane$yaxis))
   
@@ -100,6 +102,7 @@ compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), 
     } else {
       cur.show = setdiff(cur.show, hide)  
     }
+    cur.show = intersect(cur.show, names(pane$objs))
     cur.geoms = pane$geoms.li[[row]][cur.show]   
     label.postfix = c(label.postfix,rep(row,length(cur.geoms)))
     geoms = c(geoms, cur.geoms)
@@ -207,7 +210,7 @@ get.hide.geoms.ids = function(pane, show, data_rows=pane$data_rows) {
   ids  
 }
 
-show.pane.geoms = function(pane, show, data_rows=pane$data_rows, app=getApp()) {
+show.svg.geoms = function(svg.id, pane, show, data_rows=pane$data_rows, display="block", app=getApp()) {
   restore.point("show.pane.geoms")
   
   if (!app$is.running)
@@ -216,16 +219,17 @@ show.pane.geoms = function(pane, show, data_rows=pane$data_rows, app=getApp()) {
   ids = get.show.geoms.ids(pane, show, data_rows=data_rows)
   ids = c(ids, paste0("geomlabel_",ids))
   
-  selector = paste0("#", ids, collapse=", ")
-  setHtmlAttribute(selector,attr = list(display="yes"))  
+  sel = paste0("#",svg.id," #",ids, collapse=", ")
+  setHtmlAttribute(selector=sel,attr = list(display=display))   
 }
 
-hide.pane.geoms = function(pane, show) {
+hide.svg.geoms = function(svg.id, pane, show) {
   restore.point("hide.pane.geoms")
   ids = get.hide.geoms.ids(pane, show)
   ids = c(ids, paste0("geomlabel_",ids))
-  selector = paste0("#", ids, collapse=", ")
-  setHtmlAttribute(selector,attr = list(display="none")) 
+  
+  sel = paste0("#",svg.id," #",ids, collapse=", ")
+  setHtmlAttribute(selector=sel,attr = list(display="none")) 
 }
 
 

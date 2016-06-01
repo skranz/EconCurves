@@ -42,7 +42,8 @@ object.to.geom = function(obj,pane,values=pane$values, data_row=1) {
   geom$xlen = pane$xlen
   geom$ylen = pane$ylen
   geom$name = obj$name
-  geom$id = paste0(pane$name,"_",obj$type,"_",obj$name,"_",data_row)
+  #geom$id = paste0(pane$name,"_",obj$type,"_",obj$name,"_",data_row)
+  geom$id = paste0(obj$type,"_",obj$name,"_",data_row)
   geom
 }
 

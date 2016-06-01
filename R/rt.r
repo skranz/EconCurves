@@ -129,11 +129,28 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
   if (length(start.lines)>0) {
     ao = parse.hashdot.yaml(txt[start.lines])
   }
-  ao = copy.into.missing.fields(dest=ao, source=nlist(on.tol))
-  
   ao$id = paste0("panequiz_",bi)
+
+  if (!is.null(ao[["continue"]])) {
+    pre.name = ao$continue
+    row = which(bdf$stype=="panequiz" & bdf$name==pre.name)[1]
+    if (is.na(row)) {
+      stop(paste0("Your panequiz states to continute the panequiz ", pre.name, " but I could not find that pnaequiz."))
+    }
+    
+    pre = bdf$obj[[row]]$ao
+    ao = copy.into.missing.fields(dest=ao, source=as.list(pre))
+    len = length(pre[["steps"]])
+    if (len>0) {
+      ao$show = pre$steps[[len]]$postshow
+    }
+  }  else {
+    ao = copy.into.missing.fields(dest=ao, source=nlist(on.tol))
+  }
+  
+  
   # init panes
-  pane.names = names(ao$pane)
+  pane.names = names(ao$panes)
   
   ao$panes = lapply(pane.names, function(pane.name) {
     pane = ao$panes[[pane.name]]
@@ -146,11 +163,9 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
   # init svgs that initially show all curves
   ao$img.ids =  paste0(ps$ps.id,"_panequiz_",bi,"_",pane.names)
   ao$svgs = lapply(seq_along(ao$panes), function(ind) {
-    pane.svg(ao$panes[[ind]],id=ao$img.ids[[ind]], display="whisker")  
+    pane.svg(ao$panes[[ind]],id=ao$img.ids[[ind]], show = ".all", display="whisker")  
   })
 
-  
-  
   show = ao$show
   ao$all.names = unique(unlist(lapply(ao$panes, function(pane) names(pane$objs))))
   
@@ -192,16 +207,17 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
   #paneOutput = HTML(ao$svgs[[1]]$html)
   
   menu = as.character(panequiz.menu.bar(bi=bi))
-  ao$layout = HTML(replace.whiskers(ao$layout, list(text=textOutput,pane=paneOutput,menu=menu)))
+  ao$repl_layout = HTML(replace.whiskers(ao$layout, list(text=textOutput,pane=paneOutput,menu=menu)))
   
   
   return(ao)
 }
 
+
 panequiz.ui.fun = function(ts,bi,...) {
   restore.point("pane.quiz.ui.fun")
   ao = ts$ao
-  ui = ao$layout
+  ui = ao$repl_layout
   panequiz.show.step(ts=ts)
   ui
 }
@@ -255,11 +271,12 @@ panequiz.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], a
       setUI(ao$paneId,HTML(html))
       ts$pane.shown[pane.ind] = TRUE
     } else {
-      show.pane.geoms(pane, show)
-      hide.pane.geoms(pane,show)
+      svg.id = ao$img.ids[[pane.ind]]
+      show.svg.geoms(svg.id = svg.id, pane=pane, show=show)
+      hide.svg.geoms(svg.id = svg.id, pane=pane,show=show)
     }
     # hide click ...
-    setHtmlAttribute(attr=list(display="none"),id=c(pane$circle.marker.id,pane$poly.marker.id))
+    setHtmlAttribute(id=c(pane$circle.marker.id,pane$poly.marker.id),attr=list(display="none"))
   }
 }
 
@@ -503,7 +520,7 @@ panequiz.click = function(x,y,...,ts=NULL,pane=NULL) {
     r = ao$on.tol * min(abs(diff(dr$range$x)),abs(diff(dr$range$y)))
 
     
-    setHtmlAttribute(paste0("#",pane$circle.marker.id),list(cx= px, cy= py, r=r, display= "yes"))
+    setHtmlAttribute(id=pane$circle.marker.id,list(cx= px, cy= py, r=r, display= "yes"))
     return()
   }
   cat("\npixel = ",c(px,py)," xy = ",unlist(ts$xy))
