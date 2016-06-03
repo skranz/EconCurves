@@ -68,7 +68,9 @@ compute.geoms=TRUE, params = pane$params, data=pane$data, data_rows=1
   pane$params = params
   pane$yrange = yrange
   pane$xrange = xrange
+  data_rows = unlist(data_rows)
 
+  
   missing.cols = check.for.missing.data.cols(pane,pane$data, show=show)
 
   if (compute.geoms)
@@ -255,9 +257,12 @@ pane = function(...) as.environment(init.pane(...))
 init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xaxis=list(), yaxis=list(),  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0.1, 0.1))  {
   restore.point("init.pane")
 
+  
   pane = as.list(pane)
+  
   pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms.li, xaxis, yaxis, params, datavar, use_dataenv_directly, data_roles, show, hide,xlen,ylen, add_xrange, add_yrange, data_xrange, data_yrange))
 
+  
   if (is.null(pane$xaxis)) pane$xaxis = list()
   if (is.null(pane$yaxis)) pane$yaxis = list()
   
@@ -333,7 +338,8 @@ init.yaml.pane = function(yaml=NULL, pane=NULL,name=NULL, direct=FALSE, init.dat
   }
   pane$xrange = unlist(pane$xrange)
   pane$yrange = unlist(pane$yrange)
-
+  pane$data_rows = unlist(pane$data_rows)
+  
   pane = init.pane(pane=pane, dataenv = parent.frame())
 
   pane

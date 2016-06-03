@@ -68,6 +68,9 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL, s
   #if (is.null(pane$height.in)) pane$height.in = 4
   cols = setdiff(names(arg.li),c("name","pane","height.in","width.in","params"))
   
+  arg.li$xrange = unlist(arg.li$xrange)
+  arg.li$yrange = unlist(arg.li$yrange)
+
   pane = copy.into.nested.list(pane, arg.li[cols])
   
   if (is.null(pane$params)) pane$params = list()
@@ -148,7 +151,8 @@ panequiz.parse.fun = function(inner.txt,type="panequiz",name=args$name,id=paste0
     }
   }
   ao = copy.into.missing.fields(dest=ao, source=nlist(on.tol))
-
+  ao$data_rows = unlist(ao$data_rows)
+  
   # init panes
   pane.names = names(ao$panes)
   
@@ -607,7 +611,8 @@ whisker.values.from.data_rows = function(data, data_rows) {
   if (is.null(role.names))
     role.names = as.character(data_rows)
   all.cols = colnames(data)
-  val0 = as.list(data[data_rows[1],])
+  #val0 = as.list(data[data_rows[1],])
+  val0 = as.list(data[data_rows,,drop=FALSE])
   val.li = lapply(seq_along(data_rows), function(i) {
     vals = as.list(data[data_rows[i],])
     names(vals) = paste0(all.cols,"_", role.names[i])

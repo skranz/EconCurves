@@ -10,7 +10,7 @@ License: Code: GPL >= 2.0 Modells and Stories: CC BY-NC-SA (Creative Commons,
     Non-Commercial, Copyleft)
 Depends:
     dplyr,restorepoint,codeUtils,
-    sktools,
+    sktools,rmdtools,
     stringtools,
     grid,
     YamlObjects,

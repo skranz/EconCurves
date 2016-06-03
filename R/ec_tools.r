@@ -1,3 +1,4 @@
+
 copy.into.nested.list = function(given, new, return.null.new=FALSE) {
   restore.point("copy.into.nested.list")
   
@@ -86,7 +87,7 @@ replace.whiskers = function(str, env=parent.frame()) {
   vals = lapply(s, function(su) {
     res = try(eval(parse(text=su),env))
     if (is(res,"try-error")) res = "`Error`"
-    res
+    unlist(res)[[1]]
   })
   res = str.replace.at.pos(str, pos$outer, unlist(vals))
   res

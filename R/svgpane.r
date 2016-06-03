@@ -55,7 +55,8 @@ pane.svg = function(pane, id=NULL, show = pane$show, hide=pane[["hide"]], show.g
 compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), roles=NULL, css=default_svgpane_css(), width=first.non.null(pane$width,pane$org.width,480), height=first.non.null(pane$height,pane$org.height,320), margins=pane$margins,display=NULL,...
   ) {
   restore.point("pane.svg")
-
+  data_rows = unlist(data_rows)
+  
   if (is.null(roles)) {
     roles = lapply(seq_along(data_rows), function(ind) {
       default.role(ind, data_rows[[ind]])
