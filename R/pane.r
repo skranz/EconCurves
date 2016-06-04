@@ -237,20 +237,6 @@ old.compute.pane.geoms = function(pane, objs = pane$objs,xrange=pane$xrange, yra
 
 
 
-init.pane.markers = function(pane) {
-  restore.point("init.pane.markers")
-
-  xmarkers = lapply(names(pane$xmarkers), function(name) {
-    init.marker(pane$xmarkers[[name]],name=name, axis="x", pane=pane)
-  })
-  ymarkers = lapply(names(pane$ymarkers), function(name) {
-    init.marker(pane$ymarkers[[name]],name=name, axis="y", pane=pane)
-  })
-  pane$markers = c(xmarkers,ymarkers)
-  names(pane$markers) = c(names(pane$xmarkers),names(pane$ymarkers))
-  invisible(pane$markers)
-}
-
 pane = function(...) as.environment(init.pane(...))
 
 #' Initilize a pane
@@ -298,11 +284,11 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
     })
     names(pane$curves) = curve.names
   }
+  pane$points = init.pane.points(pane)
 
   pane$markers= init.pane.markers(pane)
-
   
-  pane$objs = c(pane$curves, pane$markers)
+  pane$objs = c(pane$curves, pane$markers, pane$points)
   
   pane$parnames =unique(unlist(lapply(pane$objs, function(obj) obj$parnames)))
   
@@ -318,6 +304,38 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
   if (init.data)  
     pane$data = make.pane.data(pane=pane, dataenv=dataenv)
   pane
+}
+
+update.pane.objs = function(pane, curves=NULL, points=NULL) {
+  restore.point("update.pane.objs")
+  
+  if (is.null(curves) & is.null(points)) {
+    return(pane)
+  }
+  
+  if (!is.null(curves)) {
+    if (is.null(pane$curves)) pane$curves = list()
+    curve.names = names(curves)
+    pane$curves[curve.names] = lapply(seq_along(curves), function(i) {
+      init.curve(name=curve.names[i], xvar=pane$xvar, yvar=pane$yvar, curve=curves[[i]])
+    })
+  }
+
+  if (!is.null(points)) {
+    restore.point("update.pane.points")
+    
+    if (is.null(pane[["points"]]))
+      pane$points =list()
+    
+    pane$points[names(points)] = lapply(names(points), function(name) {
+      init.point(obj=points[[name]],name=name,pane = pane)
+    })
+  }
+  pane$objs = c(pane$curves, pane$markers, pane$points)
+  pane$parnames =unique(unlist(lapply(pane$objs, function(obj) obj$parnames)))
+
+  pane
+    
 }
 
 #' Initialize a pane specified with yaml code

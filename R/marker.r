@@ -1,4 +1,19 @@
 
+init.pane.markers = function(pane) {
+  restore.point("init.pane.markers")
+
+  xmarkers = lapply(names(pane$xmarkers), function(name) {
+    init.marker(pane$xmarkers[[name]],name=name, axis="x", pane=pane)
+  })
+  ymarkers = lapply(names(pane$ymarkers), function(name) {
+    init.marker(pane$ymarkers[[name]],name=name, axis="y", pane=pane)
+  })
+  pane$markers = c(xmarkers,ymarkers)
+  names(pane$markers) = c(names(pane$xmarkers),names(pane$ymarkers))
+  invisible(pane$markers)
+}
+
+
 init.marker = function(obj=list(), name=NULL, var=name, axis = "x", color="#333333", pane=NULL,dashed="5,5") {
   restore.point("init.marker")
   if (is.null(obj)) obj = list()
@@ -61,7 +76,7 @@ marker.to.geom = function(obj,pane, values=pane$values) {
       try(x[1] <- eval.obj.formula(obj[["from"]],values,obj))
     }
   }
-  list(type="marker", geom.type="gcurve",axis=obj$axis,x=x,y=y,xrange=pane$xrange, yrange=pane$yrange)  
+  list(type="marker", axis=obj$axis,x=x,y=y,xrange=pane$xrange, yrange=pane$yrange)  
 }
 
 eval.obj.formula = function(formula, values, obj) {

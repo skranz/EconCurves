@@ -66,12 +66,18 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL, s
   }
   #if (is.null(pane$width.in)) pane$width.in = 5
   #if (is.null(pane$height.in)) pane$height.in = 4
-  cols = setdiff(names(arg.li),c("name","pane","height.in","width.in","params"))
+  cols = setdiff(names(arg.li),c("name","pane","height.in","width.in","params","curves","points"))
   
   arg.li$xrange = unlist(arg.li$xrange)
   arg.li$yrange = unlist(arg.li$yrange)
 
   pane = copy.into.nested.list(pane, arg.li[cols])
+
+  if (!is.null(arg.li$xrange)) pane$data_xrange=FALSE
+  if (!is.null(arg.li$yrange)) pane$data_yrange=FALSE
+  
+    
+  pane = update.pane.objs(pane=pane, curves=arg.li[["curves"]], points=arg.li[["points"]])
   
   if (is.null(pane$params)) pane$params = list()
   pane$params[names(arg.li$params)] = arg.li$params

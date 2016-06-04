@@ -268,6 +268,18 @@ html_arg_str = function(..., .quote='"') {
 }
 
 
+svg_point = function(svg, x,y,id=NULL, class="point",level=110,fill=NULL, tooltip=NULL,label = NULL,r=5,...) {
+  restore.point("svg_point")
+  rp = domain.to.range(x=x,y=y,svg=svg)
+  ci = svg_tag("circle",nlist(cx=rp$x,cy=rp$y,r=r,class,id,fill=fill,...), tooltip=tooltip) 
+  el = ci
+  svg_add(svg,el,id,level=level)
+  if (!is.null(label)) {
+    svg_boxed_label(svg,rp$x+r+1,rp$y,text=label, to.range = FALSE,id=paste0("label__",id), tooltip=tooltip,level=level, class="point-label")
+  }
+}
+
+
 svg_polyline = function(svg, x,y,id=NULL, class="polyline",style=c(nlist(fill, stroke,stroke_width), extra.style), fill="none", stroke="black",stroke_width=NULL, extra.style=list(), level=0, tooltip=NULL, extra.args = list(...),...) {
   restore.point("svg_polyline")
   rp = domain.to.range(x=x,y=y,svg=svg)

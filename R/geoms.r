@@ -29,6 +29,8 @@ object.to.geom = function(obj,pane,values=pane$values, data_row=1) {
     geom = curve.to.geom(obj,values=values,pane=pane)
   } else if (type=="marker") {
     geom = marker.to.geom(obj,values=values,pane=pane)
+  } else if (type=="point") {
+    geom = point.to.geom(obj,values=values,pane=pane)
   }
   if (is.null(geom)) {
     return(NULL)

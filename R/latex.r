@@ -18,31 +18,28 @@ latex.to.textspan = function(str) {
         '<tspan dy="5px" class="label_subscript">', mat[,2],'</tspan>',
       '</tspan>'
     )
+    
+    # remove curley braces
+    txt = gsub("{{","jJj",txt, fixed=TRUE)
+    txt = gsub("}}","hHh",txt, fixed=TRUE)
+    txt = gsub("{","",txt, fixed=TRUE)
+    txt = gsub("}"," ",txt, fixed=TRUE)
+    txt = gsub("  "," ",txt, fixed=TRUE)
+    txt = gsub("jJj","{{",txt, fixed=TRUE)
+    txt = gsub("hHh","}}",txt, fixed=TRUE)
   }
-  # put whiskers back
-  txt = gsub("jJj","{{",txt, fixed=TRUE)
-  txt = gsub("hHh","}}",txt, fixed=TRUE)
-  
+
   txt
 }
 
 find.subscripts = function(str) {
   restore.point("find.subscripts")
   
-  
-  # remove curley braces
-  str = gsub("{{","jJj",str, fixed=TRUE)
-  str = gsub("}}","hHh",str, fixed=TRUE)
 
-  
-    str = gsub("{","",str, fixed=TRUE)
-  str = gsub("}"," ",str, fixed=TRUE)
-  str = gsub("  "," ",str, fixed=TRUE)
-  
-  
-  
   # find subscripts
-  pos = str.find(str,'_[0-9a-zA-Z_|.=]+',fixed=FALSE)
+  pos1 = str.find(str,'_[0-9a-zA-Z_|.=]+',fixed=FALSE)
+  pos2 = str.find(str,'_\\{[0-9a-zA-Z_|.=,]+\\}',fixed=FALSE)
+  pos = rbind(pos1,pos2)
   if (NROW(pos)==0) {
     return(list(s=str,is.sub=FALSE))
   }

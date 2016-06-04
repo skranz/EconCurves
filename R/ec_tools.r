@@ -1,3 +1,6 @@
+perc = function(val, round.digits=2) {
+  paste0(round(val*100,round.digits),"%")
+}
 
 copy.into.nested.list = function(given, new, return.null.new=FALSE) {
   restore.point("copy.into.nested.list")
@@ -74,23 +77,6 @@ copy.into.null.fields = function(dest, source) {
   
   dest[snames[dest.null]] = source[dest.null]
   dest
-}
-
-
-replace.whiskers = function(str, env=parent.frame()) {
-  restore.point("replace.whiskers")
-  
-  if (is.null(str)) return(str)
-  pos = str.blocks.pos(str,"{{","}}")
-  if (NROW(pos$outer)==0) return(str)
-  s = substring(str, pos$inner[,1],pos$inner[,2])
-  vals = lapply(s, function(su) {
-    res = try(eval(parse(text=su),env))
-    if (is(res,"try-error")) res = "`Error`"
-    unlist(res)[[1]]
-  })
-  res = str.replace.at.pos(str, pos$outer, unlist(vals))
-  res
 }
 
 

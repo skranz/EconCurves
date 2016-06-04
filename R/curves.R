@@ -160,7 +160,7 @@ curve.to.geom = function(curve,pane, values=pane$values, xlen=pane$xlen, ylen=pa
   x=xy$x[rows]
   y=xy$y[rows]
   
-  list(type="curve",geom.type="gcurve",axis="",x=x,y=y,xrange=xrange,yrange=yrange)    
+  list(type="curve",axis="",x=x,y=y,xrange=xrange,yrange=yrange)    
 }
 
 compute.curve.grid = function(cu=geom$obj, values=geom$values, xrange=geom$xrange,yrange=geom$yrange, xlen=geom$xlen,ylen=geom$ylen, dim="x",x=geom$x, y=geom$y, geom=NULL) {

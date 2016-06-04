@@ -152,6 +152,9 @@ place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=
   
   if (is.null(display)) display = "yes"
   
+  use.lab = sapply(geoms, function(geom) geom$type=="curve" | geom$type=="marker")
+  geoms = geoms[use.lab]
+  
   labels = sapply(seq_along(geoms), function(i) {
     geom = geoms[[i]]
     geom.label(geom=geom,label.replace = c(geom$values, list(".id"=label.postfix[[i]])))
@@ -248,6 +251,8 @@ draw.svg.geom = function(svg,geom, role,display=NULL,...) {
     draw.svg.curve(svg,geom, role=role, display=display)
   } else if (geom$type=="marker") {
     draw.svg.marker(svg,geom, role=role, display=display)
+  } else if (geom$type=="point") {
+    draw.svg.point(svg,geom, role=role, display=display)
   }
   svg
 }
@@ -263,6 +268,17 @@ draw.svg.marker = function(svg, geom, role=NULL, level=2, display=NULL) {
   display = init.geom.display(geom, display)
   
   svg_polyline(svg,id=geom$id, x=geom$x,y=geom$y, stroke=geom$color, level=level,tooltip=geom$tooltip, extra.args = list("stroke-dasharray"=geom$obj$dashed, display=display), class="marker_line")
+}
+
+draw.svg.point = function(svg, geom, role=NULL, level = 100, display=NULL) {
+  restore.point("draw.svg.point")
+  display = init.geom.display(geom, display)
+  
+  label = geom.label(geom, role=role, label.replace=geom$values)
+  
+  svg_point(svg,id=geom$id, x=geom$x,y=geom$y, fill=geom$color, level=level,tooltip=geom$tooltip,label=label, display=display, class="point")
+  
+  
 }
 
 init.geom.display = function(geom, display) {
@@ -295,6 +311,21 @@ line, polyline, path, rect, circle {
 */
   stroke-linejoin: round;
   stroke-miterlimit: 10.00;
+}
+
+
+.point {
+  fill: #dddd00;
+  fill: #000000;
+  fill-opacity: 0.8;
+  stroke: #000044;
+  stroke-width: 0;
+}
+
+.point:hover {
+  stroke-width: 4;
+  fill: #000044;
+  fill-opacity: 1;
 }
 
 .curve {
@@ -336,6 +367,11 @@ line, polyline, path, rect, circle {
   font-weight: normal;
 }
 
+.point-label {
+  font-size: 13.00pt;
+  font-weight: normal;
+  filter: url(#label_box);
+}
 
 .boxed-label {
   font-size: 11.00pt;
