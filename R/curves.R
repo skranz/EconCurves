@@ -26,8 +26,6 @@ init.curve = function(name=NULL, eq=NULL, xvar=NULL,yvar=NULL, color=NULL,label=
     curve$name = attr(curve,"name")
   }
   
-  if (is.null(curve$label))
-    curve$label=curve$name
   if (!is.null(curve["xy"])) {
     if (is.null(curve$xvar))
       curve$xvar = curve$xy[1]
@@ -44,7 +42,26 @@ init.curve = function(name=NULL, eq=NULL, xvar=NULL,yvar=NULL, color=NULL,label=
   
   res = specialize.curve.formula(curve$eq_, xvar=curve$xvar,yvar=curve$yvar)
   
+  
   curve = c(curve, res)
+  
+  if (!is.null(curve$labx)) {
+    curve$labx_ = parse.as.call(paste0("(",curve$labx,")"))
+  }
+  if (!is.null(curve$laby)) {
+    curve$laby_ = parse.as.call(paste0("(",curve$laby,")"))
+  }
+  if (!is.null(curve$labx_) & is.null(curve$laby_)) {
+    restore.point("dfjdsfurgrbg")
+    
+    if (!is.null(curve$yformula_)) {
+      li = list(curve$labx_)
+      names(li) = xvar
+      curve$laby_ = substitute.call(curve$yformula_,li)
+    }
+  }
+  
+
   curve$type = "curve"
   curve = init.object.extras(curve)
   curve
@@ -123,20 +140,24 @@ specialize.curve.formula = function(eq, xvar, yvar, level=NULL, solve.symbolic =
 # compute symbolically a curve's slope
 compute.curve.slope = function(curve) {
   restore.point("compute.curve.slope")
-  
-  if (isTRUE(curve$is.horizontal)) {
-    slope = 0
-  } else if (isTRUE(curve$is.vertical)) {
-    slope = Inf
-  } else if (!is.null(curve$yformula_)) {
-    slope = Deriv::Deriv(curve$yformula_, curve$xvar)
-  } else if (!is.null(curve$xformula_)) {
-    slope = substitute(1 / (invslope))
-  } else {
-    dFdx =  Deriv::Deriv(curve$implicit_, curve$xvar)
-    dFdy =  Deriv::Deriv(curve$implicit_, curve$yvar)
-    slope = Deriv::Simplify(substitute(-dFdx/dFdy))
-  }
+  slope = NULL
+  try({
+    if (isTRUE(curve$is.horizontal)) {
+      slope = 0
+    } else if (isTRUE(curve$is.vertical)) {
+      slope = Inf
+    } else if (!is.null(curve$yformula_)) {
+      slope = Deriv::Deriv(curve$yformula_, curve$xvar)
+    } else if (!is.null(curve$xformula_)) {
+      slope = substitute(1 / (invslope))
+    } else {
+      dFdx =  Deriv::Deriv(curve$implicit_, curve$xvar)
+      dFdy =  Deriv::Deriv(curve$implicit_, curve$yvar)
+      slope = Deriv::Simplify(substitute(-dFdx/dFdy))
+    }
+  }, silent = TRUE)
+  if (is(slope,"try-error"))
+    slope = NULL
   slope  
 }
 

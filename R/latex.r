@@ -12,12 +12,16 @@ latex.to.textspan = function(str) {
   if (length(li)==1) {
     txt = li
   } else {
-    mat = matrix(li,ncol=2,byrow = TRUE)
-    txt = paste0(collapse="\n",
-      '<tspan>',mat[,1],
-        '<tspan dy="5px" class="label_subscript">', mat[,2],'</tspan>',
-      '</tspan>'
-    )
+    #if (length(li) %% 2 ==1) li = c(li,"")
+    sub = seq(2, length(li),by=2)
+    dy = sapply(seq_along(sub),function(i) {
+      nc = nchar(li[sub[i]])
+      if (substring(li[sub[i]],1,1)=="{") nc = nc-2
+      paste0(c(5,rep(0,nc[i]-1),-5), collapse=",")
+    })
+    li[sub] = paste0('<tspan dy="',dy,'" class="label_subscript">', li[sub],'</tspan>')
+    
+    txt = paste0('<tspan>',paste0(li,collapse=""),'</tspan>')
     
     # remove curley braces
     txt = gsub("{{","jJj",txt, fixed=TRUE)

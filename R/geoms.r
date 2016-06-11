@@ -46,6 +46,27 @@ object.to.geom = function(obj,pane,values=pane$values, data_row=1) {
   geom$name = obj$name
   #geom$id = paste0(pane$name,"_",obj$type,"_",obj$name,"_",data_row)
   geom$id = paste0(obj$type,"_",obj$name,"_",data_row)
+  labrel = obj[["labrel"]]
+  if (!is.null(labrel)) {
+    n = length(geom$x)-1
+    i = c(floor(n * labrel),ceiling(n * labrel)) +1
+    geom$labx = mean(geom$x[i])
+    geom$laby = mean(geom$y[i])
+    
+  } else {
+    if (!is.null(obj$labx_)) {
+      geom$labx = eval(obj$labx_, values)
+    } else {
+      geom$labx = NA
+    }
+    if (!is.null(obj$laby_)) {
+      geom$laby = eval(obj$laby_, values)
+    } else {
+      geom$laby = NA
+    }
+  }
+  
+  
   geom
 }
 
@@ -58,7 +79,7 @@ geom.label = function(geom=NULL,role=NULL, label.replace=NULL) {
 
   if (isTRUE(obj$label.has.whiskers)) {
     label = replace.whiskers(label , label.replace)
-    if (!is.null(obj$latex)) {
+    if (isTRUE(obj$use.latex)) {
       label = latex.to.textspan(label)
     }
   }

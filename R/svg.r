@@ -1,3 +1,22 @@
+export.svg = function(html, dest.file,format=tools::file_ext(dest.file), width=NULL, height=NULL) {
+  restore.point("export.svg")
+  
+  library(rsvg)
+  library(convertGraph)
+  dest.file = tools::file_path_sans_ext(dest.file)
+  
+  svg.file = paste0(dest.file,".svg")
+  writeLines(html, svg.file)
+  
+  Encoding(html) <- "UTF-8"
+  writeUtf8(html, svg.file)
+  raw = charToRaw(paste0(html,collapse="\n"))
+  for (form in format) {
+    fun = paste0("rsvg_",form)
+    to.file = paste0(dest.file,".",form)
+    #do.call(fun,nlist(svg=svg.file,file=to.file,width, height))
+  }
+}
 
 examples.svg = function() {
   library(dplyr)
@@ -74,7 +93,7 @@ new_svg = function(width=500, height=400, xlim=c(0,1),ylim=xlim,id=NULL, css=def
   svg = new.env()
   
   svg$id = id
-  svg$head = paste0("<svg width='",width,"' height='",height,"' id = '",id,"' class='",class,"'>")
+  svg$head = paste0("<svg xmlns='http://www.w3.org/2000/svg' version='1.1' width='",width,"' height='",height,"' id = '",id,"' class='",class,"'>")
   svg$width = 500
   svg$height = height
   svg$dr = make.domain.range(xlim=xlim,ylim=ylim,width=width, height=height, margins=margins)
@@ -335,7 +354,7 @@ svg_xaxis = function(svg, id="xaxis", label=NULL, latex = NULL,  align="default"
   }
   
   if (show.tick.labels) {
-    ti.lab = paste0('<text x="',x.ticks,'" y="',y2.tick+15,'" ', html_arg_str(style=style.tick.label, class=class.tick.label),'text-anchor="middle">',ticks,"</text>")
+    ti.lab = paste0('<text x="',x.ticks,'" y="',y2.tick+15,'" ', html_arg_str(style=style.tick.label, class=class.tick.label),' text-anchor="middle">',ticks,"</text>")
   } else {
     ti.lab = ""
   }
@@ -406,7 +425,7 @@ svg_yaxis = function(svg, id="yaxis", label=NULL,latex = NULL,
   if (!is.null(label)) {
     x.lab =  x1.tick
     y.lab = y.ax[2]-10-arrow*10
-    label = svg_tag(name = "text",args=list(x=x.lab,y=y.lab,style=style.label,class=class.label,  "text-anchor"="middle"),inner=label)
+    label = svg_tag(name = "text",args=list(x=x.lab,y=y.lab,style=style.label,class=class.label,"text-anchor"="middle"),inner=label)
   }
   
   inner = c(line, ti.str, ti.lab,label)

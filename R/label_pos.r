@@ -22,7 +22,21 @@ find.label.pos = function(geoms,xrange, yrange, yshift=diff(yrange)*0.05, do.shu
 
   inds = seq_along(geoms)
 
+
+  
   ep.df = get.endpoints(geoms)
+
+  labx = sapply(geoms, function(geom) geom$labx)
+  laby = sapply(geoms, function(geom) geom$laby)
+  
+  
+  ind = which(!is.na(labx) & !is.na(laby))
+  lab.mat = data_frame(x=labx[ind],y=laby[ind],ind=ind)
+  
+  ep.df = rbind(ep.df[!(ep.df$ind %in% ind),],lab.mat) %>% arrange(ind)
+  
+  
+  
   ep.df$remain = TRUE
   ep.df = mutate(ep.df,
     right = x == xrange[2],

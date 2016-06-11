@@ -240,11 +240,13 @@ old.compute.pane.geoms = function(pane, objs = pane$objs,xrange=pane$xrange, yra
 pane = function(...) as.environment(init.pane(...))
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xaxis=list(), yaxis=list(),  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0.1, 0.1))  {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xaxis=list(), yaxis=list(),  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0, 0.1))  {
   restore.point("init.pane")
 
   
   pane = as.list(pane)
+  
+  pane$org.li = pane
   
   pane = copy.into.null.fields(dest=pane, source=nlist(name,xvar, yvar,xrange,yrange, curves, xmarkers, ymarkers, geoms.li, xaxis, yaxis, params, datavar, use_dataenv_directly, data_roles, show, hide,xlen,ylen, add_xrange, add_yrange, data_xrange, data_yrange))
 
@@ -306,18 +308,26 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
   pane
 }
 
-update.pane.objs = function(pane, curves=NULL, points=NULL) {
+update.pane.objs = function(pane, curves=NULL, points=NULL,xmarkers = NULL, ymarkers=NULL) {
   restore.point("update.pane.objs")
   
-  if (is.null(curves) & is.null(points)) {
+  if (is.null(curves) & is.null(points) & is.null(xmarkers) & is.null(ymarkers)) {
     return(pane)
   }
   
   if (!is.null(curves)) {
     if (is.null(pane$curves)) pane$curves = list()
     curve.names = names(curves)
+    
     pane$curves[curve.names] = lapply(seq_along(curves), function(i) {
-      init.curve(name=curve.names[i], xvar=pane$xvar, yvar=pane$yvar, curve=curves[[i]])
+      restore.point("dfhdfufhriu")
+      
+      if (curve.names[i] %in% names(pane$org.li$curves)) {
+        curve = copy.into.nested.list(pane$org.li$curves[curve.names[i]],new = curves[i])[[1]]
+      } else {
+        curve = curves[[i]]
+      }
+      init.curve(name=curve.names[i], xvar=pane$xvar, yvar=pane$yvar, curve=curve)
     })
   }
 
@@ -331,6 +341,18 @@ update.pane.objs = function(pane, curves=NULL, points=NULL) {
       init.point(obj=points[[name]],name=name,pane = pane)
     })
   }
+  
+  names_markers = c(names(xmarkers),names(ymarkers))
+  xmarkers = lapply(names(xmarkers), function(name) {
+    init.marker(xmarkers[[name]],name=name, axis="x", pane=pane)
+  })
+  ymarkers = lapply(names(ymarkers), function(name) {
+    init.marker(ymarkers[[name]],name=name, axis="y", pane=pane)
+  })
+  markers = c(xmarkers,ymarkers)
+  names(markers)= names_markers
+  pane$markers[names(markers)] = markers
+  
   pane$objs = c(pane$curves, pane$markers, pane$points)
   pane$parnames =unique(unlist(lapply(pane$objs, function(obj) obj$parnames)))
 

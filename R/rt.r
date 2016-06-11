@@ -37,6 +37,16 @@ rtutor.addon.plotpane = function() {
 
       c(list(img.id=img.id),res)
     },
+    init.handlers = function(ao,...) {
+      restore.point("plotpane init.handlers")
+      
+      svgClickHandler(ao$img.id,stop.propagation = FALSE,fun = function(x,y,...) {
+        restore.point("plotpane click.handler")
+      
+
+        cat("\n click x = ",range.to.domain(x=x,svg=ao$svg) ," y = ",range.to.domain(y=y,svg=ao$svg),"\n")
+      })
+    },
     ui.fun = function(ao,...) {
       restore.point("plotpane.ui.fun")
       #addResourcePath("econcurves",paste0(path.package("EconCurves"),"/www"))
@@ -77,7 +87,7 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL, s
   if (!is.null(arg.li$yrange)) pane$data_yrange=FALSE
   
     
-  pane = update.pane.objs(pane=pane, curves=arg.li[["curves"]], points=arg.li[["points"]])
+  pane = update.pane.objs(pane=pane, curves=arg.li[["curves"]], points=arg.li[["points"]], xmarkers=arg.li[["xmarkers"]], ymarkers=arg.li[["ymarkers"]])
   
   if (is.null(pane$params)) pane$params = list()
   pane$params[names(arg.li$params)] = arg.li$params
