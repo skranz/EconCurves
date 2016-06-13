@@ -253,7 +253,9 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
     values[[cu$yvar]] = yseq
     xval = eval(cu$xformula_, values)
 
-    return(list(x=c(xseq,xval),y=c(yval,yseq)))    
+    xy = adapt.linear.curve.points(x=c(xseq,xval),y=c(yval,yseq),xrange=xrange, yrange=yrange)
+
+    return(xy)    
   }
 
   
@@ -287,6 +289,22 @@ compute.curve.points = function(cu, xrange, yrange, values, xlen=101,ylen=xlen, 
     res = res[[1]]
   }
   return(list(x = res$x, y=res$y))
+}
+
+adapt.linear.curve.points = function(x,y,xrange,yrange) {
+  restore.point("adapt.linear.curve.points")
+  
+  rows = x >= min(xrange) & x <= max(xrange) &
+         y >= min(yrange) & y <= max(yrange) 
+
+  x=x[rows]
+  y=y[rows]
+  
+  ord = order(x,y)
+  x = x[ord]
+  y = y[ord]
+  ind = !duplicated(x)
+  list(x=x[ind],y=y[ind])
 }
 
 compute.curve.implicit.z = function(cu, xrange, yrange,par,  xlen=101,ylen=xlen, z.as.matrix=FALSE) {

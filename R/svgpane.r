@@ -72,15 +72,21 @@ compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), 
 
   if (compute.geoms) {
     compute.pane.geoms(pane=pane,data_rows=data_rows)
-    xrange = pane$xrange
-    yrange = pane$yrange
   }
+  xrange = pane$xrange
+  yrange = pane$yrange
   #svg = new_svg(id=id,width=width, height=height, xlim=pane$xrange, ylim=pane$yrange,css=css, margins=margins,...)
   svg = new_svg(id=id,width=width, height=height, xlim=pane$xrange, ylim=pane$yrange,css=css, margins=margins)
 
     
   do.call(svg_xaxis, c(list(svg=svg), pane$xaxis))
   do.call(svg_yaxis, c(list(svg=svg), pane$yaxis))
+  
+  if (isTRUE(pane$zerox_line)) {
+    svg_polyline(svg=svg, x=xrange,y=c(0,0), class="axis-main")
+    
+  }
+
   
   restore.point("pane.svg2")
   

@@ -92,6 +92,8 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL, s
   if (is.null(pane$params)) pane$params = list()
   pane$params[names(arg.li$params)] = arg.li$params
   if (any(c("params","datavar","data") %in% names(arg.li)) | isTRUE(pane$use.dataenv) ) {
+    if (!is.null(arg.li$datavar) | !is.null(arg.li$data))
+      pane$data = NULL
     pane$dataenv = ps$pre.env
     make.pane.data(pane=pane) 
   }

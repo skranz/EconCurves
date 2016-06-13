@@ -48,7 +48,9 @@ object.to.geom = function(obj,pane,values=pane$values, data_row=1) {
   geom$id = paste0(obj$type,"_",obj$name,"_",data_row)
   labrel = obj[["labrel"]]
   if (!is.null(labrel)) {
-    n = length(geom$x)-1
+    restore.point("dckjdioc wnckw")
+    
+    n= length(geom$x)-1
     i = c(floor(n * labrel),ceiling(n * labrel)) +1
     geom$labx = mean(geom$x[i])
     geom$laby = mean(geom$y[i])

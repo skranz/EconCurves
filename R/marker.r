@@ -30,6 +30,9 @@ init.marker = function(obj=list(), name=NULL, var=name, axis = "x", color="#3333
     if (is.character(obj$from))
       obj$from = parse(text=obj$from)
   }
+
+  if (is.null(obj[["labrel"]]))
+    obj$labrel = 0
   
   obj = init.object.extras(obj)
 

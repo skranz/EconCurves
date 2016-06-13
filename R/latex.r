@@ -6,9 +6,43 @@ latex.to.textspan = function(str) {
 
   #str = "x_{5ab}\\alpha * \\beta"
 
+  #str = "E^{*}"
   str = replace.latex.with.unicode(str)  
 
-  li = find.subscripts(str)$s
+  txt = str
+  txt = svg.change.subscripts(txt,super = FALSE)
+  txt = svg.change.subscripts(txt,super = TRUE)
+  
+  if (!identical(txt,str)) {
+    txt = paste0("<tspan>",txt,"</tspan>")
+  }
+  
+  # remove curley braces
+  txt = gsub("{{","jJj",txt, fixed=TRUE)
+  txt = gsub("}}","hHh",txt, fixed=TRUE)
+  txt = gsub("{","",txt, fixed=TRUE)
+  txt = gsub("}"," ",txt, fixed=TRUE)
+  txt = gsub("  "," ",txt, fixed=TRUE)
+  txt = gsub("jJj","{{",txt, fixed=TRUE)
+  txt = gsub("hHh","}}",txt, fixed=TRUE)
+
+  txt
+}
+
+svg.change.subscripts = function(str, add.tspan = FALSE, super=FALSE) {
+  restore.point("svg.change.subscripts")
+  
+  if (!super) {
+    char = "_"
+    class = "label_subscript"
+    sign = 1
+  } else {
+    char = "\\^"
+    class = "label_superscript"
+    sign = -0.5
+  }
+  
+  li = find.subscripts(str,char=char)$s
   if (length(li)==1) {
     txt = li
   } else {
@@ -17,32 +51,25 @@ latex.to.textspan = function(str) {
     dy = sapply(seq_along(sub),function(i) {
       nc = nchar(li[sub[i]])
       if (substring(li[sub[i]],1,1)=="{") nc = nc-2
-      paste0(c(5,rep(0,nc[i]-1),-5), collapse=",")
+      paste0(c(5,rep(0,nc[i]-1),-5)*sign , collapse=",")
     })
-    li[sub] = paste0('<tspan dy="',dy,'" class="label_subscript">', li[sub],'</tspan>')
+    li[sub] = paste0('<tspan dy="',dy,'" class="', class,'">', li[sub],'</tspan>')
     
-    txt = paste0('<tspan>',paste0(li,collapse=""),'</tspan>')
-    
-    # remove curley braces
-    txt = gsub("{{","jJj",txt, fixed=TRUE)
-    txt = gsub("}}","hHh",txt, fixed=TRUE)
-    txt = gsub("{","",txt, fixed=TRUE)
-    txt = gsub("}"," ",txt, fixed=TRUE)
-    txt = gsub("  "," ",txt, fixed=TRUE)
-    txt = gsub("jJj","{{",txt, fixed=TRUE)
-    txt = gsub("hHh","}}",txt, fixed=TRUE)
+    txt = paste0(li,collapse="")
+    if (add.tspan) {
+      txt = paste0("<tspan>",txt,"</tspan>")
+    }
   }
-
   txt
-}
+} 
 
-find.subscripts = function(str) {
+find.subscripts = function(str, char = "_") {
   restore.point("find.subscripts")
   
 
   # find subscripts
-  pos1 = str.find(str,'_[0-9a-zA-Z_|.=]+',fixed=FALSE)
-  pos2 = str.find(str,'_\\{[0-9a-zA-Z_|.=,]+\\}',fixed=FALSE)
+  pos1 = str.find(str,paste0(char,'[0-9a-zA-Z|.=]+'),fixed=FALSE)
+  pos2 = str.find(str,paste0(char,'\\{[0-9a-zA-Z_|.=,*+-]+\\}'),fixed=FALSE)
   pos = rbind(pos1,pos2)
   if (NROW(pos)==0) {
     return(list(s=str,is.sub=FALSE))
