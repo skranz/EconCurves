@@ -31,6 +31,9 @@ object.to.geom = function(obj,pane,values=pane$values, data_row=1) {
     geom = marker.to.geom(obj,values=values,pane=pane)
   } else if (type=="point") {
     geom = point.to.geom(obj,values=values,pane=pane)
+  } else {
+    fun = paste0(type,".to.geom")
+    geom = do.call(fun, list(obj=obj,values=values, pane=pane))
   }
   if (is.null(geom)) {
     return(NULL)

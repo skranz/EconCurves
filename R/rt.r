@@ -31,6 +31,9 @@ rtutor.addon.plotpane = function() {
       yaml = merge.lines(inner.txt)
       arg.li = read.yaml(text=yaml)
       if (is.null(arg.li$pane)) arg.li$pane = name
+      if (is.null(arg.li[["pane"]])) {
+        stop("You have not specified a pane name in your plotpane block.")
+      }
       pane = get.pane.from.ps(pane = arg.li$pane, ps = ps,arg.li=arg.li, shallow.copy = TRUE)
       img.id = paste0(ps$ps.id,"_plotpane_",bi)
       res = pane.svg(pane,id=img.id)
@@ -76,7 +79,7 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL, s
   }
   #if (is.null(pane$width.in)) pane$width.in = 5
   #if (is.null(pane$height.in)) pane$height.in = 4
-  cols = setdiff(names(arg.li),c("name","pane","height.in","width.in","params","curves","points"))
+  cols = setdiff(names(arg.li),c("name","pane","height.in","width.in","params","curves","points","objects"))
   
   arg.li$xrange = unlist(arg.li$xrange)
   arg.li$yrange = unlist(arg.li$yrange)
@@ -87,7 +90,7 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL, s
   if (!is.null(arg.li$yrange)) pane$data_yrange=FALSE
   
     
-  pane = update.pane.objs(pane=pane, curves=arg.li[["curves"]], points=arg.li[["points"]], xmarkers=arg.li[["xmarkers"]], ymarkers=arg.li[["ymarkers"]])
+  pane = update.pane.objs(pane=pane, curves=arg.li[["curves"]], points=arg.li[["points"]], xmarkers=arg.li[["xmarkers"]], ymarkers=arg.li[["ymarkers"]], objects = arg.li[["objects"]])
   
   if (is.null(pane$params)) pane$params = list()
   pane$params[names(arg.li$params)] = arg.li$params

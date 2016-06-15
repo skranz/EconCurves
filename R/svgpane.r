@@ -259,6 +259,10 @@ draw.svg.geom = function(svg,geom, role,display=NULL,...) {
     draw.svg.marker(svg,geom, role=role, display=display)
   } else if (geom$type=="point") {
     draw.svg.point(svg,geom, role=role, display=display)
+  } else {
+    restore.point("draw.svg.type")
+    fun = paste0("draw.svg.",geom$type)
+    do.call(fun, list(svg=svg, geom=geom, role=role, display=display))
   }
   svg
 }

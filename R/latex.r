@@ -69,7 +69,7 @@ find.subscripts = function(str, char = "_") {
 
   # find subscripts
   pos1 = str.find(str,paste0(char,'[0-9a-zA-Z|.=]+'),fixed=FALSE)
-  pos2 = str.find(str,paste0(char,'\\{[0-9a-zA-Z_|.=,*+-]+\\}'),fixed=FALSE)
+  pos2 = str.find(str,paste0(char,'\\{[0-9a-zA-Z_|.=,*+-°]+\\}'),fixed=FALSE)
   pos = rbind(pos1,pos2)
   if (NROW(pos)==0) {
     return(list(s=str,is.sub=FALSE))

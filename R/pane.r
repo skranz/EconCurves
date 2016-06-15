@@ -290,7 +290,9 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
 
   pane$markers= init.pane.markers(pane)
   
-  pane$objs = c(pane$curves, pane$markers, pane$points)
+  pane$objects = init.pane.objects(pane)
+  
+  pane$objs = c(pane$curves, pane$markers, pane$points, pane$objects)
   
   pane$parnames =unique(unlist(lapply(pane$objs, function(obj) obj$parnames)))
   
@@ -308,10 +310,10 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
   pane
 }
 
-update.pane.objs = function(pane, curves=NULL, points=NULL,xmarkers = NULL, ymarkers=NULL) {
+update.pane.objs = function(pane, curves=NULL, points=NULL,xmarkers = NULL, ymarkers=NULL, objects=NULL) {
   restore.point("update.pane.objs")
   
-  if (is.null(curves) & is.null(points) & is.null(xmarkers) & is.null(ymarkers)) {
+  if (is.null(curves) & is.null(points) & is.null(xmarkers) & is.null(ymarkers) & is.null(objects)) {
     return(pane)
   }
   
@@ -353,7 +355,19 @@ update.pane.objs = function(pane, curves=NULL, points=NULL,xmarkers = NULL, ymar
   names(markers)= names_markers
   pane$markers[names(markers)] = markers
   
-  pane$objs = c(pane$curves, pane$markers, pane$points)
+  if (!is.null(objects)) {
+    restore.point("update.pane.objects")
+    
+    if (is.null(pane[["objects"]]))
+      pane$objects =list()
+    
+    pane$objects[names(objects)] = lapply(names(objects), function(name) {
+      init.object(obj=objects[[name]],name=name,pane = pane)
+    })
+  }
+  
+  
+  pane$objs = c(pane$curves, pane$markers, pane$points, pane$objects)
   pane$parnames =unique(unlist(lapply(pane$objs, function(obj) obj$parnames)))
 
   pane
