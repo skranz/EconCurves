@@ -396,6 +396,11 @@ line, polyline, path, rect, circle {
 }
 
 
+.label_superscript {
+  font-size: 8.00pt;
+}
+
+
 .axis-label {
   font-size: 11.00pt;
   /*font-family: Arial;*/

@@ -39,7 +39,7 @@ svg.change.subscripts = function(str, add.tspan = FALSE, super=FALSE) {
   } else {
     char = "\\^"
     class = "label_superscript"
-    sign = -0.5
+    sign = -0.75
   }
   
   li = find.subscripts(str,char=char)$s

@@ -68,7 +68,7 @@ get.pane.from.ps = function(pane=arg.li$pane, ps, bdf = ps$bdf, arg.li = NULL, s
     pane.name = pane
     row = which(bdf$stype=="pane" & bdf$name==pane)[1]
     if (is.na(row)) {
-      stop(paste0("You want to plot the pane ", name, " but have not defined that pane before"))
+      stop(paste0("You want to plot the pane ", pane.name, " but have not defined that pane before"))
     }
     pane = bdf$obj[[row]]$ao
     pane$pane.name = pane.name
