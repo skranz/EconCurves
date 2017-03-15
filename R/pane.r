@@ -240,7 +240,7 @@ old.compute.pane.geoms = function(pane, objs = pane$objs,xrange=pane$xrange, yra
 pane = function(...) as.environment(init.pane(...))
 
 #' Initilize a pane
-init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xaxis=list(), yaxis=list(),  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=c(bottom=60,left=60, top=20, right=20), init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0, 0.1))  {
+init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, yrange=NULL, xaxis=list(), yaxis=list(),  xmarkers=NULL, ymarkers=NULL, geoms.li=NULL, curves=NULL, init.curves=TRUE, data=NULL, params=NULL, datavar=NULL, use_dataenv_directly = FALSE, data_roles =NULL, show=".all", hide=NULL, xlen=201,ylen=201, org.width = 420, org.height=300, margins=pane$margins, init.data=FALSE, dataenv=parent.frame(), data_xrange=NA , data_yrange=NA, add_xrange = c(0, 0), add_yrange=c(0, 0.1))  {
   restore.point("init.pane")
 
   
@@ -265,6 +265,15 @@ init.pane = function(pane=list(),name=NULL, xvar=NULL, yvar=NULL, xrange=NULL, y
   if (is.na(pane$data_xrange)) pane$data_xrange = is.null(pane$xrange)
   if (is.na(pane$data_yrange)) pane$data_yrange = is.null(pane$yrange)
   
+  if (is.null(margins)) {
+    margins = c(bottom=60,left=60, top=20, right=20)
+    if (!isTRUE(pane$yaxis$show.ticks)) 
+      margins["left"] = 40
+    if (!isTRUE(pane$xaxis$show.ticks)) 
+      margins["bottom"] = 40
+    
+  }
+  pane$margins=margins
   
   pane = as.environment(pane)
 

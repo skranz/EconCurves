@@ -37,29 +37,29 @@ dynstory.parse.fun = function(inner.txt,type="dynstory",name=args$name,id=paste0
     stop("You must define at least one step in each dynstory.")
   }
   start.lines = from_to(1,step.lines[1]-1)
-  ao = list()
+  wid = list()
   if (length(start.lines)>0) {
-    ao = parse.hashdot.yaml(txt[start.lines])
+    wid = parse.hashdot.yaml(txt[start.lines])
   }
-  show = ao$show
-  if (is.null(ao$panes)) {
-    ao$panes = list(ao$pane)
+  show = wid$show
+  if (is.null(wid$panes)) {
+    wid$panes = list(wid$pane)
   }
   
-  ao$panes = lapply(ao$panes, function(pane) {
-    pane = get.pane.from.ps(pane = ao$pane, ps = ps,arg.li=ao)
+  wid$panes = lapply(wid$panes, function(pane) {
+    pane = get.pane.from.ps(pane = wid$pane, ps = ps,arg.li=wid)
     pane$show = show
     pane
   })
-  names(ao$panes) = sapply(ao$panes, function(pane) pane$name)
+  names(wid$panes) = sapply(wid$panes, function(pane) pane$name)
   
-  ao$all.names = unique(unlist(lapply(ao$panes, function(pane) names(pane$objs))))
+  wid$all.names = unique(unlist(lapply(wid$panes, function(pane) names(pane$objs))))
   
   # compute steps
-  given_show = compute.show.list(show=ao$show,hide=ao[["hide"]], data_rows=ao$data_rows, all.names = ao$all.names)
+  given_show = compute.show.list(show=wid$show,hide=wid[["hide"]], data_rows=wid$data_rows, all.names = wid$all.names)
 
   # overwrite default show = ".all"
-  ao$imgs = lapply(ao$panes, function(pane) {
+  wid$imgs = lapply(wid$panes, function(pane) {
     id = paste0("dynstory_",bi,"_",pane$name)
     list(
       id = id,
@@ -76,17 +76,17 @@ dynstory.parse.fun = function(inner.txt,type="dynstory",name=args$name,id=paste0
   for (i in seq_along(steps)) {
     step = parse.hashdot.yaml(txt[(lines[i]+1):(lines[i+1]-1)])
     step$step.num = i
-    step = dynstory.make.step(step, given_show=given_show, panes=ao$panes,ps=ps,bi=bi,ao=ao)
+    step = dynstory.make.step(step, given_show=given_show, panes=wid$panes,ps=ps,bi=bi,wid=wid)
     steps[[i]] = step
     given_show = step$postshow      
   }
 
-  ao$steps = steps
-  ao$max.points = sum(sapply(ao$steps, function(step) step$points))
+  wid$steps = steps
+  wid$max.points = sum(sapply(wid$steps, function(step) step$points))
   
   # init layout
-  if (is.null(ao$layout)) {
-    ao$layout = '
+  if (is.null(wid$layout)) {
+    wid$layout = '
     <table><tr>
     <td>{{text}}</td>
     <td>{{pane}}</td>
@@ -95,29 +95,29 @@ dynstory.parse.fun = function(inner.txt,type="dynstory",name=args$name,id=paste0
   }
   
   
-  ao$textId = paste0("dynstory_text_",bi)
-  ao$paneId = paste0("dynstory_pane_",bi)
+  wid$textId = paste0("dynstory_text_",bi)
+  wid$paneId = paste0("dynstory_pane_",bi)
   
-  textOutput = as.character(uiOutput(ao$textId))
-  paneOutput = as.character(uiOutput(ao$paneId))  
+  textOutput = as.character(uiOutput(wid$textId))
+  paneOutput = as.character(uiOutput(wid$paneId))  
   menu = as.character(dynstory.menu.bar(bi=bi))
-  ao$layout = HTML(replace.whiskers(ao$layout, list(text=textOutput,pane=paneOutput,menu=menu)))
+  wid$layout = HTML(replace.whiskers(wid$layout, list(text=textOutput,pane=paneOutput,menu=menu)))
   
   
-  return(ao)
+  return(wid)
 }
 
 dynstory.ui.fun = function(ts,bi,...) {
   restore.point("pane.quiz.ui.fun")
-  ao = ts$ao
-  ui = ao$layout
+  wid = ts$wid
+  ui = wid$layout
   
 
   dynstory.show.step(ts=ts)
   ui
 }
 
-dynstory.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], ao=ts$ao, step.mode = ts$step.mode, ts=NULL, msg="") {
+dynstory.show.step = function(step.num=ts$step.num, step=wid$steps[[step.num]], wid=ts$wid, step.mode = ts$step.mode, ts=NULL, msg="") {
   restore.point("dynstory.show.step")
   
   # show text
@@ -125,7 +125,7 @@ dynstory.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], a
   if (nchar(msg)>0) {
     html = div(html,p(msg))
   }
-  setUI(ao$textId,html)
+  setUI(wid$textId,html)
   
   # show pane figure
   pmode = step.mode
@@ -135,7 +135,7 @@ dynstory.show.step = function(step.num=ts$step.num, step=ao$steps[[step.num]], a
     pmode = "post"    
   }
   plot.html = HTML(step[[paste0(pmode,".plot")]][[1]]$html)
-  setUI(ao$paneId,plot.html)  
+  setUI(wid$paneId,plot.html)  
 }
 
 dynstory.show.next.step = function(ts,...) {
@@ -152,7 +152,7 @@ dynstory.show.next.step = function(ts,...) {
   }
     
   next.step.num = ts$step.num +1
-  if (next.step.num > length(ts$ao$steps))
+  if (next.step.num > length(ts$wid$steps))
      return()
   
   ts$step.num = next.step.num
@@ -170,14 +170,14 @@ dynstory.show.prev.step = function(ts, next.step.mode="pre",...) {
 
 
 
-dynstory.make.step = function(step, panes=ao$panes, given_shows,ps,bi, ao, prev_shows=NULL, prev_src=NULL) {
+dynstory.make.step = function(step, panes=wid$panes, given_shows,ps,bi, wid, prev_shows=NULL, prev_src=NULL) {
   restore.point("dynstory.make.step")
   
   if (is.null(step$points)) step$points = 0
   if (is.null(step$score)) step$score = 0
   
   
-  res = compute.step.shows(step=step, given_show=given_shows, all.names=ao$all.names, data_rows=ao$data_rows)
+  res = compute.step.shows(step=step, given_show=given_shows, all.names=wid$all.names, data_rows=wid$data_rows)
   step$preshow = res$preshow
   step$postshow = res$postshow
 
@@ -185,7 +185,7 @@ dynstory.make.step = function(step, panes=ao$panes, given_shows,ps,bi, ao, prev_
   step$pre.plot = step$post.plot = vector("list", length(panes))
   for (i in seq_along(panes)) {
     pane = panes[[i]]
-    img.id = ao$imgs[[i]]$id
+    img.id = wid$imgs[[i]]$id
   
     filename = paste0("dynstory_",bi,"_",pane$name,"_pre_",step$step.num,".png")
     
@@ -210,15 +210,15 @@ dynstory.make.step = function(step, panes=ao$panes, given_shows,ps,bi, ao, prev_
   step$success.html = withMathJax(HTML(paste0(pre.html, success.html)))
   step$failure.html = withMathJax(HTML(paste0(pre.html,failure.html)))
   
-  step = dynstory.make.step.task(step=step, ps=ps,ao=ao) 
+  step = dynstory.make.step.task(step=step, ps=ps,wid=wid) 
   
   step
 }
 
-dynstory.make.step.task = function(step,panes=ao$panes,ps,ao) {
+dynstory.make.step.task = function(step,panes=wid$panes,ps,wid) {
   restore.point("dynstory.make.step.task")
 
-  data_rows = ao$data_rows
+  data_rows = wid$data_rows
   # NEED TO CORRECT
   pane = panes[[1]]
   
@@ -275,7 +275,7 @@ dynstory.make.step.task = function(step,panes=ao$panes,ps,ao) {
 
 
 
-dynstory.make.org.task.state = function(ao,...) {
+dynstory.make.org.task.state = function(wid,...) {
   list(
     solved=FALSE,
     step.num = 1,
@@ -283,7 +283,7 @@ dynstory.make.org.task.state = function(ao,...) {
     points = 0,
     score = 0,
     sts = list(steps.solved = 0),
-    ao=ao
+    wid=wid
   )
 }
 
@@ -295,7 +295,7 @@ dynstory.init.task.state.with.ups = function(ts,ups, task.ind=ts$task.ind,...) {
     warning("ups$sts is null")
     return(dynstory.init.task.state.without.ups(ts=ts, task.ind=task.ind,...))
   }
-  ts$step.num = max(1,min(ts$sts$steps.solved, length(ts$ao$steps)))
+  ts$step.num = max(1,min(ts$sts$steps.solved, length(ts$wid$steps)))
   ts$step.mode = if (ts$step.num > ts$sts$steps.solved) "pre" else "success"
   
   ts$solved = ups$utt$was.solved[task.ind]
@@ -319,12 +319,12 @@ dynstory.sol.txt.fun = dynstory.out.txt.fun = function(ts,solved=TRUE,...) {
   "\n--A pane quiz--\n"
 }
 
-dynstory.init.handlers = function(ao=ts$ao,ps=get.ps(), app=getApp(),ts=NULL,bi,...) {
+dynstory.init.handlers = function(wid=ts$wid,ps=get.ps(), app=getApp(),ts=NULL,bi,...) {
   restore.point("dynstory.init.handlers")
   
   # NEED TO CORRECT
-  pane = ao$panes[[1]]
-  img.id = ao$imgs[[1]]$id
+  pane = wid$panes[[1]]
+  img.id = wid$imgs[[1]]$id
   
   imageClickHandler(img.id,fun = dynstory.click,ts=ts,pane=pane)  
   
@@ -341,8 +341,8 @@ dynstory.click = function(x,y,...,ts=NULL,pane=NULL) {
   restore.point("dynstory.click")
   cat("dynstory.click")
   
-  ao = ts$ao
-  step = ao$steps[[ts$step.num]]
+  wid = ts$wid
+  step = wid$steps[[ts$step.num]]
   step.mode = ts$step.mode
 
   if (step.mode == "success" | !step$has.task) {

@@ -3,7 +3,10 @@
 latex.to.textspan = function(str) {
   #str = "x_{5ab} y_{1} z_3"
   restore.point("latex.to.textspan")
-
+  #return(str)
+  
+  #return(paste0("R\\(",str,"\\)"))
+  
   #str = "x_{5ab}\\alpha * \\beta"
 
   #str = "E^{*}"
@@ -49,9 +52,10 @@ svg.change.subscripts = function(str, add.tspan = FALSE, super=FALSE) {
     #if (length(li) %% 2 ==1) li = c(li,"")
     sub = seq(2, length(li),by=2)
     dy = sapply(seq_along(sub),function(i) {
+      restore.point("hdfhkjdh")
       nc = nchar(li[sub[i]])
       if (substring(li[sub[i]],1,1)=="{") nc = nc-2
-      paste0(c(5,rep(0,nc[i]-1),-5)*sign , collapse=",")
+      paste0(c(5,rep(0,nc-1),-5)*sign , collapse=",")
     })
     li[sub] = paste0('<tspan dy="',dy,'" class="', class,'">', li[sub],'</tspan>')
     

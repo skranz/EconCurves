@@ -52,7 +52,7 @@ pane:
 
 #' Plot a pane
 pane.svg = function(pane, id=NULL, show = pane$show, hide=pane[["hide"]], show.grid=!TRUE,
-compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), roles=NULL, css=default_svgpane_css(), width=first.non.null(pane$width,pane$org.width,480), height=first.non.null(pane$height,pane$org.height,320), margins=pane$margins,display=NULL,...
+compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), roles=NULL, css=default_svgpane_css(), width=first.non.null(pane$width,pane$org.width,480), height=first.non.null(pane$height,pane$org.height,320), margins=pane$margins,display=NULL, ...
   ) {
   restore.point("pane.svg")
   data_rows = unlist(data_rows)
@@ -153,7 +153,7 @@ compute.geoms=TRUE, data=pane$data, data_rows=first.non.null(pane$data_rows,1), 
   invisible(list(svg=svg,html=svg_string(svg)))
 }
 
-place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=10, label.df = NULL, label.postfix, display=NULL) {
+place.svg.pane.labels = function(svg, geoms, pane, left.offset=NULL, bottom.offset=NULL, label.df = NULL, label.postfix, display=NULL, left.outside=TRUE, bottom.outside=TRUE) {
   restore.point("place.svg.pane.labels")
   
   if (is.null(display)) display = "yes"
@@ -169,19 +169,30 @@ place.svg.pane.labels = function(svg, geoms, pane, left.offset=5, bottom.offset=
     label.df = find.label.pos(geoms,xrange=pane$xrange, yrange=pane$yrange)
   
   rp = domain.to.range(x=label.df$x,y=label.df$y, svg=svg)
-  x.min = domain.to.range(x=pane$xrange[1],svg=svg) + left.offset
-  y.min = domain.to.range(y=pane$yrange[1],svg=svg) - bottom.offset
   is.right = label.df$x == pane$xrange[[2]]
   is.left = label.df$x == pane$xrange[[1]]
+  is.bottom = label.df$y == pane$yrange[[1]]
   
-  
-  #rp$x = pmax(rp$x,x.min)
-  #rp$y = pmin(rp$y,y.min)
-  
-  rp$x[is.right] = pane$width-3
-  #label.xy = domain.to.range(x=label.df$x,y=label.df$y)
+
+
   
   anchor = ifelse(is.right,"end",ifelse(is.left,"start", "middle"))
+  if (left.outside) {
+    anchor[is.left] = "end"
+    if (is.null(left.offset)) left.offset = -5
+  } else {
+    if (is.null(left.offset)) left.offset = 5
+  }
+  if (bottom.outside) {
+    if (is.null(bottom.offset)) bottom.offset = 20
+  } else {
+    if (is.null(bottom.offset)) bottom.offset = -5
+  }
+  
+  rp$x[is.right] = pane$width-3
+  rp$x[is.left] = rp$x[is.left] + left.offset
+  rp$y[is.bottom] = rp$y[is.bottom] + bottom.offset
+
   
   display.whisker = identical(display,"whisker")
   for (r in seq_len(NROW(label.df))) {
@@ -314,7 +325,7 @@ default_svgpane_css = function() {
 text { font-family : "Kalam" }
 */
 line, polyline, path, rect, circle {
-  fill: none;
+  /*fill: none;*/
   stroke: #000000;
 /*
   stroke-linecap: round;

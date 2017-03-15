@@ -41,13 +41,13 @@ export.ps.svg = function(ps = NULL, rps.file=NULL, rmd.file=NULL, txt=NULL, outd
   bis = which(bdf$type == "plotpane")
   for (bi in bis) {
     name = paste0("plotpane_",bdf$name[[bi]],"_",bi)
-    export.plotpane(bdf$obj[[bi]]$ao,name=name,outdir=outdir)
+    export.plotpane(bdf$obj[[bi]]$wid,name=name,outdir=outdir)
   }
 }
 
-export.plotpane = function(ao,name=ao$img.id, outdir,format=c("png","svg","pdf"), zoom=1L) {
+export.plotpane = function(wid,name=wid$img.id, outdir,format=c("png","svg","pdf"), zoom=1L) {
   restore.point("export.plotpane")
-  width = ao$svg$width*zoom
-  height = ao$svg$height*zoom
-  export.svg(html=ao$html, dest.file=paste0(outdir,"/",name),format=format, width=width, height=height)
+  width = wid$svg$width*zoom
+  height = wid$svg$height*zoom
+  export.svg(html=wid$html, dest.file=paste0(outdir,"/",name),format=format, width=width, height=height)
 }
